@@ -2,29 +2,30 @@
 
 <div align="center">
   <img src="src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="64">
-   <p>NoteWizard 是一款基于 Electron 开发的现代化跨平台笔记应用，为文字工作者设计，数据本地存储，让数据始终安全可控。</p>
 </div>
-
-
-![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
-![GitHub last commit](https://img.shields.io/github/last-commit/jetyu/NoteWizard)
-![GitHub repo size](https://img.shields.io/github/repo-size/jetyu/NoteWizard)
-![GitHub issues](https://img.shields.io/github/issues/jetyu/NoteWizard)
+<p>NoteWizard是一款基于Electron开发的现代化跨平台笔记应用，为文字工作者设计，数据本地存储，让数据始终安全可控。</p>
 
 [![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jetyu/NoteWizard/pulls)
-
+![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/jetyu/NoteWizard)
+![GitHub issues](https://img.shields.io/github/issues/jetyu/NoteWizard)
 
 
 ## 功能特点
-
 - **Markdown 支持**：实时预览 Markdown 渲染效果
-- **代码高亮**：支持多种编程语言的语法高亮
 - **跨平台**：支持 Windows、macOS 和 Linux 系统
-- **深色/浅色主题**：随心切换您偏好的界面主题
+- **主题切换**：随心切换您偏好的界面主题
 - **极简界面**：无干扰的写作环境
 - **本地存储**：所有笔记安全保存在本地
 - **快捷键支持**：优化的工作流效率
+
+*NoteWizard 主界面*  
+![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
+*NoteWizard 首选项界面*  
+![NoteWizard 界面预览](./doc/preview/NoteWizard_2.png)
+*NoteWizard 关于界面*  
+![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
+
 
 ## 快速开始
 
