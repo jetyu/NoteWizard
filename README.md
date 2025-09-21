@@ -1,9 +1,9 @@
-# NoteWizard 
-
 <div align="center">
+<h1> NoteWizard </h1>
   <img src="src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="64">
+  <p>NoteWizard是一款基于Electron开发的现代化跨平台笔记应用，为文字工作者设计，数据本地存储，让数据始终安全可控。</p>
 </div>
-<p>NoteWizard是一款基于Electron开发的现代化跨平台笔记应用，为文字工作者设计，数据本地存储，让数据始终安全可控。</p>
+
 
 [![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
 ![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
