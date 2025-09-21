@@ -1,6 +1,6 @@
 {
   "name": "notewizard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NoteWizard Installer",
   "license": "MIT License",
   "author": "NoteWizard Team",
@@ -31,7 +31,7 @@
   "build": {
     "appId": "com.app.notewizard",
     "productName": "NoteWizard",
-    "artifactName": "NoteWizard_${version}_${arch}.${ext}",
+    "artifactName": "NoteWizard_${version}_Windows_${arch}_Setup.${ext}",
     "copyright": "Copyright © 2025 ${author}",
     "directories": {
       "output": "dist",

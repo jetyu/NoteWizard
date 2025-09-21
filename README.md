@@ -4,7 +4,6 @@
   <p>一款基于Electron开发的现代化跨平台笔记应用，数据本地存储，让数据始终安全可控。</p>
 </div>
 
-
 [![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
 ![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
 ![GitHub last commit](https://img.shields.io/github/last-commit/jetyu/NoteWizard)
@@ -18,6 +17,7 @@
 - **极简界面**：无干扰的写作环境
 - **本地存储**：所有笔记安全保存在本地
 - **快捷键支持**：优化的工作流效率
+- **国际化**：支持全球19种地区及语言切换
 
 *NoteWizard 主界面*  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
