@@ -26,6 +26,8 @@
 *NoteWizard 关于界面*  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
 
+## 下载地址
+[下载地址](https://github.com/jetyu/NoteWizard/releases)
 
 ## 快速开始
 
