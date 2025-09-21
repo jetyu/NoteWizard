@@ -2,14 +2,19 @@
 
 <div align="center">
   <img src="src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="64">
+   <p>NoteWizard 是一款基于 Electron 开发的现代化跨平台笔记应用，为文字工作者设计，数据本地存储，让数据始终安全可控。</p>
 </div>
 
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/jetyu/NoteWizard)
+![GitHub repo size](https://img.shields.io/github/repo-size/jetyu/NoteWizard)
+![GitHub issues](https://img.shields.io/github/issues/jetyu/NoteWizard)
+
 [![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jetyu/NoteWizard/pulls)
 
-NoteWizard 是一款基于 Electron 开发的现代化跨平台笔记应用，专为开发者和写作者设计，专注于隐私保护，集成自定义AI服务，让您的数据始终安全可控。
+
 
 ## 功能特点
 
@@ -59,4 +64,5 @@ NoteWizard 是一款基于 Electron 开发的现代化跨平台笔记应用，�
 
 ---
 
-
+### 成长轨迹
+[![Star History Chart](https://api.star-history.com/svg?repos=jetyu/NoteWizard)](https://star-history.com/#jetyu/NoteWizard)  

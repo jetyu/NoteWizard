@@ -386,19 +386,19 @@ function createWindow() {
         {
           label: "官方网站",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu');
+            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard');
           }
         }, {
           label: "发送反馈",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu');
+            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard/issues');
           }
         },
         { type: "separator" },
         {
           label: "软件更新",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu');
+            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard/releases');
           }
         },
         {
