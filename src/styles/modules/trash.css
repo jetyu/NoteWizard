@@ -1,0 +1,161 @@
+/* 回收站对话框*/
+#trash-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--surface, #fff);
+    color: var(--text, #222);
+    z-index: 1000;
+    max-height: 90vh;
+    height: 80vh;
+    overflow-y: auto;
+    margin: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    width: 800px;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 对话框头部 */
+#trash-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border, #ddd);
+    flex-shrink: 0;
+}
+
+#trash-modal .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#trash-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+/* 操作按钮 */
+#trash-modal .trash-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+#trash-modal .btn {
+    background: transparent;
+    border: 1px solid var(--border, #ddd);
+    color: var(--text, #222);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#trash-modal .btn:hover {
+    background: var(--hover-bg, #f5f5f5);
+    border-color: var(--accent, #666);
+}
+
+
+#trash-modal .btn-danger:hover {
+    background: var(--danger-light, #fde8e8);
+}
+
+/* 表格样式 */
+#trash-modal .trash-list-container {
+    border: 1px solid var(--border, #ddd);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#trash-modal .trash-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+#trash-modal .trash-table th,
+#trash-modal .trash-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border, #eee);
+}
+
+#trash-modal .trash-table th {
+    background-color: var(--surface-alt, #f8f9fa);
+    font-weight: 600;
+    color: var(--text-muted, #6c757d);
+}
+
+#trash-modal .trash-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* 操作按钮组 */
+#trash-modal .close {
+    display: flex;
+    gap: 8px;
+}
+
+#trash-modal .btn-restore,
+#trash-modal .btn-delete {
+    padding: 4px 12px;
+    border: 1px solid var(--border, #ddd);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text, #222);
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+
+/* 空状态 */
+#trash-modal .modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 0;
+    min-height: 0; 
+}
+
+#trash-modal .empty-trash {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #6c757d);
+}
+
+/* 操作按钮组 */
+#trash-modal .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+#trash-modal .restore-btn,
+#trash-modal .delete-btn {
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+

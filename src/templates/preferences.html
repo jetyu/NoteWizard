@@ -1,0 +1,105 @@
+<div class="modal-content">
+  <div class="pref-header">
+    <h2 id="pref-title" data-i18n="preferencesTitle"></h2>
+    <div class="pref-actions">
+      <button id="pref-export" class="exportSetting-btn" data-i18n="btnExportSetting"></button>
+      <button id="pref-import" class="importSetting-btn" data-i18n="btnImportSetting"></button>
+      <button id="pref-reset" class="resetSetting-btn" data-i18n="btnResetSetting"></button>
+      <span class="close" id="pref-close" data-i18n="btnClose"></span>
+    </div>
+  </div>
+  <div class="pref-layout">
+    <nav class="pref-sidebar">
+      <ul>
+        <li data-pane="general" class="active" data-i18n="paneGeneral"></li>
+        <li data-pane="appearance" data-i18n="paneAppearance"></li>
+        <li data-pane="ai" data-i18n="paneAI"></li>
+      </ul>
+    </nav>
+    <section class="pref-content">
+      <div id="pane-general" class="pref-pane active">
+        <div class="pref-section">
+          <label for="pref-startup" data-i18n="labelStartup"></label>
+          <label class="startup-switch">
+            <input type="checkbox" id="pref-startup">
+            <span id="pref-startup-text" data-i18n="textStartup"></span>
+          </label>
+        </div>
+        <div class="pref-section">
+          <label for="pref-lang" data-i18n="labelLanguage"></label>
+          <select id="pref-lang">
+          </select>
+        </div>
+        <div class="pref-section">
+          <label for="pref-theme-mode" data-i18n="labelThemeMode"></label>
+          <select id="pref-theme-mode">
+            <option value="system" data-i18n="themeSystem"></option>
+            <option value="light" data-i18n="themeLight"></option>
+            <option value="dark" data-i18n="themeDark"></option>
+          </select>
+        </div>
+        <div class="pref-section">
+          <label for="pref-note-save-path">
+            <span data-i18n="labelNoteSavePath"></span>
+          </label>
+          <div class="path-selector">
+            <input type="text" id="pref-note-save-path" class="path-input" readonly />
+            <button type="button" id="browse-note-save-path" class="browse-btn" data-i18n="btnBrowse"></button>
+          </div>
+        </div>
+        
+      </div>
+      <div id="pane-appearance" class="pref-pane">
+        <div class="pref-section">
+          <label for="pref-editor-font" data-i18n="labelEditorFontSize"></label>
+          <input id="pref-editor-font" type="number" min="10" max="24" step="1" placeholder="14" />
+        </div>
+        <div class="pref-section">
+          <label for="pref-editor-font-family" data-i18n="labelEditorFont"></label>
+          <select id="pref-editor-font-family">
+            <option value="'Microsoft YaHei', '微软雅黑', sans-serif" data-i18n="optionMicrosoftYaHei"></option>
+            <option value="'SimHei', '黑体', sans-serif" data-i18n="optionSimHei"></option>
+            <option value="'FangSong', '仿宋', serif" data-i18n="optionFangSong"></option>
+            <option value="'SimSun', '宋体', serif" data-i18n="optionSimSun"></option>
+            <option value="Arial, sans-serif" data-i18n="optionArial"></option>
+            <option value="'Courier New', monospace" data-i18n="optionCourierNew"></option>
+          </select>
+        </div>
+        <div class="pref-section">
+          <label for="pref-preview-font" data-i18n="labelPreviewFontSize"></label>
+          <input id="pref-preview-font" type="number" min="10" max="24" step="1" placeholder="14" />
+        </div>
+        <div class="pref-section">
+          <label for="pref-preview-font-family" data-i18n="labelPreviewFont"></label>
+          <select id="pref-preview-font-family">
+            <option value="'Microsoft YaHei', '微软雅黑', sans-serif" data-i18n="optionMicrosoftYaHei"></option>
+            <option value="'SimHei', '黑体', sans-serif" data-i18n="optionSimHei"></option>
+            <option value="'FangSong', '仿宋', serif" data-i18n="optionFangSong"></option>
+            <option value="'SimSun', '宋体', serif" data-i18n="optionSimSun"></option>
+            <option value="Arial, sans-serif" data-i18n="optionArial"></option>
+            <option value="'Courier New', monospace" data-i18n="optionCourierNew"></option>
+          </select>
+        </div>
+      </div>
+      <div id="pane-ai" class="pref-pane">
+        <div class="pref-section">
+          <label for="pref-ai-provider" data-i18n="labelAIProvider"></label>
+          <select id="pref-ai-provider">
+          </select>
+        </div>
+        <div class="pref-section">
+          <label for="pref-ai-model" data-i18n="labelAIModel"></label>
+          <select id="pref-ai-model"></select>
+        </div>
+        <div class="pref-section">
+          <label for="pref-ai-api-key" data-i18n="labelAIApiKey"></label>
+          <input type="password" id="pref-ai-api-key" placeholder="sk-..." autocomplete="off" />
+        </div>
+        <div class="pref-section">
+          <label for="pref-ai-endpoint" data-i18n="labelAIEndpoint"></label>
+          <input type="text" id="pref-ai-endpoint" placeholder="https://api.openai.com/v1/chat/completions" />
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

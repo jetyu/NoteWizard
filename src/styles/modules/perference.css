@@ -1,0 +1,175 @@
+/* Perference Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--surface, #fff);
+    color: var(--text, #222);
+    z-index: 1000;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    width: 720px;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.pref-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border, #ddd);
+}
+
+.pref-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+
+.pref-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.browse-btn,
+.exportSetting-btn,
+.importSetting-btn,
+.resetSetting-btn {
+    background: transparent;
+    border: 1px solid var(--border, #ddd);
+    color: var(--text, #222);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: none;
+}
+
+.browse-btn:hover,
+.exportSetting-btn:hover,
+.importSetting-btn:hover,
+.resetSetting-btn:hover {
+    background: var(--hover-bg, #f5f5f5);
+    border-color: var(--accent, #666);
+}
+
+.modal-content .close {
+    float: right;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--muted);
+}
+
+
+.pref-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    margin-top: 8px;
+    min-height: 360px;
+}
+
+.pref-sidebar {
+    border-right: 1px solid var(--border, #ddd);
+    padding-right: 8px;
+}
+
+.pref-sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pref-sidebar li {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text, #222);
+}
+
+.pref-sidebar li.active,
+.pref-sidebar li:hover {
+    background: var(--surface-2, #f3f3f3);
+}
+
+.pref-content {
+    padding-left: 8px;
+}
+
+#pref-note-save-path {
+    width: 100%;
+    max-width: 335px;
+}
+
+#pref-ai-api-key,
+#pref-ai-endpoint {
+    width: 100%;
+    max-width: 350px;
+}
+
+.pref-section {
+    margin-bottom: 12px;
+}
+
+.pref-section label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+
+.startup-switch input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0 8px 0 0;
+    vertical-align: middle;
+}
+
+#pref-startup-text {
+    font-size: 14px;
+    font-weight: normal;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
+.pref-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.pref-pane {
+    display: none;
+}
+
+.pref-pane.active {
+    display: block;
+}
+
+/* Pref hint text */
+.pref-hint {
+    font-size: 0.85em;
+    color: var(--muted, #666);
+    margin: 4px 0 0 0;
+    line-height: 1.4;
+}

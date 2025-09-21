@@ -1,0 +1,238 @@
+/* Workspace*/
+.workspace-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-bottom: 1px solid var(--border);
+    background: #ffffff;
+    position: relative;
+    height: 40px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.workspace-toolbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.workspace-tree {
+    height: 100%;  /* 使用相对单位 */
+    max-height: 100vh;  /* 设置最大高度 */
+    overflow-y: auto;  /* 垂直滚动 */
+    position: relative;
+    
+}
+
+.tool-btn {
+    background: transparent;
+    color: #5f6368;
+    border: none;
+    padding: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: none;
+}
+
+.tool-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tool-btn:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.tool-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: none;
+}
+
+.tool-btn:hover::before {
+    left: 100%;
+}
+
+#file-search {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #202124;
+    font-size: 13px;
+    transition: none;
+    height: 28px;
+    box-sizing: border-box;
+    width: 0; /* Allow flex to control width */
+}
+
+#file-search:hover {
+    border-color: var(--muted);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#file-search:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(97, 98, 105, 0.2), 0 6px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.file-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    flex: 1;
+}
+
+.file-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: none;
+    font-size: 13px;
+    position: relative;
+}
+
+.file-item:hover {
+    padding-left: 16px;
+}
+
+.file-item.active {
+    color: var(--accent);
+    font-weight: 500;
+    border-left: 3px solid var(--accent-border);
+}
+
+.file-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-border);
+}
+
+/* Tree 基础行样式（可调：--accent, --accent-contrast, --accent-hover） */
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tree-label {
+    line-height: 22px;
+}
+
+.tree-root,
+.tree-root li,
+.tree-level,
+.tree-level li {
+    list-style: none;
+}
+
+.tree-root {
+    margin: 0;
+    padding-left: 10px;
+}
+
+.tree-level {
+    margin: 0;
+    padding-left: 0;
+    margin-left: 10px;
+}
+
+.tree-row:hover {
+    background: var(--accent-hover);
+}
+
+.tree-row.active {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+
+/* Outline */
+.outline-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    overflow: auto;
+    flex: 1;
+}
+
+.outline-list li {
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 2px 0;
+    transition: none;
+    font-size: 13px;
+}
+
+.outline-list li:hover {
+    background: var(--hover);
+    padding-left: 12px;
+}
+
+.outline-list li.active {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 500;
+}
+
+.outline-list li.collapsed {
+    color: var(--muted);
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* 兼容旧选择器 */
+#outline-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    overflow: auto;
+    flex: 1;
+}
+
+#outline-list li {
+    padding: 2px 4px;
+    cursor: pointer;
+}
+
+#outline-list li:hover {
+    background: var(--hover);
+}
+
+#outline-list li.active {
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 700;
+}
+
+#outline-list li.collapsed {
+    color: var(--muted);
+    font-style: italic;
+}
