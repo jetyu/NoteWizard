@@ -1,5 +1,5 @@
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null };
-const i18n = (() => { try { return require('./i18n'); } catch { return null; } })();
+const i18n = require('./i18n');
 const { applyThemeByMode } = require('./theme');
 
 // 获取默认的笔记保存路径
@@ -152,21 +152,75 @@ function loadAISettings() {
     return;
   }
 
-  try {
-    const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+  const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
     
-    // 直接加载保存的设置
-    if (settings.model) modelInput.value = settings.model;
-    if (settings.apiKey) apiKeyInput.value = settings.apiKey;
-    if (settings.endpoint) endpointInput.value = settings.endpoint;
-  } catch (e) {
-    console.error('加载AI设置失败:', e);
+  if (settings.model) modelInput.value = settings.model;
+  if (settings.apiKey) apiKeyInput.value = settings.apiKey;
+  if (settings.endpoint) endpointInput.value = settings.endpoint;
+
+}
+async function testAIConnection() {
+  const modelInput = document.getElementById('pref-ai-model');
+  const apiKeyInput = document.getElementById('pref-ai-api-key');
+  const endpointInput = document.getElementById('pref-ai-endpoint');
+  const testStatus = document.getElementById('pref-ai-test-status');
+
+  if (!modelInput || !apiKeyInput || !endpointInput || !testStatus) {
+    return;
+  }
+
+  const settings = {
+    model: modelInput.value.trim(),
+    apiKey: apiKeyInput.value.trim(),
+    endpoint: endpointInput.value.trim()
+  };
+
+  // 验证必填字段
+  if (!settings.model || !settings.apiKey || !settings.endpoint) {
+    testStatus.textContent = i18n.t('InputAllFields')
+    testStatus.className = 'test-status error';
+    return;
+  }
+  testStatus.textContent = i18n.t('testConnectionTesting');
+  testStatus.className = 'test-status testing';
+
+  try {
+    const response = await fetch(settings.endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${settings.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: settings.model,
+        messages: [{role: 'user', content: 'Hello'}],
+        max_tokens: 5
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || `请求失败: ${response.status} ${response.statusText}`);
+    }
+    
+    if (!data.choices || !Array.isArray(data.choices)) {
+      throw new Error(i18n.t('apiFormatInvalid'));
+    }
+    
+    testStatus.textContent = i18n.t('testConnectionSuccess');
+    testStatus.className = 'test-status success';
+    
+  } catch (error) {
+    testStatus.textContent = i18n.t('testConnectionFailed'), error.message;
+    testStatus.className = 'test-status error';
   }
 }
-
 // 保存AI设置
 function saveAISettings() {
- 
+  const aiEnabledInput = document.getElementById('pref-ai-enabled');
+  const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
+  const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
   const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
@@ -178,14 +232,14 @@ function saveAISettings() {
   const settings = {
     model: modelInput.value.trim(),
     apiKey: apiKeyInput.value.trim(),
-    endpoint: endpointInput.value.trim()
+    endpoint: endpointInput.value.trim(),
+    enabled: aiEnabledInput.checked,
+    typingDelay: parseInt(aiTypingDelayInput.value) || 2000,
+    minInputLength: parseInt(aiTypingLengthInput.value) || 10
   };
 
-  try {
-    localStorage.setItem('aiSettings', JSON.stringify(settings));
-  } catch (e) {
-    console.error('保存AI设置失败:', e);
-  }
+  localStorage.setItem('aiSettings', JSON.stringify(settings));
+
 }
 
 // 应用编辑器字体大小
@@ -291,7 +345,6 @@ async function ensureModalExists() {
 function openModal() {
   ensureModalExists();
   const modal = document.getElementById('preferences-modal');
-  // reset pane active state to General when opening
   const sidebarItems = modal.querySelectorAll('.pref-sidebar li');
   const panes = modal.querySelectorAll('.pref-pane');
   sidebarItems.forEach((li) => li.classList.remove('active'));
@@ -311,7 +364,6 @@ function openModal() {
   const applyBtn = document.getElementById('pref-submit');
   if (!modal || !select) return;
 
-  // 初始化下拉：优先 themeMode，其次从 theme 推断
   const mode = localStorage.getItem('themeMode');
   if (mode) {
     select.value = mode;
@@ -367,16 +419,35 @@ function bindEvents() {
   const exportBtn = document.getElementById('pref-export');
   const importBtn = document.getElementById('pref-import');
   const startupCheckbox = document.getElementById('pref-startup');
-
-  // AI Settings Elements - 直接绑定保存事件
   const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
+  const testButton = document.getElementById('pref-ai-test');
 
   // 加载已保存的AI设置
   loadAISettings();
 
-  const aiFields = [ modelInput, apiKeyInput, endpointInput];
+  // 绑定测试连接按钮点击事件
+if (testButton) {
+  testButton.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const testStatus = document.getElementById('pref-ai-test-status');
+    if (testStatus) {
+      testStatus.textContent = i18n.t('testConnectionTesting');
+      testStatus.className = 'test-status testing';
+    }
+    try {
+      await testAIConnection();
+    } catch (error) {
+      if (testStatus) {
+        testStatus.textContent = i18n.t('testConnectionFailed') + (error.message || error);
+        testStatus.className = 'test-status error';
+      }
+    }
+  });
+}
+
+  const aiFields = [modelInput, apiKeyInput, endpointInput];
   aiFields.forEach(field => {
     if (field) {
       field.addEventListener('change', saveAISettings);
@@ -418,21 +489,20 @@ function bindEvents() {
           try { localStorage.setItem('startupOnLogin', String(desired)); } catch {}
           const statusElement = document.getElementById('status');
           if (statusElement) {
-            statusElement.textContent = desired ? '已启用开机自启动' : '已关闭开机自启动';
+            statusElement.textContent = desired ? i18n.t('startupEnabled') : i18n.t('startupDisabled');
           }
         } else {
-          // 失败则回退 UI
           startupCheckbox.checked = !desired;
           const statusElement = document.getElementById('status');
           if (statusElement) {
-            statusElement.textContent = `设置开机自启失败${res?.error ? ': ' + res.error : ''}`;
+            statusElement.textContent = i18n.t('setStartupFailed') + (res?.error ? ': ' + res.error : '');
           }
         }
       } catch (e) {
         startupCheckbox.checked = !desired;
         const statusElement = document.getElementById('status');
         if (statusElement) {
-          statusElement.textContent = `设置开机自启失败: ${e.message || e}`;
+          statusElement.textContent = i18n.t('setStartupFailed') + (e.message || e);
         }
       } finally {
         startupCheckbox.disabled = false;
@@ -537,7 +607,6 @@ function bindEvents() {
         };
 
         // 添加AI设置
-       
         const modelInput = document.getElementById('pref-ai-model');
         const apiKeyInput = document.getElementById('pref-ai-api-key');
         const endpointInput = document.getElementById('pref-ai-endpoint');
@@ -551,17 +620,17 @@ function bindEvents() {
         const statusElement = document.getElementById('status');
         if (result.success) {
           if (statusElement) {
-            statusElement.textContent = `首选项已导出到: ${result.filePath}`;
+            statusElement.textContent = i18n.t('exportSuccess') + result.filePath;
           }
         } else {
           if (statusElement) {
-            statusElement.textContent = `导出失败: ${result.error}`;
+            statusElement.textContent = i18n.t('exportFailed') + (result.error || error.message);
           }
         }
       } catch (error) {
         const statusElement = document.getElementById('status');
         if (statusElement) {
-          statusElement.textContent = `导出失败: ${error.message}`;
+          statusElement.textContent = i18n.t('exportFailed') + (error.message || error);
         }
       }
     });
@@ -572,7 +641,7 @@ function bindEvents() {
     importBtn.addEventListener('click', async () => {
       try {
         // 显示确认对话框
-        if (!confirm('导入首选项将覆盖当前设置，是否继续？')) {
+        if (!confirm(i18n.t('importConfirm'))) {
           return;
         }
         const statusElement = document.getElementById('status');
@@ -590,24 +659,18 @@ function bindEvents() {
             applyThemeByMode(prefs.themeMode);
           }
 
-          // 显示成功消息
-          const backupMsg = result.backupCreated ? ` (已创建备份: ${result.backupPath})` : '';
-          if (statusElement) {
-            statusElement.textContent = `首选项导入成功${backupMsg}`;
-          }
-
           // 提示用户重启应用
-          if (confirm('部分设置需要重启应用才能生效，是否现在重启？')) {
+          if (confirm(i18n.t('restartAppNotify'))) {
             ipcRenderer.send('relaunch-app');
           }
         } else {
           if (statusElement) {
-            statusElement.textContent = `导入失败: ${result.error}`;
+            statusElement.textContent = i18n.t('importFailed') + (result.error || error.message);
           }
         }
       } catch (error) {
         if (statusElement) {
-          statusElement.textContent = `导入失败: ${error.message}`;
+          statusElement.textContent = i18n.t('importFailed') + (error.message || error);
         }
       }
     });
@@ -628,7 +691,7 @@ function bindEvents() {
     resetBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       // 显示确认对话框
-      if (confirm('确定要重置所有设置为默认值吗？此操作不可撤销且重启应用后生效')) {
+      if (confirm(i18n.t('resetConfirmNotify'))) {
         // Language -> zh-CN
         if (i18n) {
           try {
@@ -675,7 +738,6 @@ function bindEvents() {
         if (endpointInput) endpointInput.value = '';
         if (modelInput) modelInput.value = '';
 
-        // Reset note save path to default
         const defaultPath = await getDefaultSavePath();
         // 使用 showConfirmation = false 来避免重复确认
         await saveNoteSavePath(defaultPath, false);
@@ -746,7 +808,6 @@ function initPreferences() {
   // 确保ipcRenderer可用
   if (ipcRenderer) {
     ipcRenderer.on('open-preferences', () => {
-      console.log('Received open-preferences event');
       openModal();
     });
   } else {
@@ -785,8 +846,7 @@ function getNoteSavePath() {
 
 // 检查并创建笔记保存目录
 async function ensureNoteSaveDir() {
-  try {
-    let savePath = localStorage.getItem('noteSavePath');
+  let savePath = localStorage.getItem('noteSavePath');
     if (!savePath) {
       savePath = await getDefaultSavePath();
       localStorage.setItem('noteSavePath', savePath);
@@ -799,10 +859,6 @@ async function ensureNoteSaveDir() {
     }
 
     return savePath;
-  } catch (error) {
-    console.error('确保笔记保存目录时出错:', error);
-    return '';
-  }
 }
 
 // 应用导入的首选项
@@ -909,7 +965,6 @@ async function applyImportedPreferences(prefs) {
 
     return true;
   } catch (error) {
-    console.error('应用导入的首选项时出错:', error);
     return false;
   }
 }

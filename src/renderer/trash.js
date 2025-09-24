@@ -11,8 +11,8 @@ function initTrash() {
   bindEvents();
   
   // 确保回收站目录存在
-  const { app } = window.require('@electron/remote');
-  const trashPath = path.join(app.getPath('documents'), 'NoteWizard', 'Database', 'trash');
+  const workspaceRoot = vfs.getDefaultWorkspaceRoot();
+  const trashPath = path.join(workspaceRoot, 'Database', 'trash');
   if (!fs.existsSync(trashPath)) {
     fs.mkdirSync(trashPath, { recursive: true });
   }

@@ -179,20 +179,7 @@ function showContextMenu(node, e) {
         tree.renderTree();
       } else if (act === 'rename') {
         setTimeout(() => tree.startInlineRename(node.id), 0);
-      } else if (act === 'delete') {
-        if (confirm(`确定删除"${node.name}"${node.type === 'folder' ? '（将删除其子项）' : ''}？`)) {
-          vfs.deleteNode(node.id);
-          if (state.currentNodeId === node.id) {
-            state.currentNodeId = null;
-            if (state.editor) state.editor.setValue('');
-          }
-          // 刷新文件列表
-          if (typeof tree.renderTree === 'function') {
-            tree.renderTree();
-          }
-          tree.renderTree();
-          updateStatus('已删除');
-        }
+      
       }
     } catch (err) {
     }
@@ -440,22 +427,7 @@ function initializeFileWorkspace() {
       if (ev.key === 'F2') {
         ev.preventDefault();
         setTimeout(() => tree.startInlineRename(node.id), 0);
-      } else if (ev.key === 'Delete') {
-        ev.preventDefault();
-        if (confirm(`确定删除"${node.name}"${node.type === 'folder' ? '（将删除其子项）' : ''}？`)) {
-          vfs.deleteNode(node.id);
-          if (state.currentNodeId === node.id) {
-            state.currentNodeId = null;
-            if (state.editor) state.editor.setValue('');
-          }
-          // 刷新文件列表
-          if (typeof tree.renderTree === 'function') {
-            tree.renderTree();
-          }
-          tree.renderTree();
-          updateStatus('已删除');
-        }
-      }
+      } 
     });
   }
 
