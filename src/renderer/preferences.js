@@ -1,20 +1,6 @@
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null };
-const fs = window.require ? window.require('fs') : null;
-const path = window.require ? window.require('path') : null;
 const i18n = (() => { try { return require('./i18n'); } catch { return null; } })();
 const { applyThemeByMode } = require('./theme');
-
-// 导入AI供应商配置
-let aiProviders = {};
-try {
-  const aiProviderConfigPath = path.join(__dirname, '..', 'config', 'ai-providers.json');
-
-  if (fs.existsSync(aiProviderConfigPath)) {
-    const configContent = fs.readFileSync(aiProviderConfigPath, 'utf-8');
-    aiProviders = JSON.parse(configContent);
-  }
-} catch (error) {
-}
 
 // 获取默认的笔记保存路径
 async function getDefaultSavePath() {
@@ -156,182 +142,49 @@ async function selectNoteSaveDirectory() {
   }
 }
 
-// 动态生成 AI 服务商选项
-function populateAIProviders() {
-  const providerSelect = document.getElementById('pref-ai-provider');
-  if (!providerSelect) {
-    return;
-  }
 
-  // 清空现有选项
-  providerSelect.innerHTML = '';
-
-  // 添加从配置中加载的选项
-  const providerEntries = Object.entries(aiProviders);
-
-  // 如果没有可用的服务商，添加一个禁用选项
-  if (providerEntries.length === 0) {
-    const noProviderOption = document.createElement('option');
-    noProviderOption.value = '';
-    noProviderOption.textContent = '没有可用的 AI 服务商';
-    noProviderOption.disabled = true;
-    noProviderOption.selected = true;
-    providerSelect.appendChild(noProviderOption);
-    return;
-  }
-
-  // 添加可用的服务商选项
-  providerEntries.forEach(([id, provider]) => {
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = provider.name;
-    providerSelect.appendChild(option);
-  });
-
-  // 默认选择第一个可用的服务商
-  if (providerSelect.options.length > 0) {
-    providerSelect.selectedIndex = 0;
-    // 触发 change 事件以更新相关UI
-    const event = new Event('change', { bubbles: true });
-    providerSelect.dispatchEvent(event);
-  }
-}
-
-function updateModelsAndEndpoint() {
-  const providerSelect = document.getElementById('pref-ai-provider');
-  const modelSelect = document.getElementById('pref-ai-model');
-  const endpointInput = document.getElementById('pref-ai-endpoint');
-
-  if (!providerSelect || !modelSelect || !endpointInput) {
-    return;
-  }
-
-  const provider = aiProviders[providerSelect.value];
-  if (!provider) {
-    return;
-  }
-
-  // 保存当前选中的模型和端点
-  const currentModel = modelSelect.value;
-  const currentEndpoint = endpointInput.value;
-
-  // 清空并重新填充模型列表
-  modelSelect.innerHTML = '';
-  const modelIds = [];
-
-  provider.models.forEach(model => {
-    const option = document.createElement('option');
-    option.value = model.id;
-    option.textContent = model.name;
-    modelSelect.appendChild(option);
-    modelIds.push(model.id);
-  });
-
-  // 恢复之前选中的模型（如果存在）
-  if (modelIds.length > 0) {
-    if (currentModel && modelIds.includes(currentModel)) {
-      modelSelect.value = currentModel;
-    } else {
-      modelSelect.value = modelIds[0];
-    }
-  }
-
-  // 更新端点为当前选中供应商的默认端点
-  endpointInput.placeholder = provider.defaultEndpoint;
-  endpointInput.value = provider.defaultEndpoint;
-
-  // 保存AI设置
-  saveAISettings();
-
-  // 触发模型列表更新完成事件
-  const modelListUpdatedEvent = new Event('modelListUpdated');
-  providerSelect.dispatchEvent(modelListUpdatedEvent);
-}
-
-function loadAISettings(providerId = null, skipSave = false) {
-  const providerSelect = document.getElementById('pref-ai-provider');
-  const modelSelect = document.getElementById('pref-ai-model');
+function loadAISettings() {
+  const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
 
-  if (!providerSelect || !modelSelect || !apiKeyInput || !endpointInput) {
+  if (!modelInput || !apiKeyInput || !endpointInput) {
     return;
   }
 
   try {
     const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
-
-    // 确保 AI 服务商选项已加载
-    populateAIProviders();
-
-    // 设置选中的提供者
-    const provider = providerId || settings.provider || 'openai';
-
-    // 设置 API Key 和 Endpoint
-    if (settings.apiKey) {
-      apiKeyInput.value = settings.apiKey;
-    }
-
-    if (settings.endpoint) {
-      endpointInput.value = settings.endpoint;
-    } else if (aiProviders[provider]?.defaultEndpoint) {
-      endpointInput.value = aiProviders[provider].defaultEndpoint;
-    }
-
-    // 设置提供者并触发更新
-    providerSelect.value = provider;
-
-    // 添加一次性事件监听器，在模型列表更新后设置模型
-    const onModelListUpdated = () => {
-      if (settings.model && modelSelect) {
-        modelSelect.value = settings.model;
-      }
-
-      // 如果不是跳过保存，则保存设置
-      if (!skipSave) {
-        saveAISettings();
-      }
-
-      // 移除事件监听器
-      providerSelect.removeEventListener('modelListUpdated', onModelListUpdated);
-    };
-
-    // 添加事件监听器
-    providerSelect.addEventListener('modelListUpdated', onModelListUpdated);
-
-    // 触发change事件以更新模型列表
-    const event = new Event('change', { bubbles: true });
-    providerSelect.dispatchEvent(event);
+    
+    // 直接加载保存的设置
+    if (settings.model) modelInput.value = settings.model;
+    if (settings.apiKey) apiKeyInput.value = settings.apiKey;
+    if (settings.endpoint) endpointInput.value = settings.endpoint;
   } catch (e) {
+    console.error('加载AI设置失败:', e);
   }
 }
 
-// Save AI settings
+// 保存AI设置
 function saveAISettings() {
-  const providerSelect = document.getElementById('pref-ai-provider');
-  const modelSelect = document.getElementById('pref-ai-model');
+ 
+  const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
 
-  if (!providerSelect || !modelSelect || !apiKeyInput || !endpointInput) {
+  if (!modelInput || !apiKeyInput || !endpointInput) {
     return;
   }
 
-  // 优先使用输入框中的值
-  const endpoint = endpointInput.value.trim() ||
-    aiProviders[providerSelect.value]?.defaultEndpoint ||
-    '';
-
   const settings = {
-    provider: providerSelect.value,
-    model: modelSelect.value,
-    apiKey: apiKeyInput.value,
-    endpoint: endpoint
+    model: modelInput.value.trim(),
+    apiKey: apiKeyInput.value.trim(),
+    endpoint: endpointInput.value.trim()
   };
 
   try {
     localStorage.setItem('aiSettings', JSON.stringify(settings));
   } catch (e) {
+    console.error('保存AI设置失败:', e);
   }
 }
 
@@ -515,24 +368,21 @@ function bindEvents() {
   const importBtn = document.getElementById('pref-import');
   const startupCheckbox = document.getElementById('pref-startup');
 
-  // AI Settings Elements
-  const providerSelect = document.getElementById('pref-ai-provider');
-  const modelSelect = document.getElementById('pref-ai-model');
+  // AI Settings Elements - 直接绑定保存事件
+  const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
 
-  if (providerSelect) {
-    loadAISettings();
+  // 加载已保存的AI设置
+  loadAISettings();
 
-    providerSelect.addEventListener('change', updateModelsAndEndpoint);
-
-    const aiFields = [providerSelect, modelSelect, apiKeyInput, endpointInput];
-    aiFields.forEach(field => {
-      if (field) {
-        field.addEventListener('change', saveAISettings);
-      }
-    });
-  }
+  const aiFields = [ modelInput, apiKeyInput, endpointInput];
+  aiFields.forEach(field => {
+    if (field) {
+      field.addEventListener('change', saveAISettings);
+      field.addEventListener('blur', saveAISettings);
+    }
+  });
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (modal) modal.addEventListener('click', (e) => {
@@ -687,13 +537,12 @@ function bindEvents() {
         };
 
         // 添加AI设置
-        const providerSelect = document.getElementById('pref-ai-provider');
-        const modelSelect = document.getElementById('pref-ai-model');
+       
+        const modelInput = document.getElementById('pref-ai-model');
         const apiKeyInput = document.getElementById('pref-ai-api-key');
         const endpointInput = document.getElementById('pref-ai-endpoint');
-
-        if (providerSelect) preferences.aiSettings.provider = providerSelect.value;
-        if (modelSelect) preferences.aiSettings.model = modelSelect.value;
+     
+        if (modelInput) preferences.aiSettings.model = modelInput.value;
         if (apiKeyInput) preferences.aiSettings.apiKey = apiKeyInput.value;
         if (endpointInput) preferences.aiSettings.endpoint = endpointInput.value;
 
@@ -824,10 +673,7 @@ function bindEvents() {
         localStorage.removeItem('aiSettings');
         if (apiKeyInput) apiKeyInput.value = '';
         if (endpointInput) endpointInput.value = '';
-        if (providerSelect) {
-          providerSelect.value = '';
-          if (modelSelect) modelSelect.innerHTML = '';
-        }
+        if (modelInput) modelInput.value = '';
 
         // Reset note save path to default
         const defaultPath = await getDefaultSavePath();
@@ -1004,64 +850,25 @@ async function applyImportedPreferences(prefs) {
     if (prefs.ai) {
       console.log('Applying AI settings:', prefs.ai);
 
-      // 先直接设置所有字段
-      const apiKeyInput = document.getElementById('pref-ai-api-key');
-      const endpointInput = document.getElementById('pref-ai-endpoint');
-
-      if (apiKeyInput) {
-        apiKeyInput.value = prefs.ai.apiKey || '';
-      }
-
-      if (endpointInput) {
-        endpointInput.value = prefs.ai.endpoint || '';
-      }
-
       // 准备设置
       const settings = {
-        provider: prefs.ai.provider || 'openai',
         model: prefs.ai.model,
-        apiKey: prefs.ai.apiKey || '',
-        endpoint: prefs.ai.endpoint || ''
+        apiKey: prefs.ai.apiKey,
+        endpoint: prefs.ai.endpoint
       };
 
+      // 设置AI配置输入框
+      const modelInput = document.getElementById('pref-ai-model');
+      const apiKeyInput = document.getElementById('pref-ai-api-key');
+      const endpointInput = document.getElementById('pref-ai-endpoint');
+      
+      // 更新输入框值
+      if (modelInput) modelInput.value = settings.model || '';
+      if (apiKeyInput) apiKeyInput.value = settings.apiKey || '';
+      if (endpointInput) endpointInput.value = settings.endpoint || '';
+      
       // 保存到localStorage
-      localStorage.setItem('aiSettings', JSON.stringify(settings));
-
-      // 设置提供者并触发更新
-      const providerSelect = document.getElementById('pref-ai-provider');
-      if (providerSelect) {
-        providerSelect.value = settings.provider;
-
-        // 添加一次性事件监听器
-        const onModelListUpdated = () => {
-          // 设置模型
-          const modelSelect = document.getElementById('pref-ai-model');
-          if (modelSelect && settings.model) {
-            modelSelect.value = settings.model;
-          }
-
-          // 确保API密钥和端点已设置
-          if (apiKeyInput) {
-            apiKeyInput.value = settings.apiKey;
-          }
-          if (endpointInput) {
-            endpointInput.value = settings.endpoint;
-          }
-
-          // 保存设置
-          saveAISettings();
-
-          // 移除事件监听器
-          providerSelect.removeEventListener('modelListUpdated', onModelListUpdated);
-        };
-
-        // 添加事件监听器
-        providerSelect.addEventListener('modelListUpdated', onModelListUpdated);
-
-        // 触发change事件以更新模型列表
-        const event = new Event('change');
-        providerSelect.dispatchEvent(event);
-      }
+      saveAISettings();
     }
 
     // 应用笔记保存路径

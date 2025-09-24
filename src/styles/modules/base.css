@@ -493,8 +493,17 @@ input.tree-rename:focus {
    ## 预览面板容器
    -------------------------------------------- */
 #preview-panel {
-  flex: 1;
-  min-width: 300px;
+  flex: 0 0 auto;
+  width: 40%;
+  max-width: 40%;
+  min-width: 20%;
+  resize: horizontal;
+  overflow: auto;
+}
+
+/* Applied dynamically when pointer is near the preview's left edge */
+.edge-resize {
+  cursor: col-resize !important;
 }
 
 /* --------------------------------------------

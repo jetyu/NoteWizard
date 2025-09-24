@@ -6,6 +6,7 @@ const state = require('./state');
 const { renderPreview } = require('./preview');
 const vfs = require('./vfs');
 const tree = require('./tree');
+const outline = require('./outline');
 
 
 /**
@@ -466,6 +467,9 @@ function initializeFileWorkspace() {
  */
 function setupEditorEvents() {
   if (state.editor) {
+    // 初始化大纲
+    outline.setupOutlineWhenReady();
+    
     state.editor.on('change', () => {
       renderPreview();
       const nodeId = state.currentNodeId;

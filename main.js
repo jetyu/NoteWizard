@@ -1,4 +1,12 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, Tray, nativeImage } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  dialog,
+  ipcMain,
+  Tray,
+  nativeImage,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 
@@ -17,7 +25,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   // 当第二个实例启动时，恢复已有窗口
-  app.on('second-instance', (event, argv, workingDirectory) => {
+  app.on("second-instance", (event, argv, workingDirectory) => {
     if (win) {
       if (win.isMinimized()) win.restore();
       win.show();
@@ -39,9 +47,9 @@ ipcMain.handle("relaunch-app", () => {
 });
 
 // 处理版本信息请求
-ipcMain.on('request-versions', (event) => {
-  const packageInfo = require('./package.json');
-  event.sender.send('versions', {
+ipcMain.on("request-versions", (event) => {
+  const packageInfo = require("./package.json");
+  event.sender.send("versions", {
     app: packageInfo.version,
     electron: process.versions.electron,
     node: process.versions.node,
@@ -93,7 +101,6 @@ ipcMain.handle("export-preferences", async (event, preferences) => {
           fontFamily: preferences.previewFontFamily || "'Arial', sans-serif",
         },
         ai: {
-          provider: preferences.aiSettings?.provider || "",
           model: preferences.aiSettings?.model || "",
           apiKey: preferences.aiSettings?.apiKey || "",
           endpoint: preferences.aiSettings?.endpoint || "",
@@ -192,8 +199,7 @@ ipcMain.handle("import-preferences", async () => {
             JSON.stringify(currentSettings.settings, null, 2),
             "utf8"
           );
-        } catch (restoreError) {
-        }
+        } catch (restoreError) { }
       }
       throw error;
     }
@@ -204,13 +210,18 @@ ipcMain.handle("import-preferences", async () => {
 
 function createTray() {
   // 创建托盘图标
-  const iconPath = path.join(__dirname, "src", "assets", "logo", "app-logo.ico");
+  const iconPath = path.join(
+    __dirname,
+    "src",
+    "assets",
+    "logo",
+    "app-logo.ico"
+  );
 
   // 创建原生图片对象
   let trayIcon = nativeImage.createFromPath(iconPath);
 
-
-  if (process.platform === 'win32') {
+  if (process.platform === "win32") {
     trayIcon = trayIcon.resize({ width: 32, height: 32 });
   }
 
@@ -218,38 +229,38 @@ function createTray() {
   tray = new Tray(trayIcon);
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '打开 NoteWizard',
+      label: "打开 NoteWizard",
       click: () => {
         if (win) {
           if (win.isMinimized()) win.restore();
           win.show();
           win.focus();
         }
-      }
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: '退出',
+      label: "退出",
       click: () => {
         // 关闭所有窗口
         const windows = BrowserWindow.getAllWindows();
-        windows.forEach(win => {
-          win.removeAllListeners('close');
+        windows.forEach((win) => {
+          win.removeAllListeners("close");
           win.close();
         });
 
         // 完全退出应用
         app.exit(0);
-      }
-    }
+      },
+    },
   ]);
 
   // 设置托盘提示
-  tray.setToolTip('NoteWizard');
+  tray.setToolTip("NoteWizard");
   tray.setContextMenu(contextMenu);
 
   // 点击托盘图标时切换窗口显示/隐藏
-  tray.on('click', () => {
+  tray.on("click", () => {
     if (win) {
       if (win.isVisible()) {
         win.hide();
@@ -270,8 +281,8 @@ function createWindow() {
       : path.join(__dirname, "src", "assets", "logo", "app-logo-512.png");
 
   // 当所有窗口都关闭时，不退出应用
-  app.on('window-all-closed', (e) => {
-    if (process.platform !== 'darwin') {
+  app.on("window-all-closed", (e) => {
+    if (process.platform !== "darwin") {
       e.preventDefault();
     }
   });
@@ -330,33 +341,75 @@ function createWindow() {
           },
         },
         {
-          label: '退出',
+          label: "退出",
           click: () => {
             // 关闭所有窗口
             const windows = BrowserWindow.getAllWindows();
-            windows.forEach(win => {
-              win.removeAllListeners('close');
+            windows.forEach((win) => {
+              win.removeAllListeners("close");
               win.close();
             });
 
             // 完全退出应用
             app.exit(0);
-          }
-        }
+          },
+        },
+      ],
+    },
+    {
+      label: "视图",
+      submenu: [
+        {
+          label: "预览面板",
+          submenu: [
+            {
+              id: "preview-open",
+              label: "打开",
+              accelerator: "Ctrl+Alt+P",
+              click: () => {
+                if (win && !win.isDestroyed()) {
+                  win.webContents.send("preview-show");
+                }
+              },
+            },
+
+            {
+              id: "preview-close",
+              label: "关闭",
+              accelerator: "Ctrl+Alt+Shift+P",
+              click: () => {
+                if (win && !win.isDestroyed()) {
+                  win.webContents.send("preview-hide");
+                }
+              },
+            },
+            {
+              id: "preview-toggle",
+              label: "切换",
+              accelerator: "Ctrl+Alt+\\",
+              click: () => {
+                if (win && !win.isDestroyed()) {
+                  win.webContents.send("preview-toggle");
+                }
+              },
+            },
+          ],
+        },
       ],
     },
     {
       label: "编辑",
-      submenu: [{
-        label: "回收站",
-        accelerator: "Ctrl+Shift+T",
-        click: () => {
-          if (win && !win.isDestroyed()) {
-            win.webContents.send("open-trash");
-          }
+      submenu: [
+        {
+          label: "回收站",
+          accelerator: "Ctrl+Shift+T",
+          click: () => {
+            if (win && !win.isDestroyed()) {
+              win.webContents.send("open-trash");
+            }
+          },
         },
-      },
-      { type: "separator" },
+        { type: "separator" },
         { role: "undo", label: "撤销" },
         { role: "redo", label: "重做" },
         { type: "separator" },
@@ -365,14 +418,17 @@ function createWindow() {
         { role: "paste", label: "粘贴" },
       ],
     },
+
     {
       label: "帮助",
       submenu: [
         {
           label: "使用教程",
           click: () => {
-            require('electron').shell.openExternal('https://markdown.com.cn/intro.html');
-          }
+            require("electron").shell.openExternal(
+              "https://markdown.com.cn/intro.html"
+            );
+          },
         },
         {
           label: "调试工具",
@@ -386,20 +442,27 @@ function createWindow() {
         {
           label: "官方网站",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard');
-          }
-        }, {
+            require("electron").shell.openExternal(
+              "https://github.com/jetyu/NoteWizard"
+            );
+          },
+        },
+        {
           label: "发送反馈",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard/issues');
-          }
+            require("electron").shell.openExternal(
+              "https://github.com/jetyu/NoteWizard/issues"
+            );
+          },
         },
         { type: "separator" },
         {
           label: "软件更新",
           click: () => {
-            require('electron').shell.openExternal('https://github.com/jetyu/NoteWizard/releases');
-          }
+            require("electron").shell.openExternal(
+              "https://github.com/jetyu/NoteWizard/releases"
+            );
+          },
         },
         {
           label: "更新日志",
@@ -473,14 +536,36 @@ function createWindow() {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
+  try {
+    const openItem = menu.getMenuItemById("preview-open");
+    const closeItem = menu.getMenuItemById("preview-close");
+    if (openItem && closeItem) {
+      openItem.enabled = false;
+      closeItem.enabled = true;
+    }
+  } catch { }
+
+  ipcMain.removeAllListeners("preview-state-changed");
+  ipcMain.on("preview-state-changed", (event, payload) => {
+    const { visible } = payload || {};
+    const currentMenu = Menu.getApplicationMenu();
+    if (!currentMenu) return;
+    const openItem = currentMenu.getMenuItemById("preview-open");
+    const closeItem = currentMenu.getMenuItemById("preview-close");
+    if (openItem && closeItem) {
+      openItem.enabled = !visible;
+      closeItem.enabled = !!visible;
+    }
+  });
+
   // 创建系统托盘（在Windows和Linux上）
-  if (process.platform !== 'darwin') {
+  if (process.platform !== "darwin") {
     createTray();
   }
 
   // 拦截窗口关闭事件，改为隐藏窗口
-  win.on('close', (e) => {
-    if (process.platform !== 'darwin') {
+  win.on("close", (e) => {
+    if (process.platform !== "darwin") {
       e.preventDefault();
       win.hide();
       return false;
@@ -550,7 +635,7 @@ if (gotTheLock) {
   app.whenReady().then(() => {
     createWindow();
     //若无窗口则新建，否则聚焦
-    app.on('activate', () => {
+    app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
       } else if (win) {
