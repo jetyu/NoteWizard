@@ -360,8 +360,6 @@ function openModal() {
   const previewFontInput = document.getElementById('pref-preview-font');
   const previewFontFamilySelect = document.getElementById('pref-preview-font-family');
   const langSelect = document.getElementById('pref-lang');
-  const resetBtn = document.getElementById('pref-reset');
-  const applyBtn = document.getElementById('pref-submit');
   if (!modal || !select) return;
 
   const mode = localStorage.getItem('themeMode');
