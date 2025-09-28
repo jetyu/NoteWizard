@@ -9,6 +9,8 @@ export class AIAssistant {
     this.cursorPosition = { line: 0, ch: 0 };
     this.typingDelay = 2000; // 2秒后触发AI辅助写作
     this.minInputLength = 10; // 最小输入长度才触发AI辅助
+    this.suggestionMark = null; // 内联建议标记
+    this.editor = null; // 编辑器实例引用
     this.init();
   }
 
@@ -23,38 +25,19 @@ export class AIAssistant {
   loadSettings() {
     try {
       const aiSettings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
-      this.isEnabled = aiSettings.enabled !== false; // 默认启用
-      this.typingDelay = aiSettings.typingDelay || 2000;
-      this.minInputLength = aiSettings.minInputLength || 10;
+      this.isEnabled = aiSettings.enabled === true; // 默认禁用
+      this.typingDelay = parseInt(aiSettings.typingDelay) || 2000;
+      this.minInputLength = parseInt(aiSettings.minInputLength) || 10;
     } catch (error) {
       console.error('加载AI设置失败:', error);
-      this.isEnabled = true; // 默认启用
+      this.isEnabled = false; // 默认禁用
     }
   }
 
-  // 创建建议UI
+  // 创建建议UI（保留用于兼容性，但不再使用）
   createSuggestionUI() {
-    if (this.suggestionElement) return;
-
-    this.suggestionElement = document.createElement('div');
-    this.suggestionElement.className = 'ai-suggestion';
-    this.suggestionElement.style.cssText = `
-      position: absolute;
-      background: rgba(100, 150, 255, 0.1);
-      border: 1px solid rgba(100, 150, 255, 0.3);
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 14px;
-      color: #666;
-      pointer-events: none;
-      z-index: 1000;
-      display: none;
-      max-width: 300px;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-    `;
-
-    document.body.appendChild(this.suggestionElement);
+    // 内联模式不需要创建独立的UI元素
+    // 建议直接显示在编辑器中
   }
 
   // 绑定事件
@@ -67,6 +50,9 @@ export class AIAssistant {
 
     // 监听设置变化
     window.addEventListener('ai-settings-changed', this.handleSettingsChange.bind(this));
+
+    // 监听编辑器就绪事件
+    window.addEventListener('editor-ready', this.handleEditorReady.bind(this));
 
     // 监听窗口大小变化
     window.addEventListener('resize', this.hideSuggestion.bind(this));
@@ -97,7 +83,24 @@ export class AIAssistant {
     const { cursor } = event.detail || {};
     if (cursor) {
       this.cursorPosition = cursor;
-      this.updateSuggestionPosition();
+      
+      // 内联模式下，只有当光标移动到建议范围外时才隐藏建议
+      if (this.suggestionMark && this.currentSuggestion) {
+        const range = this.suggestionMark.find();
+        if (range) {
+          // 检查光标是否在建议范围内
+          const cursorInRange = (
+            cursor.line === range.from.line && 
+            cursor.ch >= range.from.ch && 
+            cursor.ch <= range.to.ch
+          );
+          
+          // 如果光标移动到建议范围外，隐藏建议
+          if (!cursorInRange) {
+            this.hideSuggestion();
+          }
+        }
+      }
     }
   }
 
@@ -108,6 +111,15 @@ export class AIAssistant {
       this.isEnabled = settings.enabled !== false;
       this.typingDelay = settings.typingDelay || 2000;
       this.minInputLength = settings.minInputLength || 10;
+    }
+  }
+
+  // 处理编辑器就绪事件
+  handleEditorReady(event) {
+    // 获取编辑器实例
+    const editorElement = document.querySelector('.CodeMirror');
+    if (editorElement && editorElement.CodeMirror) {
+      this.editor = editorElement.CodeMirror;
     }
   }
 
@@ -182,7 +194,7 @@ export class AIAssistant {
       messages: [
         {
           role: 'system',
-          content: '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。'
+          content: '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。每次最多返回一句话。'
         },
         {
           role: 'user',
@@ -221,49 +233,75 @@ export class AIAssistant {
     }
   }
 
-  // 显示建议
+  // 显示建议（内联模式）
   showSuggestion(suggestion) {
-    if (!suggestion || !suggestion.trim()) return;
+    if (!suggestion || !suggestion.trim() || !this.editor) return;
+
+    // 先隐藏之前的建议
+    this.hideSuggestion();
 
     this.currentSuggestion = suggestion.trim();
-    this.updateSuggestionPosition();
-    this.suggestionElement.textContent = this.currentSuggestion;
-    this.suggestionElement.style.display = 'block';
+    
+    // 在光标位置插入建议文本并标记为建议样式
+    const cursor = this.editor.getCursor();
+    const from = cursor;
+    const to = { line: cursor.line, ch: cursor.ch };
+    
+    // 插入建议文本
+    this.editor.replaceRange(this.currentSuggestion, from, to);
+    
+    // 创建标记来设置建议样式
+    const suggestionEnd = {
+      line: cursor.line,
+      ch: cursor.ch + this.currentSuggestion.length
+    };
+    
+    this.suggestionMark = this.editor.markText(from, suggestionEnd, {
+      className: 'ai-suggestion-inline',
+      atomic: false,
+      clearOnEnter: false,
+      inclusiveLeft: false,
+      inclusiveRight: false
+    });
+    
+    //将光标保持在建议开始位置
+    this.editor.setCursor(from);
   }
 
-  // 隐藏建议
+  // 隐藏建议（内联模式）
   hideSuggestion() {
-    if (this.suggestionElement) {
-      this.suggestionElement.style.display = 'none';
+    if (this.suggestionMark) {
+      // 获取建议文本的范围
+      const range = this.suggestionMark.find();
+      if (range) {
+        // 删除建议文本
+        this.editor.replaceRange('', range.from, range.to);
+      }
+      // 清除标记
+      this.suggestionMark.clear();
+      this.suggestionMark = null;
     }
     this.currentSuggestion = '';
   }
 
-  // 更新建议位置
-  updateSuggestionPosition() {
-    if (!this.currentSuggestion || !this.suggestionElement) return;
-
-    const editorElement = document.querySelector('.CodeMirror');
-    if (!editorElement) return;
-
-    const cursorCoords = editorElement.CodeMirror.cursorCoords(this.cursorPosition, 'local');
-    const editorRect = editorElement.getBoundingClientRect();
-
-    this.suggestionElement.style.left = `${cursorCoords.left + editorRect.left}px`;
-    this.suggestionElement.style.top = `${cursorCoords.bottom + editorRect.top + 5}px`;
-  }
-
-  // 应用建议
+  // 应用建议（内联模式）
   applySuggestion() {
-    if (!this.currentSuggestion) return;
+    if (!this.currentSuggestion || !this.suggestionMark) {
+      return;
+    }
 
-    // 触发自定义事件，让编辑器处理建议的插入
-    const event = new CustomEvent('apply-ai-suggestion', {
-      detail: { suggestion: this.currentSuggestion }
-    });
-    window.dispatchEvent(event);
-
-    this.hideSuggestion();
+    // 获取建议文本的范围
+    const range = this.suggestionMark.find();
+    if (range) {
+      // 清除建议样式标记，保留文本
+      this.suggestionMark.clear();
+      this.suggestionMark = null;
+      
+      // 将光标移动到建议文本末尾
+      this.editor.setCursor(range.to);
+    }
+    
+    this.currentSuggestion = '';
   }
 
   // 自动保存设置
@@ -280,14 +318,14 @@ export class AIAssistant {
       clearTimeout(this.typingTimer);
     }
 
-    if (this.suggestionElement) {
-      this.suggestionElement.remove();
-    }
+    // 清理建议标记
+    this.hideSuggestion();
 
     // 移除事件监听器
     window.removeEventListener('editor-content-changed', this.handleContentChange.bind(this));
     window.removeEventListener('editor-cursor-changed', this.handleCursorChange.bind(this));
     window.removeEventListener('ai-settings-changed', this.handleSettingsChange.bind(this));
+    window.removeEventListener('editor-ready', this.handleEditorReady.bind(this));
     window.removeEventListener('resize', this.hideSuggestion.bind(this));
   }
 }

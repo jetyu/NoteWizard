@@ -161,10 +161,39 @@ async function selectNoteSaveDirectory() {
 }
 
 
+// 更新AI相关字段的可用性状态
+function updateAIFieldsState() {
+  const aiEnabledInput = document.getElementById('pref-ai-enabled');
+  if (!aiEnabledInput) return;
+  
+  const isEnabled = aiEnabledInput.checked;
+  
+  // 需要更新状态的元素
+  const elementsToUpdate = [
+    'pref-ai-typing-delay',
+    'pref-ai-typing-length',
+    'pref-ai-model',
+    'pref-ai-api-key',
+    'pref-ai-endpoint',
+    'pref-ai-test'
+  ];
+  
+  // 只更新元素的disabled属性
+  elementsToUpdate.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.disabled = !isEnabled;
+    }
+  });
+}
+
 function loadAISettings() {
   const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
+  const aiEnabledInput = document.getElementById('pref-ai-enabled');
+  const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
+  const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
 
   if (!modelInput || !apiKeyInput || !endpointInput) {
     return;
@@ -172,10 +201,27 @@ function loadAISettings() {
 
   const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
     
+  // 加载模型、API密钥和端点
   if (settings.model) modelInput.value = settings.model;
   if (settings.apiKey) apiKeyInput.value = settings.apiKey;
   if (settings.endpoint) endpointInput.value = settings.endpoint;
-
+  
+  // 加载AI辅助启用状态
+  if (aiEnabledInput) {
+    aiEnabledInput.checked = settings.enabled === true;
+  }
+  
+  // 加载输入延迟和最小输入长度
+  if (aiTypingDelayInput) {
+    aiTypingDelayInput.value = settings.typingDelay || 2000;
+  }
+  
+  if (aiTypingLengthInput) {
+    aiTypingLengthInput.value = settings.minInputLength || 10;
+  }
+  
+  // 更新相关字段的可用性状态
+  updateAIFieldsState();
 }
 async function testAIConnection() {
   const modelInput = document.getElementById('pref-ai-model');
@@ -243,7 +289,8 @@ function saveAISettings() {
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
 
-  if (!modelInput || !apiKeyInput || !endpointInput) {
+  if (!modelInput || !apiKeyInput || !endpointInput || !aiEnabledInput || !aiTypingDelayInput || !aiTypingLengthInput) {
+    console.error('无法找到AI设置相关的DOM元素');
     return;
   }
 
@@ -257,7 +304,12 @@ function saveAISettings() {
   };
 
   localStorage.setItem('aiSettings', JSON.stringify(settings));
-
+  
+  // 触发设置变更事件，通知AI助手
+  const event = new CustomEvent('ai-settings-changed', {
+    detail: { settings }
+  });
+  window.dispatchEvent(event);
 }
 
 // 应用编辑器字体大小
@@ -460,6 +512,30 @@ if (testButton) {
   });
 }
 
+  // 绑定AI设置相关事件
+  const aiEnabledInput = document.getElementById('pref-ai-enabled');
+  const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
+  const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
+  
+  // 为AI开关添加事件监听
+  if (aiEnabledInput) {
+    aiEnabledInput.addEventListener('change', () => {
+      saveAISettings();
+      updateAIFieldsState();
+    });
+  }
+  
+  // 为输入延迟和最小输入长度添加事件监听
+  if (aiTypingDelayInput) {
+    aiTypingDelayInput.addEventListener('change', saveAISettings);
+    aiTypingDelayInput.addEventListener('blur', saveAISettings);
+  }
+  
+  if (aiTypingLengthInput) {
+    aiTypingLengthInput.addEventListener('change', saveAISettings);
+    aiTypingLengthInput.addEventListener('blur', saveAISettings);
+  }
+  
   const aiFields = [modelInput, apiKeyInput, endpointInput];
   aiFields.forEach(field => {
     if (field) {

@@ -10,13 +10,18 @@ function initializeEditor() {
         lineNumbers: true,
         lineWrapping: true,
         theme: 'default',
+        inputStyle: 'contenteditable',
         autofocus: true,
         extraKeys: {
           'Ctrl-S': function () {
           },
           'Tab': function(cm) {
             // 处理Tab键：如果有AI建议，应用建议；否则插入制表符
-            handleTabKey(cm);
+            return handleTabKey(cm);
+          },
+          'Esc': function(cm) {
+            // ESC键：取消AI建议
+            return handleEscKey(cm);
           },
           'Ctrl-/': function(cm) {
             // Ctrl+/ 快捷键：隐藏AI建议
@@ -68,29 +73,40 @@ function setupEditorEventListeners(editor, aiAssistant) {
     });
     window.dispatchEvent(event);
   });
-
-  // 监听AI建议应用事件
-  window.addEventListener('apply-ai-suggestion', function(event) {
-    const { suggestion } = event.detail;
-    if (suggestion && editor) {
-      insertAISuggestion(editor, suggestion);
-    }
-  });
 }
 
 // 处理Tab键
 function handleTabKey(cm) {
   const aiAssistant = getAIAssistant();
+  
+  console.log('Tab键被按下, 当前AI建议:', aiAssistant?.currentSuggestion);
 
   // 如果有AI建议，应用建议
   if (aiAssistant && aiAssistant.currentSuggestion) {
     aiAssistant.applySuggestion();
-    return;
+    return false; // 阻止默认行为
   }
 
-  // 否则执行默认的Tab行为
-  const spaces = Array(3).fill(' ').join(''); // 插入2个空格
+  // 否则执行默认的Tab行为（插入空格）
+  const spaces = Array(3).fill(' ').join(''); // 插入3个空格
   cm.replaceSelection(spaces);
+  return false;
+}
+
+// 处理ESC键
+function handleEscKey(cm) {
+  const aiAssistant = getAIAssistant();
+  
+  console.log('ESC键被按下, 当前AI建议:', aiAssistant?.currentSuggestion);
+  
+  // 如果有AI建议，取消建议
+  if (aiAssistant && aiAssistant.currentSuggestion) {
+    aiAssistant.hideSuggestion();
+    return false; // 阻止默认行为
+  }
+  
+  // 如果没有AI建议，允许默认ESC行为
+  return CodeMirror.Pass;
 }
 
 // 隐藏AI建议

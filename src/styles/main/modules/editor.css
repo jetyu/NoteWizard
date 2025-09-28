@@ -292,3 +292,33 @@
     background: var(--border);
     border-radius: 4px;
 }
+
+/* AI建议内联样式 */
+.ai-suggestion-inline {
+    color: #999 !important;
+    font-style: italic !important;
+    opacity: 0.7 !important;
+    background: rgba(100, 150, 255, 0.05) !important;
+    border-radius: 2px !important;
+    padding: 0 2px !important;
+    position: relative !important;
+}
+
+.ai-suggestion-inline::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(100, 150, 255, 0.3);
+    border-radius: 1px;
+}
+
+/* 暗色主题下的AI建议样式 */
+@media (prefers-color-scheme: dark) {
+    .ai-suggestion-inline {
+        color: #666 !important;
+        background: rgba(100, 150, 255, 0.08) !important;
+    }
+}
