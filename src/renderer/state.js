@@ -9,4 +9,4 @@ const state = {
   nodes: new Map(),
 };
 
-module.exports = state;
+export default state;

@@ -1,7 +1,11 @@
-const sharp = require('sharp');
-const fs = require('fs').promises;
-const path = require('path');
-const iconGen = require('icon-gen');
+import sharp from 'sharp';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import iconGen from 'icon-gen';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 配置
 const config = {

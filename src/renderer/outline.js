@@ -1,6 +1,6 @@
-const state = require('./state');
+import state from './state.js';
 
-function generateOutline(markdownText) {
+export function generateOutline(markdownText) {
   const lines = markdownText.split('\n');
   const outline = [];
   lines.forEach((line, index) => {
@@ -17,7 +17,7 @@ function generateOutline(markdownText) {
   return outline;
 }
 
-function renderOutline(outline) {
+export function renderOutline(outline) {
   const list = document.getElementById('outline-list');
   if (!list) return;
   list.innerHTML = '';
@@ -60,7 +60,7 @@ function renderOutline(outline) {
   });
 }
 
-function highlightCurrentHeading() {
+export function highlightCurrentHeading() {
   if (!state.editor) return;
   const listItems = document.querySelectorAll('#outline-list li');
   const cursor = state.editor.getCursor().line;
@@ -84,17 +84,10 @@ function setupOutline() {
   render();
 }
 
-function setupOutlineWhenReady() {
+export function setupOutlineWhenReady() {
   if (state.editor) {
     setupOutline();
   } else {
     setTimeout(setupOutlineWhenReady, 100);
   }
 }
-
-module.exports = {
-  setupOutlineWhenReady,
-  generateOutline,
-  renderOutline,
-  highlightCurrentHeading,
-};

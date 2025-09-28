@@ -1,6 +1,25 @@
-const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null };
-const i18n = require('./i18n');
-const { applyThemeByMode } = require('./theme');
+import i18n from './i18n.js';
+import { applyThemeByMode } from './theme.js';
+import * as vfs from './vfs.js';
+
+const electronAPI = window.electronAPI;
+
+if (!electronAPI) {
+  throw new Error('electronAPI 未初始化，无法在渲染进程访问受信任的 Node API');
+}
+
+const {
+  ipcRenderer,
+  path: electronPath,
+  fs: electronFs,
+} = electronAPI;
+
+function resolveFilePath(relativePath) {
+  const fileUrl = new URL(relativePath, import.meta.url);
+  let pathname = decodeURIComponent(fileUrl.pathname);
+  if (/^\/[A-Za-z]:/.test(pathname)) pathname = pathname.slice(1);
+  return electronPath.normalize(pathname);
+}
 
 // 获取默认的笔记保存路径
 async function getDefaultSavePath() {
@@ -57,8 +76,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
     }
 
     // 重新初始化工作区
-    const { initWorkspace } = require('./vfs');
-    const { root } = initWorkspace(path);
+    const { root } = vfs.initWorkspace(path);
 
     // 更新状态
     const statusElement = document.getElementById('status');
@@ -312,12 +330,9 @@ async function ensureModalExists() {
 
   try {
     // 使用 require 导入模板内容
-    const { join } = window.require('path');
-    const { readFileSync } = window.require('fs');
-
     // 获取模板文件的绝对路径
-    const templatePath = join(__dirname, '../templates/preferences.html');
-    const htmlContent = readFileSync(templatePath, 'utf8');
+    const templatePath = resolveFilePath('../templates/preferences.html');
+    const htmlContent = electronFs.readFileSync(templatePath, 'utf8');
 
     wrapper.innerHTML = htmlContent;
     document.body.appendChild(wrapper);
@@ -851,9 +866,8 @@ async function ensureNoteSaveDir() {
     }
 
     // 确保目录存在
-    const fs = window.require('fs');
-    if (!fs.existsSync(savePath)) {
-      fs.mkdirSync(savePath, { recursive: true });
+    if (!electronFs.existsSync(savePath)) {
+      electronFs.mkdirSync(savePath, { recursive: true });
     }
 
     return savePath;
@@ -966,10 +980,10 @@ async function applyImportedPreferences(prefs) {
     return false;
   }
 }
-module.exports = {
+export {
   initPreferences,
   getNoteSavePath,
   ensureNoteSaveDir,
-  applyImportedPreferences
+  applyImportedPreferences,
 };
 

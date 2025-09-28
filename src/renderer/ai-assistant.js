@@ -1,4 +1,4 @@
-class AIAssistant {
+export class AIAssistant {
   constructor() {
     this.isEnabled = false;
     this.isProcessing = false;
@@ -296,14 +296,9 @@ class AIAssistant {
 // 导出单例实例
 let aiAssistantInstance = null;
 
-function getAIAssistant() {
+export function getAIAssistant() {
   if (!aiAssistantInstance) {
     aiAssistantInstance = new AIAssistant();
   }
   return aiAssistantInstance;
 }
-
-module.exports = {
-  AIAssistant,
-  getAIAssistant
-};

@@ -1,12 +1,13 @@
 // Bootstrap entry for renderer process (modularized)
-const { onDomReadyInitEditor } = require('./renderer/editor');
-const { setupOutlineWhenReady } = require('./renderer/outline');
-const { initializeFileWorkspace, setupEditorEvents } = require('./renderer/files');
-const { setupToolbar } = require('./renderer/toolbar');
-const { initI18n, applyI18n } = require('./renderer/i18n');
-const { initPreferences } = require('./renderer/preferences');
-const { initTrash } = require('./renderer/trash');
-const { ipcRenderer } = require('electron');
+import { onDomReadyInitEditor } from './renderer/editor.js';
+import { setupOutlineWhenReady } from './renderer/outline.js';
+import { initializeFileWorkspace, setupEditorEvents } from './renderer/files.js';
+import { setupToolbar } from './renderer/toolbar.js';
+import { initI18n, applyI18n } from './renderer/i18n.js';
+import { initPreferences } from './renderer/preferences.js';
+import { initTrash } from './renderer/trash/trash.js';
+
+const { ipcRenderer } = window.electronAPI;
 
 function setupLeftPanelUI() {
   const leftPanel = document.getElementById('left-panel');

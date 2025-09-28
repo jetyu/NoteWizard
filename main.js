@@ -1,14 +1,20 @@
-const {
-  app,
-  BrowserWindow,
-  Menu,
-  dialog,
-  ipcMain,
-  Tray,
-  nativeImage,
-} = require("electron");
-const path = require("path");
-const fs = require("fs");
+import { app, BrowserWindow, Menu, dialog, ipcMain, Tray, nativeImage, shell } from "electron";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 启用详细警告跟踪和日志记录
+process.traceProcessWarnings = true;
+
+// 启用Chromium的详细日志
+app.commandLine.appendSwitch('enable-logging');
+app.commandLine.appendSwitch('log-level', '0'); // 0=INFO, 1=WARNING, 2=ERROR
 
 // 在应用启动前设置应用名称
 if (process.platform === "win32") {
@@ -16,8 +22,13 @@ if (process.platform === "win32") {
 }
 app.setName("NoteWizard");
 
-let win;
+// 主窗口和托盘引用
+let win = null;
 let tray = null;
+
+// 添加调试日志
+//console.log('argv:', process.argv);
+//console.log('user data:', app.getPath('userData'));
 
 // 只允许一个实例运行
 const gotTheLock = app.requestSingleInstanceLock();
@@ -292,11 +303,20 @@ function createWindow() {
     height: 800,
     icon: iconPath,
     webPreferences: {
-   
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false
     },
   });
+
+  // 开发工具
+  if (process.env.NODE_ENV === 'development') {
+    win.webContents.openDevTools();
+  }
 
   // Set window title with app name
   win.setTitle("NoteWizard");
@@ -425,9 +445,7 @@ function createWindow() {
         {
           label: "使用教程",
           click: () => {
-            require("electron").shell.openExternal(
-              "https://markdown.com.cn/intro.html"
-            );
+            shell.openExternal("https://markdown.com.cn/intro.html");
           },
         },
         {
@@ -442,26 +460,20 @@ function createWindow() {
         {
           label: "官方网站",
           click: () => {
-            require("electron").shell.openExternal(
-              "https://github.com/jetyu/NoteWizard"
-            );
+            shell.openExternal("https://github.com/jetyu/NoteWizard");
           },
         },
         {
           label: "发送反馈",
           click: () => {
-            require("electron").shell.openExternal(
-              "https://github.com/jetyu/NoteWizard/issues"
-            );
+            shell.openExternal("https://github.com/jetyu/NoteWizard/issues");
           },
         },
         { type: "separator" },
         {
           label: "软件更新",
           click: () => {
-            require("electron").shell.openExternal(
-              "https://github.com/jetyu/NoteWizard/releases"
-            );
+            shell.openExternal("https://github.com/jetyu/NoteWizard/releases");
           },
         },
         {
@@ -481,14 +493,19 @@ function createWindow() {
                 useContentSize: true,
                 icon: iconPath,
                 webPreferences: {
-                  nodeIntegration: true,
-                  contextIsolation: false,
+                  nodeIntegration: false,
+                  contextIsolation: true,
+                  sandbox: false,
+                  preload: path.join(__dirname, 'preload.js'),
+                  webSecurity: true,
+                  allowRunningInsecureContent: false,
+                  experimentalFeatures: false
                 },
               });
               aboutWindow.setMenuBarVisibility(false);
 
               aboutWindow.loadFile(
-                path.join(__dirname, "src", "templates", "changelog.html")
+                path.join(__dirname, "src", "renderer", "changelog", "changelog.html")
               );
               aboutWindow.once("ready-to-show", () => {
                 aboutWindow.show();
@@ -514,14 +531,19 @@ function createWindow() {
                 useContentSize: true,
                 icon: iconPath,
                 webPreferences: {
-                  nodeIntegration: true,
-                  contextIsolation: false,
+                  nodeIntegration: false,
+                  contextIsolation: true,
+                  sandbox: false,
+                  preload: path.join(__dirname, 'preload.js'),
+                  webSecurity: true,
+                  allowRunningInsecureContent: false,
+                  experimentalFeatures: false
                 },
               });
               aboutWindow.setMenuBarVisibility(false);
 
               aboutWindow.loadFile(
-                path.join(__dirname, "src", "templates", "about.html")
+                path.join(__dirname, "src", "renderer", "about", "about.html")
               );
               aboutWindow.once("ready-to-show", () => {
                 aboutWindow.show();
@@ -575,17 +597,29 @@ function createWindow() {
 }
 
 // 处理保存请求
-ipcMain.on("save-file-content", async (event, { content, filePath }) => {
-  let targetPath = filePath;
-  if (!targetPath) {
-    const { canceled, filePath: savePath } = await dialog.showSaveDialog(win, {
-      filters: [{ name: "Markdown", extensions: ["md"] }],
-    });
-    if (canceled) return;
-    targetPath = savePath;
+ipcMain.handle("save-file-content", async (event, { content, filePath }) => {
+  try {
+    let targetPath = filePath;
+    if (!targetPath) {
+      const { canceled, filePath: savePath } = await dialog.showSaveDialog(win, {
+        filters: [{ name: "Markdown", extensions: ["md"] }],
+      });
+      if (canceled) return { success: false, error: "用户取消保存" };
+      targetPath = savePath;
+    }
+
+    // 确保目录存在
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    await fs.promises.writeFile(targetPath, content, "utf-8");
+    return { success: true, filePath: targetPath };
+  } catch (error) {
+    console.error('保存文件失败:', error);
+    return { success: false, error: error.message };
   }
-  fs.writeFileSync(targetPath, content, "utf-8");
-  win.webContents.send("file-saved", targetPath);
 });
 
 // Handle directory selection dialog
@@ -596,6 +630,113 @@ ipcMain.handle("select-directory", async (event, defaultPath) => {
   });
   return result.canceled ? null : result.filePaths[0];
 });
+
+// --- Preload bridged FS handlers ---
+ipcMain.handle("fs:readFile", async (_event, filePath, encoding) => {
+  return fs.promises.readFile(filePath, encoding);
+});
+
+ipcMain.handle("fs:writeFile", async (_event, filePath, content, options = {}) => {
+  await fs.promises.writeFile(filePath, content, options);
+  return true;
+});
+
+ipcMain.handle("fs:readdir", async (_event, dirPath, options = {}) => {
+  return fs.promises.readdir(dirPath, options);
+});
+
+ipcMain.handle("fs:mkdir", async (_event, dirPath, options = {}) => {
+  await fs.promises.mkdir(dirPath, options);
+  return true;
+});
+
+ipcMain.handle("fs:stat", async (_event, targetPath) => {
+  const stats = await fs.promises.stat(targetPath);
+  return {
+    size: stats.size,
+    mtimeMs: stats.mtimeMs,
+    ctimeMs: stats.ctimeMs,
+    birthtimeMs: stats.birthtimeMs,
+    isFile: stats.isFile(),
+    isDirectory: stats.isDirectory(),
+    isSymbolicLink: stats.isSymbolicLink(),
+  };
+});
+
+ipcMain.handle("fs:unlink", async (_event, targetPath) => {
+  await fs.promises.unlink(targetPath);
+  return true;
+});
+
+ipcMain.handle("fs:rmdir", async (_event, targetPath) => {
+  await fs.promises.rm(targetPath, { recursive: true, force: true });
+  return true;
+});
+
+ipcMain.handle("fs:readFileSync", (_event, targetPath, encoding) => {
+  return fs.readFileSync(targetPath, encoding);
+});
+
+ipcMain.handle("fs:writeFileSync", (_event, targetPath, data, options) => {
+  fs.writeFileSync(targetPath, data, options);
+  return true;
+});
+
+ipcMain.handle("fs:exists", async (_event, targetPath) => {
+  try {
+    await fs.promises.access(targetPath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle("fs:existsSync", (_event, targetPath) => {
+  return fs.existsSync(targetPath);
+});
+
+ipcMain.handle("fs:mkdirSync", (_event, targetPath, options) => {
+  fs.mkdirSync(targetPath, options);
+  return true;
+});
+
+ipcMain.handle("fs:rename", async (_event, oldPath, newPath) => {
+  await fs.promises.rename(oldPath, newPath);
+  return true;
+});
+
+// --- Path handlers ---
+ipcMain.handle("path:join", (_event, ...segments) => path.join(...segments));
+ipcMain.handle("path:dirname", (_event, targetPath) => path.dirname(targetPath));
+ipcMain.handle("path:basename", (_event, targetPath, ext) => path.basename(targetPath, ext));
+ipcMain.handle("path:extname", (_event, targetPath) => path.extname(targetPath));
+ipcMain.handle("path:resolve", (_event, ...segments) => path.resolve(...segments));
+
+// --- OS handlers ---
+ipcMain.handle("os:homedir", () => os.homedir());
+ipcMain.handle("os:platform", () => os.platform());
+ipcMain.handle("os:arch", () => os.arch());
+
+// --- Dialog handlers ---
+ipcMain.handle("dialog:showOpenDialog", async (_event, options) => {
+  const result = await dialog.showOpenDialog(win, options);
+  return result;
+});
+
+ipcMain.handle("dialog:showSaveDialog", async (_event, options) => {
+  return dialog.showSaveDialog(win, options);
+});
+
+ipcMain.handle("dialog:showMessageBox", async (_event, options) => {
+  return dialog.showMessageBox(win, options);
+});
+
+// --- App handlers ---
+ipcMain.handle("app:getPath", (_event, name) => app.getPath(name));
+ipcMain.handle("app:getAppPath", () => app.getAppPath());
+ipcMain.handle("app:getVersion", () => app.getVersion());
+ipcMain.handle("app:openPath", (_event, targetPath) => shell.openPath(targetPath));
+ipcMain.handle("app:showItemInFolder", (_event, targetPath) => shell.showItemInFolder(targetPath));
 
 // Get default note save path
 ipcMain.handle("get-default-save-path", () => {
@@ -630,19 +771,45 @@ ipcMain.handle("set-startup-enabled", (event, enabled) => {
   }
 });
 
-// 仅在获得单实例锁时启动应用
-if (gotTheLock) {
-  app.whenReady().then(() => {
-    createWindow();
-    //若无窗口则新建，否则聚焦
-    app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-      } else if (win) {
-        if (win.isMinimized()) win.restore();
-        win.show();
-        win.focus();
-      }
-    });
+// 应用就绪
+app.whenReady().then(() => {
+  createWindow();
+
+  // macOS应用激活
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    } else if (win) {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+    }
   });
-}
+
+  console.log('NoteWizard Started');
+});
+
+// 所有窗口关闭时退出应用 (macOS除外)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// 未捕获的异常处理
+process.on('uncaughtException', (error) => {
+  console.error('未捕获的异常:', error);
+  dialog.showErrorBox('应用程序错误', '发生未处理的错误: ' + error.message);
+});
+
+// 未处理的Promise拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('未处理的Promise拒绝:', reason);
+  dialog.showErrorBox('Promise错误', '未处理的Promise拒绝: ' + (reason instanceof Error ? reason.message : String(reason)));
+});
+
+// 应用即将退出
+app.on('will-quit', (event) => {
+  console.log('NoteWizard will quit');
+  // 可以在这里执行清理操作
+});

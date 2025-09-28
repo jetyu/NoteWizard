@@ -1,10 +1,15 @@
-const builder = require('electron-builder');
-const path = require('path');
-const fs = require('fs');
-const { execSync } = require('child_process');
+import builder from 'electron-builder';
+import path from 'node:path';
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 构建配置
-const config = require('./package.json').build;
+const packageJsonPath = path.join(__dirname, 'package.json');
+const config = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')).build;
 
 // 清理之前的构建目录
 function cleanDist() {

@@ -1,48 +1,97 @@
-const { contextBridge, ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import { contextBridge, ipcRenderer, shell } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     fs: {
-        readFile: (filePath, encoding) => ipcRenderer.invoke('fs:readFile', filePath, encoding),
-        writeFile: (filePath, content, options = {}) => ipcRenderer.invoke('fs:writeFile', filePath, content, options),
-        readdir: (dirPath, options = {}) => ipcRenderer.invoke('fs:readdir', dirPath, options),
-        mkdir: (dirPath, options = {}) => ipcRenderer.invoke('fs:mkdir', dirPath, options),
-        stat: (path) => ipcRenderer.invoke('fs:stat', path),
-        unlink: (path) => ipcRenderer.invoke('fs:unlink', path),
-        rmdir: (path) => ipcRenderer.invoke('fs:rmdir', path),
-        readFileSync: (path, encoding) => ipcRenderer.invoke('fs:readFileSync', path, encoding),
-        writeFileSync: (path, data, options) => ipcRenderer.invoke('fs:writeFileSync', path, data, options),
-        exists: (path) => ipcRenderer.invoke('fs:exists', path),
-        existsSync: (path) => ipcRenderer.invoke('fs:existsSync', path),
-        mkdirSync: (path, options) => ipcRenderer.invoke('fs:mkdirSync', path, options),
-        rename: (oldPath, newPath) => ipcRenderer.invoke('fs:rename', oldPath, newPath)
+        readFile: (filePath, encoding) => fs.promises.readFile(filePath, encoding),
+        writeFile: (filePath, content, options = {}) => fs.promises.writeFile(filePath, content, options),
+        readdir: (dirPath, options = {}) => fs.promises.readdir(dirPath, options),
+        mkdir: (dirPath, options = {}) => fs.promises.mkdir(dirPath, options),
+        stat: (targetPath) => fs.promises.stat(targetPath),
+        unlink: (targetPath) => fs.promises.unlink(targetPath),
+        rmdir: (targetPath) => fs.promises.rm(targetPath, { recursive: true, force: true }),
+        exists: async (targetPath) => {
+            try {
+                await fs.promises.access(targetPath, fs.constants.F_OK);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        rename: (oldPath, newPath) => fs.promises.rename(oldPath, newPath),
+        readFileSync: (targetPath, encoding) => fs.readFileSync(targetPath, encoding),
+        writeFileSync: (targetPath, data, options) => fs.writeFileSync(targetPath, data, options),
+        existsSync: (targetPath) => fs.existsSync(targetPath),
+        mkdirSync: (targetPath, options) => fs.mkdirSync(targetPath, options),
+        renameSync: (oldPath, newPath) => fs.renameSync(oldPath, newPath),
+        unlinkSync: (targetPath) => fs.unlinkSync(targetPath),
+        readdirSync: (dirPath, options) => fs.readdirSync(dirPath, options),
+        statSync: (targetPath) => fs.statSync(targetPath)
     },
 
     path: {
-        join: (...args) => ipcRenderer.invoke('path:join', ...args),
-        dirname: (p) => ipcRenderer.invoke('path:dirname', p),
-        basename: (p, ext) => ipcRenderer.invoke('path:basename', p, ext),
-        extname: (p) => ipcRenderer.invoke('path:extname', p),
-        resolve: (...args) => ipcRenderer.invoke('path:resolve', ...args),
+        join: (...args) => path.join(...args),
+        dirname: (p) => path.dirname(p),
+        basename: (p, ext) => path.basename(p, ext),
+        extname: (p) => path.extname(p),
+        normalize: (p) => path.normalize(p),
+        resolve: (...args) => path.resolve(...args),
         sep: path.sep
     },
 
     os: {
-        homedir: () => ipcRenderer.invoke('os:homedir'),
-        platform: () => ipcRenderer.invoke('os:platform'),
-        arch: () => ipcRenderer.invoke('os:arch')
+        homedir: () => os.homedir(),
+        platform: () => os.platform(),
+        arch: () => os.arch()
+    },
+
+    shell: {
+        openPath: (targetPath) => shell.openPath(targetPath),
+        showItemInFolder: (targetPath) => shell.showItemInFolder(targetPath)
     },
 
     ipcRenderer: {
         send: (channel, ...args) => ipcRenderer.send(channel, ...args),
         on: (channel, listener) => {
-            const subscription = (event, ...args) => listener(...args);
+            const subscription = (event, ...args) => {
+                const invoke = () => {
+                    try {
+                        listener(event, ...args);
+                    } catch (error) {
+                        console.warn(`[preload] listener for ${channel} threw`, error);
+                    }
+                };
+
+                if (document.readyState === 'loading') {
+                    const runOnce = () => {
+                        document.removeEventListener('DOMContentLoaded', runOnce);
+                        invoke();
+                    };
+                    document.addEventListener('DOMContentLoaded', runOnce, { once: true });
+                } else {
+                    invoke();
+                }
+            };
             ipcRenderer.on(channel, subscription);
             return () => ipcRenderer.removeListener(channel, subscription);
         },
-        once: (channel, listener) => ipcRenderer.once(channel, (event, ...args) => listener(...args)),
+        once: (channel, listener) => ipcRenderer.once(channel, (event, ...args) => {
+            const invoke = () => {
+                try {
+                    listener(event, ...args);
+                } catch (error) {
+                    console.warn(`[preload] listener for ${channel} threw`, error);
+                }
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', invoke, { once: true });
+            } else {
+                invoke();
+            }
+        }),
         removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
         invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args)
     },
@@ -63,5 +112,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Preload script loaded successfully');
+   //console.log('Preload script loaded successfully');
 });

@@ -1,5 +1,5 @@
-const state = require('./state');
-const { renderPreview } = require('./preview');
+import state from './state.js';
+import { renderPreview } from './preview.js';
 
 function wrapSelection(before, after = before) {
   if (!state.editor) return;
@@ -110,4 +110,4 @@ function setupToolbar() {
   });
 }
 
-module.exports = { setupToolbar };
+export { setupToolbar };
