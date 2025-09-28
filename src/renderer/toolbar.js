@@ -1,5 +1,5 @@
 import state from './state.js';
-import { renderPreview } from './preview.js';
+import { renderPreview } from './preview/preview.js';
 
 function wrapSelection(before, after = before) {
   if (!state.editor) return;

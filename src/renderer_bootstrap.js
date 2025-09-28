@@ -6,6 +6,7 @@ import { setupToolbar } from './renderer/toolbar.js';
 import { initI18n, applyI18n } from './renderer/i18n.js';
 import { initPreferences } from './renderer/preferences.js';
 import { initTrash } from './renderer/trash/trash.js';
+import { initPreview } from './renderer/preview/preview.js';
 
 const { ipcRenderer } = window.electronAPI;
 
@@ -177,6 +178,7 @@ function bootstrap() {
       onDomReadyInitEditor();
       initializeFileWorkspace();
       setupEditorEvents();
+      initPreview();
       setupToolbar();
       initPreferences();
       initTrash();
@@ -196,6 +198,7 @@ function bootstrap() {
     onDomReadyInitEditor();
     initializeFileWorkspace();
     setupEditorEvents();
+    initPreview();
     setupToolbar();
     initPreferences();
     initTrash();

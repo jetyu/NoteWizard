@@ -120,8 +120,7 @@ export class AIAssistant {
     try {
       const aiSettings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
 
-      if (!aiSettings.apiKey || !aiSettings.provider) {
-        console.log('AI配置不完整，跳过辅助写作');
+      if (!aiSettings.apiKey || !aiSettings.endpoint || !aiSettings.model) {
         return;
       }
 

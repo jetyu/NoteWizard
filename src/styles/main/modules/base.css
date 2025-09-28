@@ -469,56 +469,9 @@ input.tree-rename:focus {
 }
 
 /* 移除了pulse动画 */
-
-/* --------------------------------------------
-   ## 状态消息
-   -------------------------------------------- */
-.status-message {
-  color: var(--text);
-}
-
 /* --------------------------------------------
    ## 状态详情
    -------------------------------------------- */
 .status-details {
-  color: var(--muted);
   font-size: 12px;
-}
-
-/* ============================================
-   # 预览面板
-   ============================================ */
-
-/* --------------------------------------------
-   ## 预览面板容器
-   -------------------------------------------- */
-#preview-panel {
-  flex: 0 0 auto;
-  width: 40%;
-  max-width: 40%;
-  min-width: 20%;
-  resize: horizontal;
-  overflow: auto;
-}
-
-/* Applied dynamically when pointer is near the preview's left edge */
-.edge-resize {
-  cursor: col-resize !important;
-}
-
-/* --------------------------------------------
-   ## 预览内容
-   -------------------------------------------- */
-#preview-container {
-  flex: 1;
-  overflow: auto;
-  padding: 10px;
-  background: var(--surface);
-}
-
-#preview {
-  white-space: pre-wrap;
-  font-size: var(--preview-font-size, 14px);
-  font-family: var(--preview-font-family, 'Microsoft YaHei', '微软雅黑', sans-serif);
-  line-height: 1.6;
 }

@@ -1,0 +1,65 @@
+#preview-panel {
+  flex: 0 0 auto;
+  width: 40%;
+  max-width: 40%;
+  min-width: 20%;
+  resize: horizontal;
+  overflow: auto;
+}
+
+.edge-resize {
+  cursor: col-resize !important;
+}
+
+#preview-container {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+  background: var(--surface);
+}
+
+#preview {
+  white-space: normal;
+  font-size: var(--preview-font-size, 14px);
+  font-family: var(--preview-font-family, 'Microsoft YaHei', '微软雅黑', sans-serif);
+  line-height: 1.4;
+}
+
+#preview p {
+  margin: 0 0 0.5em;
+}
+
+#preview ul,
+#preview ol {
+  margin: 0 0 0.5em 1.2em;
+  line-height: 1.4;
+}
+
+#preview li {
+  margin: 0.2em 0;
+  line-height: 1.4;
+}
+
+#preview h1 {
+  font-size: 1.8em;
+  margin: 0.75em 0 0.4em;
+  font-weight: 600;
+}
+
+#preview h2 {
+  font-size: 1.5em;
+  margin: 0.65em 0 0.35em;
+  font-weight: 600;
+}
+
+#preview h3 {
+  font-size: 1.3em;
+  margin: 0.55em 0 0.3em;
+  font-weight: 600;
+}
+
+#preview h4 {
+  font-size: 1.1em;
+  margin: 0.5em 0 0.25em;
+  font-weight: 600;
+}
