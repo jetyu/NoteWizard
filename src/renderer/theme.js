@@ -56,4 +56,7 @@ function initTheme() {
   });
 }
 
-module.exports = { initTheme, applyThemeByMode };
+export {
+  initTheme,
+  applyThemeByMode,
+};

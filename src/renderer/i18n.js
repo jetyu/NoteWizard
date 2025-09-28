@@ -1,10 +1,27 @@
-const { ipcRenderer } = require('electron');
-const path = require('path');
-const fs = require('fs');
+const electronAPI = window.electronAPI;
+
+if (!electronAPI) {
+  throw new Error('electronAPI 未初始化，无法在渲染进程访问受信任的 Node API');
+}
+
+const {
+  ipcRenderer,
+  path: electronPath,
+  fs: electronFs,
+} = electronAPI;
 
 const STORAGE_KEY = "lang";
 const DEFAULT_LANG = "zh-CN";
-const LOCALES_PATH = path.join(__dirname, '../locales');
+
+function resolveFilePath(relativePath) {
+  let pathname = decodeURIComponent(new URL(relativePath, import.meta.url).pathname);
+  if (/^\/[A-Za-z]:/.test(pathname)) {
+    pathname = pathname.slice(1);
+  }
+  return pathname;
+}
+
+const LOCALES_PATH = resolveFilePath('../locales');
 
 // 存储所有加载的语言包
 const dict = {};
@@ -13,11 +30,16 @@ let currentLang = DEFAULT_LANG;
 // 加载语言包
 async function loadLanguage(lang) {
   try {
-    const filePath = path.join(LOCALES_PATH, `${lang}.json`);
-    const data = await fs.promises.readFile(filePath, 'utf8');
+    const filePath = electronPath.join(LOCALES_PATH, `${lang}.json`);
+    const data = await electronFs.readFile(filePath, 'utf8');
     dict[lang] = JSON.parse(data);
     return dict[lang];
   } catch (error) {
+    if (lang === DEFAULT_LANG) {
+      console.warn(`加载默认语言包失败: ${error.message}`);
+      dict[DEFAULT_LANG] = {};
+      return dict[DEFAULT_LANG];
+    }
     return loadLanguage(DEFAULT_LANG);
   }
 }
@@ -167,9 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // 加载语言提供者配置
 let localesProviders = {};
 try {
-  const localesProvidersPath = path.join(__dirname, '../config/locales-providers.json');
-  if (fs.existsSync(localesProvidersPath)) {
-    localesProviders = JSON.parse(fs.readFileSync(localesProvidersPath, 'utf8'));
+  const localesProvidersPath = resolveFilePath('../config/locales-providers.json');
+  if (electronFs.existsSync(localesProvidersPath)) {
+    localesProviders = JSON.parse(electronFs.readFileSync(localesProvidersPath, 'utf8'));
   }
 } catch (error) {
   // 静默失败
@@ -183,9 +205,9 @@ function getLanguageDisplayName(lang) {
 // 获取支持的语言列表
 function getSupportedLanguagesWithNames() {
   try {
-    const supportedLangs = fs.readdirSync(LOCALES_PATH)
+    const supportedLangs = electronFs.readdirSync(LOCALES_PATH)
       .filter(file => file.endsWith('.json'))
-      .map(file => path.basename(file, '.json'));
+      .map((file) => electronPath.basename(file, '.json'));
     
     return supportedLangs.map(code => ({
       code,
@@ -197,7 +219,18 @@ function getSupportedLanguagesWithNames() {
 }
 
 // 导出API
-module.exports = {
+export function getSupportedLanguages() {
+  try {
+    return electronFs
+      .readdirSync(LOCALES_PATH)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => electronPath.basename(file, '.json'));
+  } catch (error) {
+    return [DEFAULT_LANG];
+  }
+}
+
+export {
   getLanguage,
   setLanguage,
   t,
@@ -205,20 +238,28 @@ module.exports = {
   initI18n,
   STORAGE_KEY,
   DEFAULT_LANG,
+  ensureI18nInitialized as ensureInitialized,
+  getLanguageDisplayName as getCurrentLanguageName,
+  getSupportedLanguagesWithNames,
+  getLanguageDisplayName,
+};
+
+const i18nAPI = {
+  getLanguage,
+  setLanguage,
+  t,
+  applyI18n,
+  initI18n,
+  STORAGE_KEY,
+  DEFAULT_LANG,
+  ensureInitialized: ensureI18nInitialized,
   get currentLanguage() {
     return currentLang;
   },
-  ensureInitialized: ensureI18nInitialized,
   getCurrentLanguageName: () => getLanguageDisplayName(currentLang),
-  getSupportedLanguages: () => {
-    try {
-      return fs.readdirSync(LOCALES_PATH)
-        .filter(file => file.endsWith('.json'))
-        .map(file => path.basename(file, '.json'));
-    } catch (error) {
-      return [DEFAULT_LANG];
-    }
-  },
+  getSupportedLanguages,
   getSupportedLanguagesWithNames,
-  getLanguageDisplayName
+  getLanguageDisplayName,
 };
+
+export default i18nAPI;

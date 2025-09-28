@@ -1,12 +1,22 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { ipcRenderer } = require('electron');
-const state = require('./state');
-const { renderPreview } = require('./preview');
-const vfs = require('./vfs');
-const tree = require('./tree');
-const outline = require('./outline');
+import state from './state.js';
+import { renderPreview } from './preview.js';
+import * as vfs from './vfs.js';
+import * as tree from './tree.js';
+import * as outline from './outline.js';
+
+const electronAPI = window.electronAPI;
+
+if (!electronAPI) {
+  throw new Error('electronAPI 未初始化，无法在渲染进程访问受信任的 Node API');
+}
+
+const {
+  fs: electronFs,
+  path: electronPath,
+  os: electronOs,
+  ipcRenderer,
+  shell: electronShell,
+} = electronAPI;
 
 
 /**
@@ -15,18 +25,24 @@ const outline = require('./outline');
  * @returns {string} 返回配置文件的完整路径
  */
 function getDefaultSaveDir() {
-  let baseDir = '';
-  const appName = 'NoteWizard'; // 统一应用名称
-  if (process.platform === 'win32') {
-    // 使用用户文档目录下的 NoteWizard\Database 作为默认存储位置
-    baseDir = path.join(os.homedir(), 'Documents', appName, 'Database');
-  } else if (process.platform === 'darwin') {
-    baseDir = path.join(os.homedir() || '', 'Library', 'Application Support', appName, 'Database');
-  } else {
-    baseDir = path.join(os.homedir() || '', `.${appName}`, 'Database');
+  const appName = 'NoteWizard';
+  const platform = electronOs.platform();
+  const homeDir = electronOs.homedir() || '';
+
+  if (platform === 'win32') {
+    return electronPath.join(homeDir, 'Documents', appName, 'Database');
   }
-  
-  return baseDir;
+  if (platform === 'darwin') {
+    return electronPath.join(
+      homeDir,
+      'Library',
+      'Application Support',
+      appName,
+      'Database',
+    );
+  }
+
+  return electronPath.join(homeDir, `.${appName}`, 'Database');
 }
 
 /**
@@ -43,20 +59,19 @@ function updateStatus(message) {
  * @param {string} filePath - 文件路径
  */
 function showFileProperties(filePath) {
-  
   try {
     // 检查文件是否存在
-    if (!fs.existsSync(filePath)) {
+    if (!electronFs.existsSync(filePath)) {
       throw new Error(`文件不存在: ${filePath}`);
     }
 
-    const stats = fs.statSync(filePath);
-    const sizeInMB = (stats.size).toFixed(2);
+    const stats = electronFs.statSync(filePath);
+    const sizeInKB = (stats.size / 1024).toFixed(2);
     const modifiedTime = new Date(stats.mtime).toLocaleString();
 
     const props = `
-      位置: ${path.dirname(filePath)}
-      大小: ${sizeInMB} KB
+      位置: ${electronPath.dirname(filePath)}
+      大小: ${sizeInKB} KB
       修改时间: ${modifiedTime}
     `;
 
@@ -134,13 +149,13 @@ function showContextMenu(node, e) {
           // 获取文件路径
           let filePath;
           if (node.contentId) {
-            const ext = node.name ? path.extname(node.name) : '.md'; // 默认使用 .md 扩展名
+            const ext = node.name ? electronPath.extname(node.name) : '.md'; // 默认使用 .md 扩展名
             const fileName = node.contentId + (node.contentId.endsWith(ext) ? '' : ext);
-            filePath = path.join(getDefaultSaveDir(), 'objects', fileName);
+            filePath = electronPath.join(getDefaultSaveDir(), 'objects', fileName);
           }
           // 确保文件路径有扩展名
-          if (filePath && !path.extname(filePath) && node.name) {
-            const ext = path.extname(node.name) || '.md';
+          if (filePath && !electronPath.extname(filePath) && node.name) {
+            const ext = electronPath.extname(node.name) || '.md';
             filePath += ext;
           }
           
@@ -150,10 +165,10 @@ function showContextMenu(node, e) {
           }
           switch (act) {
             case 'open':
-              require('electron').shell.openPath(filePath).catch(console.error);
+              electronShell.openPath(filePath).catch(console.error);
               break;
             case 'showInFolder':
-              require('electron').shell.showItemInFolder(filePath);
+              electronShell.showItemInFolder(filePath);
               break;
             case 'properties':
               showFileProperties(filePath);
@@ -179,7 +194,38 @@ function showContextMenu(node, e) {
         tree.renderTree();
       } else if (act === 'rename') {
         setTimeout(() => tree.startInlineRename(node.id), 0);
-      
+      } else if (act === 'delete' && node) {
+        const displayName = node.name || '此项目';
+        if (!confirm(`确定要删除 "${displayName}" 吗？`)) {
+          return;
+        }
+
+        try {
+          const parentNode = node.parentId ? vfs.getNodeById(node.parentId) : null;
+          vfs.deleteNode(node.id);
+          ipcRenderer?.send('trash-updated');
+          tree.renderTree();
+
+          if (state.currentNodeId === node.id) {
+            state.currentNodeId = null;
+            if (state.editor) {
+              state.editor.setValue('');
+            }
+          }
+
+          if (parentNode) {
+            selectNode(parentNode);
+          } else {
+            renderPreview();
+          }
+
+          updateStatus('已移至回收站');
+        } catch (err) {
+          console.error('删除节点失败:', err);
+          updateStatus('删除失败，请检查日志');
+        }
+
+        return;
       }
     } catch (err) {
     }
@@ -233,24 +279,24 @@ function selectNode(node) {
 function handleFileAction(action, fileItem) {
   const oldName = fileItem.textContent;
   const oldPath = fileItem.dataset.filePath;
-  const dir = path.dirname(oldPath || getDefaultSaveDir());
+  const dir = electronPath.dirname(oldPath || getDefaultSaveDir());
 
   switch (action) {
     case 'rename': {
       const input = prompt('请输入新文件名:', oldName);
       if (!input || input === oldName) return;
       const finalName = input.toLowerCase().endsWith('.md') ? input : input + '.md';
-      const newPath = path.join(dir, finalName);
-      if (fs.existsSync(newPath)) {
+      const newPath = electronPath.join(dir, finalName);
+      if (electronFs.existsSync(newPath)) {
         alert('已存在同名文件，请换一个名称。');
         return;
       }
       try {
-        if (oldPath && fs.existsSync(oldPath)) {
-          fs.renameSync(oldPath, newPath);
+        if (oldPath && electronFs.existsSync(oldPath)) {
+          electronFs.renameSync(oldPath, newPath);
         } else {
           const content = state.fileContents.get(oldName) || (state.editor && state.editor.getValue && state.editor.getValue()) || '';
-          fs.writeFileSync(newPath, content, 'utf-8');
+          electronFs.writeFileSync(newPath, content, 'utf-8');
         }
         fileItem.textContent = finalName;
         fileItem.dataset.filePath = newPath;
@@ -269,7 +315,7 @@ function handleFileAction(action, fileItem) {
     case 'delete': {
       if (!confirm(`确定要删除文件 "${oldName}" 吗？此操作不可恢复。`)) return;
       try {
-        if (oldPath && fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        if (oldPath && electronFs.existsSync(oldPath)) electronFs.unlinkSync(oldPath);
       } catch (e) {
         alert('删除失败，请检查权限或文件是否被占用。');
         return;
@@ -308,9 +354,9 @@ function initializeFileWorkspace() {
   // 添加文件打开事件监听
   ipcRenderer.on('file-opened', (event, { content, filePath }) => {
       // 获取文件名（带扩展名）
-      const fileNameWithExt = path.basename(filePath);
+      const fileNameWithExt = electronPath.basename(filePath);
       // 获取不带扩展名的文件名
-      const fileName = path.basename(filePath, path.extname(filePath));
+      const fileName = electronPath.basename(filePath, electronPath.extname(filePath));
       // 使用当前选中的节点作为父节点，如果没有则使用根目录
       const parentId = state.currentNodeId || null;
       // 创建新节点，传入带扩展名的文件名
@@ -470,12 +516,12 @@ function setupEditorEvents() {
 /**
  * 文件操作相关的公共接口
  */
-module.exports = {
+export {
   getDefaultSaveDir,
   updateStatus,
   showFileProperties,
   handleFileAction,
   initializeFileWorkspace,
   setupEditorEvents,
-  selectFile: selectNode,
+  selectNode as selectFile,
 };

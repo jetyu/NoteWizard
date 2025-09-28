@@ -1,6 +1,6 @@
-const state = require('./state');
+import state from './state.js';
 
-function renderPreview() {
+export function renderPreview() {
   if (state.editor) {
     const el = document.getElementById('preview');
     if (el && window.marked) {
@@ -8,5 +8,3 @@ function renderPreview() {
     }
   }
 }
-
-module.exports = { renderPreview };

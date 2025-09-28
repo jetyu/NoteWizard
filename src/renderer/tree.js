@@ -1,5 +1,4 @@
-const state = require('./state');
-const vfs = require('./vfs');
+import * as vfs from './vfs.js';
 
 // 跟踪展开的文件夹ID
 let expandedFolders = new Set();
@@ -286,10 +285,9 @@ function startInlineRename(nodeId) {
   input.addEventListener('blur', onBlur);
 }
 
-module.exports = {
+export {
   setHandlers,
   renderTree,
   startInlineRename,
-  // 导出buildTreeDom用于外部调用
   buildTreeDom,
 };

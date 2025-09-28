@@ -4,15 +4,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self';
+    img-src 'self' data:;
+    font-src 'self' data:;
+    connect-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  " />
   <title data-i18n="about.title"></title>
-  <link rel="stylesheet" href="../styles/modules/info.css" />
-  <script src="../renderer/i18n.js"></script>
+  <link rel="stylesheet" href="./about.css" />
 </head>
 
 <body>
   <div class="container">
     <div class="logo">
-      <img src="../assets/logo/app-logo-512.png" alt="NoteWizard" />
+      <img src="../../assets/logo/app-logo-512.png" alt="NoteWizard" />
     </div>
     <h1 data-i18n="about.appName"></h1>
     <div class="version">
@@ -47,29 +57,7 @@
       <p><span data-i18n="copyrights"></span></p>
     </div>
   </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      await initI18n();
-      applyI18n();
-      const { ipcRenderer } = require("electron");
-      
-      // 请求版本信息
-      ipcRenderer.send('request-versions');
-      
-      // 接收版本信息并更新UI
-      ipcRenderer.on("versions", (event, versions) => {
-        if (versions) {
-          document.getElementById("app-version").textContent = versions.app;
-          document.getElementById("electron-version").textContent = versions.electron;
-          document.getElementById("node-version").textContent = versions.node;
-          document.getElementById("chrome-version").textContent = versions.chrome;
-          document.getElementById("v8-version").textContent = versions.v8;
-          document.getElementById("app-author").textContent = versions.author;
-          document.getElementById("app-license").textContent = versions.license;
-        }
-      });
-    });
-  </script>
+  <script type="module" src="./about.js"></script>
 </body>
 
 </html>

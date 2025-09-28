@@ -1,5 +1,5 @@
-const state = require('./state');
-const { getAIAssistant } = require('./ai-assistant');
+import state from './state.js';
+import { getAIAssistant } from './ai-assistant.js';
 
 function initializeEditor() {
   const editorElement = document.getElementById('editor');
@@ -133,15 +133,11 @@ function insertAISuggestion(cm, suggestion) {
   }, 100);
 }
 
-function onDomReadyInitEditor() {
+export function onDomReadyInitEditor() {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeEditor);
   } else {
     initializeEditor();
   }
 }
-
-module.exports = {
-  initializeEditor,
-  onDomReadyInitEditor,
-};
+export { initializeEditor };
