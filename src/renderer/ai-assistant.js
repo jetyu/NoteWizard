@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 export class AIAssistant {
   constructor() {
     this.isEnabled = false;
@@ -16,7 +18,7 @@ export class AIAssistant {
 
   init() {
     this.loadSettings();
-    this.createSuggestionUI();
+   
     this.bindEvents();
     this.startAutoSave();
   }
@@ -34,11 +36,7 @@ export class AIAssistant {
     }
   }
 
-  // 创建建议UI（保留用于兼容性，但不再使用）
-  createSuggestionUI() {
-    // 内联模式不需要创建独立的UI元素
-    // 建议直接显示在编辑器中
-  }
+
 
   // 绑定事件
   bindEvents() {
@@ -188,13 +186,14 @@ export class AIAssistant {
   async callAIAPI(context, settings) {
     const endpoint = settings.endpoint;
     const model = settings.model;
+    const systemPrompt = settings.systemPrompt;
 
     const requestBody = {
       model: model,
       messages: [
         {
           role: 'system',
-          content: '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。每次最多返回一句话。'
+          content: systemPrompt || t('placeholderAISystemPrompt')
         },
         {
           role: 'user',

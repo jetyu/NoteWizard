@@ -5,7 +5,7 @@
     gap: 8px;
     padding: 4px 12px;
     border-bottom: 1px solid var(--border);
-    background: #ffffff;
+    background: var(--surface);
     position: relative;
     height: 40px;
     box-sizing: border-box;
@@ -32,7 +32,7 @@
 
 .tool-btn {
     background: transparent;
-    color: #5f6368;
+    color: var(--muted);
     border: none;
     padding: 0;
     border-radius: 4px;
@@ -42,24 +42,22 @@
     height: 28px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
     overflow: hidden;
     transition: none;
 }
 
 .tool-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--hover);
 }
 
 .tool-btn:active {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--hover);
+    opacity: 0.8;
 }
 
 .tool-btn::before {
     content: '';
     position: absolute;
-    top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
@@ -74,10 +72,10 @@
 #file-search {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border);
     border-radius: 4px;
-    background: #ffffff;
-    color: #202124;
+    background: var(--surface);
+    color: var(--text);
     font-size: 13px;
     transition: none;
     height: 28px;

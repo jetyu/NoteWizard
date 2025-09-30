@@ -385,10 +385,10 @@ input.tree-rename:focus {
 
 /* Context Menu */
 .context-menu {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   padding: 4px 0;
   min-width: 120px;
   font-size: 13px;
@@ -397,7 +397,6 @@ input.tree-rename:focus {
 .menu-item {
   padding: 8px 16px;
   cursor: pointer;
-  transition: none;
   color: var(--text);
 }
 

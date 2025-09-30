@@ -175,6 +175,7 @@ function updateAIFieldsState() {
     'pref-ai-model',
     'pref-ai-api-key',
     'pref-ai-endpoint',
+    'pref-ai-system-prompt',
     'pref-ai-test'
   ];
   
@@ -194,6 +195,7 @@ function loadAISettings() {
   const aiEnabledInput = document.getElementById('pref-ai-enabled');
   const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
   const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
+  const systemPromptInput = document.getElementById('pref-ai-system-prompt');
 
   if (!modelInput || !apiKeyInput || !endpointInput) {
     return;
@@ -218,6 +220,11 @@ function loadAISettings() {
   
   if (aiTypingLengthInput) {
     aiTypingLengthInput.value = settings.minInputLength || 10;
+  }
+  
+  // 加载系统提示词
+  if (systemPromptInput) {
+    systemPromptInput.value = settings.systemPrompt;
   }
   
   // 更新相关字段的可用性状态
@@ -288,6 +295,7 @@ function saveAISettings() {
   const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
+  const systemPromptInput = document.getElementById('pref-ai-system-prompt');
 
   if (!modelInput || !apiKeyInput || !endpointInput || !aiEnabledInput || !aiTypingDelayInput || !aiTypingLengthInput) {
     console.error('无法找到AI设置相关的DOM元素');
@@ -300,7 +308,8 @@ function saveAISettings() {
     endpoint: endpointInput.value.trim(),
     enabled: aiEnabledInput.checked,
     typingDelay: parseInt(aiTypingDelayInput.value) || 2000,
-    minInputLength: parseInt(aiTypingLengthInput.value) || 10
+    minInputLength: parseInt(aiTypingLengthInput.value) || 10,
+    systemPrompt: systemPromptInput ? systemPromptInput.value.trim() : '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。每次最多返回一句话。'
   };
 
   localStorage.setItem('aiSettings', JSON.stringify(settings));
@@ -536,7 +545,9 @@ if (testButton) {
     aiTypingLengthInput.addEventListener('blur', saveAISettings);
   }
   
-  const aiFields = [modelInput, apiKeyInput, endpointInput];
+  const systemPromptInput = document.getElementById('pref-ai-system-prompt');
+  
+  const aiFields = [modelInput, apiKeyInput, endpointInput, systemPromptInput];
   aiFields.forEach(field => {
     if (field) {
       field.addEventListener('change', saveAISettings);

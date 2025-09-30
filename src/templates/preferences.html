@@ -99,16 +99,32 @@
             <span class="unit" data-i18n="unitCharacters"></span>
         </div> 
         <div class="pref-section">
-          <label for="pref-ai-model" data-i18n="labelAIModel"></label>
+          <label for="pref-ai-model">
+            <span data-i18n="labelAIModel"></span>
+            <span class="required-mark">*</span>
+          </label>
           <input type="text" id="pref-ai-model" />
         </div>
         <div class="pref-section">
-          <label for="pref-ai-api-key" data-i18n="labelAIApiKey"></label>
+          <label for="pref-ai-api-key">
+            <span data-i18n="labelAIApiKey"></span>
+            <span class="required-mark">*</span>
+          </label>
           <input type="password" id="pref-ai-api-key"  autocomplete="off" />
         </div>
         <div class="pref-section">
-          <label for="pref-ai-endpoint" data-i18n="labelAIEndpoint"></label>
+          <label for="pref-ai-endpoint">
+            <span data-i18n="labelAIEndpoint"></span>
+            <span class="required-mark">*</span>
+          </label>
           <input type="text" id="pref-ai-endpoint" />
+        </div>
+        <div class="pref-section">
+          <label for="pref-ai-system-prompt">
+            <span data-i18n="labelAISystemPrompt"></span>
+            <span class="tooltip-icon" data-i18n-title="hintAISystemPrompt">ⓘ</span>
+          </label>
+          <textarea id="pref-ai-system-prompt" rows="2" data-i18n-placeholder="placeholderAISystemPrompt"></textarea>
         </div>
         <div class="pref-section">
           <div class="pref-ai-test">
