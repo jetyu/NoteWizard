@@ -1,6 +1,6 @@
 {
   "name": "notewizard",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "type": "module",
   "description": "NoteWizard Installer",
   "license": "MIT License",
@@ -11,7 +11,10 @@
     "dev": "nodemon --watch main.js --watch src --exec electron .",
     "dist": "node build.js",
     "dist:win": "electron-builder --win --x64",
-    "dist:all": "electron-builder -wl",
+    "dist:mac": "electron-builder --mac --x64 --arm64",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder -wml",
+    "generate-icons": "node scripts/generate-icons.js",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -33,7 +36,7 @@
   "build": {
     "appId": "com.app.notewizard",
     "productName": "NoteWizard",
-    "artifactName": "NoteWizard_${version}_Windows_${arch}_Setup.${ext}",
+    "artifactName": "NoteWizard_${version}_${os}_${arch}_Setup.${ext}",
     "copyright": "Copyright © 2025 ${author}",
     "directories": {
       "output": "dist",
@@ -56,6 +59,76 @@
         "sha1",
         "sha256"
       ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "src/assets/logo/app-logo.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": null,
+      "entitlementsInherit": null
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "src/assets/logo/app-logo-512.png",
+      "category": "Office",
+      "maintainer": "NoteWizard Team",
+      "vendor": "NoteWizard",
+      "synopsis": "A powerful note-taking application",
+      "description": "NoteWizard is a modern, feature-rich note-taking application for organizing your thoughts and ideas."
     },
     "nsis": {
       "oneClick": false,
