@@ -25,6 +25,7 @@
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
 *NoteWizard 首选项界面*  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_2.png)
+![NoteWizard 界面预览](./doc/preview/NoteWizard_3.png)
 *NoteWizard 关于界面*  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
 
