@@ -69,7 +69,7 @@
 ## 🖥️ 界面介绍
 
 NoteWizard 采用三栏式布局，简洁高效：
-![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
+![NoteWizard 界面预览](../preview/NoteWizard_1.png)
 
 ### 左侧面板 - 文件树
 
@@ -327,8 +327,8 @@ NoteWizard 支持 19 种语言：
 ## ⚙️ 首选项设置
 
 通过 `Ctrl+Shift+P` (或菜单: 文件 → 首选项) 打开首选项面板。
-![NoteWizard 界面预览](./doc/preview/NoteWizard_2.png)
-![NoteWizard 界面预览](./doc/preview/NoteWizard_3.png)
+![NoteWizard 界面预览](../preview/NoteWizard_2.png)
+![NoteWizard 界面预览](../preview/NoteWizard_3.png)
 
 ### 通用设置
 
