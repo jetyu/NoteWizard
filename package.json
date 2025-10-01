@@ -33,6 +33,9 @@
     "nodemon": "^3.0.2",
     "rimraf": "^6.0.1"
   },
+  "optionalDependencies": {
+    "dmg-license": "^1.0.11"
+  },
   "build": {
     "appId": "com.app.notewizard",
     "productName": "NoteWizard",
