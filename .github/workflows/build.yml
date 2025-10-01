@@ -1,10 +1,10 @@
-name: NoteWizard - Build Multi-Platform Installer v1.0.0
+name: Build Multi-Platform
 
 on:
   push:
     tags:
-      - 'v*'
-  workflow_dispatch:
+      - 'v*'  # 仅在创建版本标签时自动构建
+  workflow_dispatch:  # 保留手动触发功能
 
 jobs:
   build:
@@ -84,7 +84,6 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: ${{ github.ref_name }}
           files: |
             artifacts/**/*.exe
             artifacts/**/*.AppImage
@@ -93,7 +92,7 @@ jobs:
             artifacts/**/*.dmg
             artifacts/**/*.zip
           draft: false
-          prerelease: true
+          prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
