@@ -3,6 +3,7 @@
   <h2> NoteWizard </h2>
   <p>一款基于Electron开发的现代化跨平台笔记应用，数据本地存储，让数据始终安全可控。</p>
   
+[![Build Status](https://github.com/jetyu/NoteWizard/workflows/Auto%20Build%20Multi-Platform%20Installer/badge.svg)](https://github.com/jetyu/NoteWizard/actions)
 [![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
 [![Downloads](https://img.shields.io/github/downloads/jetyu/NoteWizard/total?style=flat-square&logo=github)](https://github.com/jetyu/NoteWizard/releases/)
 ![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
