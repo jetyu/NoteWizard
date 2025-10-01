@@ -2,17 +2,9 @@ name: Build Multi-Platform
 
 on:
   push:
-    branches:
-      - main
-      - master
-      - develop
     tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:
+      - 'v*'  # 仅在创建版本标签时自动构建
+  workflow_dispatch:  # 保留手动触发功能
 
 jobs:
   build:
