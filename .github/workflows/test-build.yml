@@ -1,0 +1,95 @@
+name: Test Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        type: choice
+        options:
+          - windows
+          - linux
+          - macos
+          - all
+
+jobs:
+  build-selected:
+    name: Build ${{ github.event.inputs.platform }}
+    runs-on: ${{ 
+      github.event.inputs.platform == 'windows' && 'windows-latest' ||
+      github.event.inputs.platform == 'linux' && 'ubuntu-latest' ||
+      github.event.inputs.platform == 'macos' && 'macos-latest' ||
+      'ubuntu-latest'
+    }}
+    if: github.event.inputs.platform != 'all'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          if [ "${{ github.event.inputs.platform }}" = "windows" ]; then
+            npm run dist:win
+          elif [ "${{ github.event.inputs.platform }}" = "linux" ]; then
+            npm run dist:linux
+          elif [ "${{ github.event.inputs.platform }}" = "macos" ]; then
+            npm run dist:mac
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NoteWizard-${{ github.event.inputs.platform }}
+          path: dist/*
+          retention-days: 7
+
+  build-all:
+    name: Build All Platforms
+    if: github.event.inputs.platform == 'all'
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for platform
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            npm run dist:win
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            npm run dist:linux
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            npm run dist:mac
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NoteWizard-${{ matrix.os }}
+          path: dist/*
+          retention-days: 7

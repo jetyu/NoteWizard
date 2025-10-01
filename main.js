@@ -269,19 +269,25 @@ ipcMain.handle("import-preferences", async () => {
 });
 
 function createTray() {
-  // 创建托盘图标
+  // 创建托盘图标 - 根据平台选择正确的图标格式
+  const iconFileName = process.platform === "win32" 
+    ? "app-logo.ico"   // Windows 使用 .ico 格式
+    : "app-logo-512.png";  // Linux 使用 .png 格式
+  
   const iconPath = path.join(
     __dirname,
     "src",
     "assets",
     "logo",
-    "app-logo.ico"
+    iconFileName
   );
 
   // 创建原生图片对象
   let trayIcon = nativeImage.createFromPath(iconPath);
 
   if (process.platform === "win32") {
+    trayIcon = trayIcon.resize({ width: 32, height: 32 });
+  } else {
     trayIcon = trayIcon.resize({ width: 32, height: 32 });
   }
 
