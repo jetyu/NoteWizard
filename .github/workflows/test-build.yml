@@ -16,12 +16,7 @@ on:
 jobs:
   build-selected:
     name: Build ${{ github.event.inputs.platform }}
-    runs-on: ${{ 
-      github.event.inputs.platform == 'windows' && 'windows-latest' ||
-      github.event.inputs.platform == 'linux' && 'ubuntu-latest' ||
-      github.event.inputs.platform == 'macos' && 'macos-latest' ||
-      'ubuntu-latest'
-    }}
+    runs-on: ${{ (github.event.inputs.platform == 'windows' && 'windows-latest') || (github.event.inputs.platform == 'linux' && 'ubuntu-latest') || (github.event.inputs.platform == 'macos' && 'macos-latest') || 'ubuntu-latest' }}
     if: github.event.inputs.platform != 'all'
     
     steps:
