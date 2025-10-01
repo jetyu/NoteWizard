@@ -32,17 +32,25 @@
 *NoteWizard 关于界面*  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
 
+
+## 支持平台
+
+本项目当前支持以下操作系统与架构：
+
+| 平台 | 支持版本 | 架构/芯片类型 | 安装包类型 | 兼容性 |
+|------|-----------|----------------|--------------|----------|
+| **Windows** | Windows 10 / Windows 11 | x64 | `.exe` | ✅ 完全支持 |
+| **Linux** | Debian / Ubuntu / RedHat / Fedora | x64 | `.deb` / `.AppImage` | ✅ 完全支持 |
+| **macOS** | macOS（Intel 芯片 / Apple Silicon） | x64 / arm64 | `.dmg` | ✅ 完全支持 |
+
+> 💡 **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
+
 ## 下载地址
-支持的平台: Windows、Linux、macOS
+使用`Github Workflows`自动构建操作系统平台安装包
+
+**请根据对应平台下载相应安装包。**
 
 [下载地址](https://github.com/jetyu/NoteWizard/releases)
-
-### 1. **Windows (Windows 11/Windows 10 64bit)**
-- **构建脚本**: `npm run dist:win`
-### 2. **Linux (Debian/Ubuntu/RedHat/Fedora)** 
-- **构建脚本**: `npm run dist:linux`
-### 3. **macOS (Intel 芯片/Apple Silicon)**
-- **构建脚本**: `npm run dist:mac`
 
 ## 快速开始
 
