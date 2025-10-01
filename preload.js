@@ -112,5 +112,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-   //console.log('Preload script loaded successfully');
 });

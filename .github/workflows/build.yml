@@ -3,8 +3,8 @@ name: Build Multi-Platform
 on:
   push:
     tags:
-      - 'v*'  # 仅在创建版本标签时自动构建
-  workflow_dispatch:  # 保留手动触发功能
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:

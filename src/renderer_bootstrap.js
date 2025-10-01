@@ -1,4 +1,3 @@
-// Bootstrap entry for renderer process (modularized)
 import { onDomReadyInitEditor } from './renderer/editor.js';
 import { setupOutlineWhenReady } from './renderer/outline.js';
 import { initializeFileWorkspace, setupEditorEvents } from './renderer/files.js';
@@ -17,7 +16,6 @@ function setupLeftPanelUI() {
   const tabContents = document.querySelectorAll('.tab-content');
 
   if (collapseBtn && leftPanel) {
-    // The icon is now managed by CSS
     collapseBtn.setAttribute('aria-label', '折叠面板');
     collapseBtn.title = '折叠面板';
     

@@ -9,12 +9,12 @@ const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ==================== i18n Support ====================
+// ==================== 国际化支持 ====================
 const DEFAULT_LANG = "zh-CN";
 let currentLang = DEFAULT_LANG;
 let translations = {};
 
-// Load language file
+// 加载语言文件
 function loadLanguage(lang) {
   try {
     const langFile = path.join(__dirname, "src", "locales", `${lang}.json`);
@@ -30,12 +30,12 @@ function loadLanguage(lang) {
   return false;
 }
 
-// Get translation
+// 获取翻译
 function t(key) {
   return translations[key] || key;
 }
 
-// Get user's preferred language from preferences
+// 从首选项获取用户的首选语言
 function getUserLanguage() {
   try {
     const prefsPath = path.join(app.getPath("userData"), "preferences.json");
@@ -49,21 +49,21 @@ function getUserLanguage() {
   return DEFAULT_LANG;
 }
 
-// Initialize language
+// 初始化语言
 function initLanguage() {
   const userLang = getUserLanguage();
   if (!loadLanguage(userLang)) {
     loadLanguage(DEFAULT_LANG);
   }
 }
-// ==================== End i18n Support ====================
+// ==================== 国际化支持结束 ====================
 
 // 启用详细警告跟踪和日志记录
 process.traceProcessWarnings = true;
 
-// 启用Chromium的详细日志
+// 启用 Chromium 的详细日志
 app.commandLine.appendSwitch('enable-logging');
-app.commandLine.appendSwitch('log-level', '0'); // 0=INFO, 1=WARNING, 2=ERROR
+app.commandLine.appendSwitch('log-level', '0'); // 0=信息, 1=警告, 2=错误
 
 // 在应用启动前设置应用名称
 if (process.platform === "win32") {
@@ -74,10 +74,6 @@ app.setName("NoteWizard");
 // 主窗口和托盘引用
 let win = null;
 let tray = null;
-
-// 添加调试日志
-//console.log('argv:', process.argv);
-//console.log('user data:', app.getPath('userData'));
 
 // 只允许一个实例运行
 const gotTheLock = app.requestSingleInstanceLock();
@@ -339,7 +335,7 @@ function createTray() {
   });
 }
 
-// Create application menu
+// 创建应用程序菜单
 function createMenu(iconPath) {
   const menuTemplate = [
     {
@@ -621,11 +617,11 @@ function createWindow() {
     win.webContents.openDevTools();
   }
 
-  // Set window title with app name
+  // 设置窗口标题
   win.setTitle("NoteWizard");
   win.loadFile("src/index.html");
 
-  // Create menu
+  // 创建菜单
   createMenu(iconPath);
 
   ipcMain.removeAllListeners("preview-state-changed");
@@ -683,7 +679,7 @@ ipcMain.handle("save-file-content", async (event, { content, filePath }) => {
   }
 });
 
-// Handle directory selection dialog
+// 处理目录选择对话框
 ipcMain.handle("select-directory", async (event, defaultPath) => {
   const result = await dialog.showOpenDialog(win, {
     defaultPath: defaultPath || app.getPath("documents"),
@@ -692,7 +688,7 @@ ipcMain.handle("select-directory", async (event, defaultPath) => {
   return result.canceled ? null : result.filePaths[0];
 });
 
-// --- Preload bridged FS handlers ---
+// --- 预加载桥接的文件系统处理器 ---
 ipcMain.handle("fs:readFile", async (_event, filePath, encoding) => {
   return fs.promises.readFile(filePath, encoding);
 });
@@ -766,19 +762,19 @@ ipcMain.handle("fs:rename", async (_event, oldPath, newPath) => {
   return true;
 });
 
-// --- Path handlers ---
+// --- 路径处理器 ---
 ipcMain.handle("path:join", (_event, ...segments) => path.join(...segments));
 ipcMain.handle("path:dirname", (_event, targetPath) => path.dirname(targetPath));
 ipcMain.handle("path:basename", (_event, targetPath, ext) => path.basename(targetPath, ext));
 ipcMain.handle("path:extname", (_event, targetPath) => path.extname(targetPath));
 ipcMain.handle("path:resolve", (_event, ...segments) => path.resolve(...segments));
 
-// --- OS handlers ---
+// --- 操作系统处理器 ---
 ipcMain.handle("os:homedir", () => os.homedir());
 ipcMain.handle("os:platform", () => os.platform());
 ipcMain.handle("os:arch", () => os.arch());
 
-// --- Dialog handlers ---
+// --- 对话框处理器 ---
 ipcMain.handle("dialog:showOpenDialog", async (_event, options) => {
   const result = await dialog.showOpenDialog(win, options);
   return result;
@@ -792,19 +788,19 @@ ipcMain.handle("dialog:showMessageBox", async (_event, options) => {
   return dialog.showMessageBox(win, options);
 });
 
-// --- App handlers ---
+// --- 应用程序处理器 ---
 ipcMain.handle("app:getPath", (_event, name) => app.getPath(name));
 ipcMain.handle("app:getAppPath", () => app.getAppPath());
 ipcMain.handle("app:getVersion", () => app.getVersion());
 ipcMain.handle("app:openPath", (_event, targetPath) => shell.openPath(targetPath));
 ipcMain.handle("app:showItemInFolder", (_event, targetPath) => shell.showItemInFolder(targetPath));
 
-// Get default note save path
+// 获取默认笔记保存路径
 ipcMain.handle("get-default-save-path", () => {
   return path.join(app.getPath("documents"), "NoteWizard");
 });
 
-// Query current startup (open at login) setting
+// 查询当前开机启动设置
 ipcMain.handle("get-startup-enabled", () => {
   try {
     const settings = app.getLoginItemSettings();
@@ -814,14 +810,14 @@ ipcMain.handle("get-startup-enabled", () => {
   }
 });
 
-// Set startup (open at login) using Electron API (registry on Windows)
+// 使用 Electron API 设置开机启动（Windows 上使用注册表）
 ipcMain.handle("set-startup-enabled", (event, enabled) => {
   try {
     const options = {
       openAtLogin: !!enabled,
       openAsHidden: true,
     };
-    // Explicitly set path on Windows to ensure correct exe is used
+    // 在 Windows 上显式设置路径以确保使用正确的可执行文件
     if (process.platform === "win32") {
       options.path = process.execPath;
     }
@@ -832,7 +828,7 @@ ipcMain.handle("set-startup-enabled", (event, enabled) => {
   }
 });
 
-// Listen for language change from renderer process
+// 监听来自渲染进程的语言更改
 ipcMain.on("language-changed", (event, lang) => {
   if (loadLanguage(lang)) {
     const iconPath =
@@ -840,10 +836,10 @@ ipcMain.on("language-changed", (event, lang) => {
         ? path.join(__dirname, "src", "assets", "logo", "app-logo.ico")
         : path.join(__dirname, "src", "assets", "logo", "app-logo-512.png");
     
-    // Rebuild menu with new language
+    // 使用新语言重建菜单
     createMenu(iconPath);
     
-    // Rebuild tray with new language
+    // 使用新语言重建托盘
     if (tray && process.platform !== "darwin") {
       tray.destroy();
       createTray();
@@ -853,12 +849,12 @@ ipcMain.on("language-changed", (event, lang) => {
 
 // 应用就绪
 app.whenReady().then(() => {
-  // Initialize language before creating window
+  // 在创建窗口前初始化语言
   initLanguage();
   
   createWindow();
 
-  // macOS应用激活
+  // macOS 应用激活
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -885,7 +881,7 @@ process.on('uncaughtException', (error) => {
   dialog.showErrorBox('应用程序错误', '发生未处理的错误: ' + error.message);
 });
 
-// 未处理的Promise拒绝
+// 未处理的 Promise 拒绝
 process.on('unhandledRejection', (reason, promise) => {
   console.error('未处理的Promise拒绝:', reason);
   dialog.showErrorBox('Promise错误', '未处理的Promise拒绝: ' + (reason instanceof Error ? reason.message : String(reason)));

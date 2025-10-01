@@ -20,11 +20,11 @@ function initializeEditor() {
             return handleTabKey(cm);
           },
           'Esc': function(cm) {
-            // ESC键：取消AI建议
+            // ESC 键：取消 AI 建议
             return handleEscKey(cm);
           },
           'Ctrl-/': function(cm) {
-            // Ctrl+/ 快捷键：隐藏AI建议
+            // Ctrl+/ 快捷键：隐藏 AI 建议
             hideAISuggestion();
           }
         },

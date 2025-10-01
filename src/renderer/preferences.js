@@ -792,7 +792,7 @@ if (testButton) {
       e.stopPropagation();
       // 显示确认对话框
       if (confirm(i18n.t('resetConfirmNotify'))) {
-        // Language -> zh-CN
+        // 语言 -> zh-CN
         if (i18n) {
           try {
             i18n.setLanguage('zh-CN');
@@ -804,7 +804,7 @@ if (testButton) {
         }
         if (langSelect) langSelect.value = 'zh-CN';
 
-        // Theme -> system
+        // 主题 -> 系统
         localStorage.setItem('themeMode', 'system');
         const effective = getSystemPrefersDark() ? 'dark' : 'light';
         localStorage.setItem('theme', effective);
@@ -812,7 +812,7 @@ if (testButton) {
         if (select) select.value = 'system';
         applyThemeByMode('system');
 
-        // Fonts -> 14
+        // 字体 -> 14
         const defaultFontSize = 14;
         const defaultFontFamily = 'Arial, sans-serif';
 
