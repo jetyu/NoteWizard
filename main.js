@@ -9,6 +9,55 @@ const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ==================== i18n Support ====================
+const DEFAULT_LANG = "zh-CN";
+let currentLang = DEFAULT_LANG;
+let translations = {};
+
+// Load language file
+function loadLanguage(lang) {
+  try {
+    const langFile = path.join(__dirname, "src", "locales", `${lang}.json`);
+    if (fs.existsSync(langFile)) {
+      const data = fs.readFileSync(langFile, "utf8");
+      translations = JSON.parse(data);
+      currentLang = lang;
+      return true;
+    }
+  } catch (error) {
+    console.error(`Failed to load language ${lang}:`, error);
+  }
+  return false;
+}
+
+// Get translation
+function t(key) {
+  return translations[key] || key;
+}
+
+// Get user's preferred language from preferences
+function getUserLanguage() {
+  try {
+    const prefsPath = path.join(app.getPath("userData"), "preferences.json");
+    if (fs.existsSync(prefsPath)) {
+      const prefs = JSON.parse(fs.readFileSync(prefsPath, "utf8"));
+      return prefs.language || DEFAULT_LANG;
+    }
+  } catch (error) {
+    console.error("Failed to read user language preference:", error);
+  }
+  return DEFAULT_LANG;
+}
+
+// Initialize language
+function initLanguage() {
+  const userLang = getUserLanguage();
+  if (!loadLanguage(userLang)) {
+    loadLanguage(DEFAULT_LANG);
+  }
+}
+// ==================== End i18n Support ====================
+
 // 启用详细警告跟踪和日志记录
 process.traceProcessWarnings = true;
 
@@ -240,7 +289,7 @@ function createTray() {
   tray = new Tray(trayIcon);
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: "打开 NoteWizard",
+      label: t("tray.open"),
       click: () => {
         if (win) {
           if (win.isMinimized()) win.restore();
@@ -251,7 +300,7 @@ function createTray() {
     },
     { type: "separator" },
     {
-      label: "退出",
+      label: t("tray.quit"),
       click: () => {
         // 关闭所有窗口
         const windows = BrowserWindow.getAllWindows();
@@ -284,50 +333,14 @@ function createTray() {
   });
 }
 
-function createWindow() {
-  // 设置应用图标
-  const iconPath =
-    process.platform === "win32"
-      ? path.join(__dirname, "src", "assets", "logo", "app-logo.ico")
-      : path.join(__dirname, "src", "assets", "logo", "app-logo-512.png");
-
-  // 当所有窗口都关闭时，不退出应用
-  app.on("window-all-closed", (e) => {
-    if (process.platform !== "darwin") {
-      e.preventDefault();
-    }
-  });
-
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    icon: iconPath,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false,
-      preload: path.join(__dirname, 'preload.js'),
-      webSecurity: true,
-      allowRunningInsecureContent: false,
-      experimentalFeatures: false
-    },
-  });
-
-  // 开发工具
-  if (process.env.NODE_ENV === 'development') {
-    win.webContents.openDevTools();
-  }
-
-  // Set window title with app name
-  win.setTitle("NoteWizard");
-  win.loadFile("src/index.html");
-
+// Create application menu
+function createMenu(iconPath) {
   const menuTemplate = [
     {
-      label: "文件",
+      label: t("menu.file"),
       submenu: [
         {
-          label: "打开",
+          label: t("menu.file.open"),
           accelerator: "CmdOrCtrl+O",
           click: async () => {
             const { canceled, filePaths } = await dialog.showOpenDialog(win, {
@@ -344,7 +357,7 @@ function createWindow() {
           },
         },
         {
-          label: "保存",
+          label: t("menu.file.save"),
           accelerator: "CmdOrCtrl+S",
           click: () => {
             win.webContents.send("save-file");
@@ -352,7 +365,7 @@ function createWindow() {
         },
         { type: "separator" },
         {
-          label: "首选项",
+          label: t("menu.file.preferences"),
           accelerator: "Ctrl+Shift+P",
           click: () => {
             if (win && !win.isDestroyed()) {
@@ -361,7 +374,7 @@ function createWindow() {
           },
         },
         {
-          label: "退出",
+          label: t("menu.file.quit"),
           click: () => {
             // 关闭所有窗口
             const windows = BrowserWindow.getAllWindows();
@@ -377,14 +390,14 @@ function createWindow() {
       ],
     },
     {
-      label: "视图",
+      label: t("menu.view"),
       submenu: [
         {
-          label: "预览面板",
+          label: t("menu.view.previewPanel"),
           submenu: [
             {
               id: "preview-open",
-              label: "打开",
+              label: t("menu.view.previewPanel.open"),
               accelerator: "Ctrl+Alt+P",
               click: () => {
                 if (win && !win.isDestroyed()) {
@@ -395,7 +408,7 @@ function createWindow() {
 
             {
               id: "preview-close",
-              label: "关闭",
+              label: t("menu.view.previewPanel.close"),
               accelerator: "Ctrl+Alt+Shift+P",
               click: () => {
                 if (win && !win.isDestroyed()) {
@@ -405,7 +418,7 @@ function createWindow() {
             },
             {
               id: "preview-toggle",
-              label: "切换",
+              label: t("menu.view.previewPanel.toggle"),
               accelerator: "Ctrl+Alt+\\",
               click: () => {
                 if (win && !win.isDestroyed()) {
@@ -418,10 +431,10 @@ function createWindow() {
       ],
     },
     {
-      label: "编辑",
+      label: t("menu.edit"),
       submenu: [
         {
-          label: "回收站",
+          label: t("menu.edit.trash"),
           accelerator: "Ctrl+Shift+T",
           click: () => {
             if (win && !win.isDestroyed()) {
@@ -430,26 +443,26 @@ function createWindow() {
           },
         },
         { type: "separator" },
-        { role: "undo", label: "撤销" },
-        { role: "redo", label: "重做" },
+        { role: "undo", label: t("menu.edit.undo") },
+        { role: "redo", label: t("menu.edit.redo") },
         { type: "separator" },
-        { role: "cut", label: "剪切" },
-        { role: "copy", label: "复制" },
-        { role: "paste", label: "粘贴" },
+        { role: "cut", label: t("menu.edit.cut") },
+        { role: "copy", label: t("menu.edit.copy") },
+        { role: "paste", label: t("menu.edit.paste") },
       ],
     },
 
     {
-      label: "帮助",
+      label: t("menu.help"),
       submenu: [
         {
-          label: "使用教程",
+          label: t("menu.help.tutorial"),
           click: () => {
             shell.openExternal("https://markdown.com.cn/intro.html");
           },
         },
         {
-          label: "调试工具",
+          label: t("menu.help.devTools"),
           click: () => {
             if (win && !win.isDestroyed()) {
               win.webContents.toggleDevTools();
@@ -458,26 +471,26 @@ function createWindow() {
         },
         { type: "separator" },
         {
-          label: "官方网站",
+          label: t("menu.help.website"),
           click: () => {
             shell.openExternal("https://github.com/jetyu/NoteWizard");
           },
         },
         {
-          label: "发送反馈",
+          label: t("menu.help.feedback"),
           click: () => {
             shell.openExternal("https://github.com/jetyu/NoteWizard/issues");
           },
         },
         { type: "separator" },
         {
-          label: "软件更新",
+          label: t("menu.help.update"),
           click: () => {
             shell.openExternal("https://github.com/jetyu/NoteWizard/releases");
           },
         },
         {
-          label: "更新日志",
+          label: t("menu.help.changelog"),
           click: () => {
             if (win && !win.isDestroyed()) {
               const aboutWindow = new BrowserWindow({
@@ -515,7 +528,7 @@ function createWindow() {
           },
         },
         {
-          label: "关于 NoteWizard",
+          label: t("menu.help.about"),
           click: () => {
             if (win && !win.isDestroyed()) {
               const aboutWindow = new BrowserWindow({
@@ -566,6 +579,48 @@ function createWindow() {
       closeItem.enabled = true;
     }
   } catch { }
+}
+
+function createWindow() {
+  // 设置应用图标
+  const iconPath =
+    process.platform === "win32"
+      ? path.join(__dirname, "src", "assets", "logo", "app-logo.ico")
+      : path.join(__dirname, "src", "assets", "logo", "app-logo-512.png");
+
+  // 当所有窗口都关闭时，不退出应用
+  app.on("window-all-closed", (e) => {
+    if (process.platform !== "darwin") {
+      e.preventDefault();
+    }
+  });
+
+  win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    icon: iconPath,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false
+    },
+  });
+
+  // 开发工具
+  if (process.env.NODE_ENV === 'development') {
+    win.webContents.openDevTools();
+  }
+
+  // Set window title with app name
+  win.setTitle("NoteWizard");
+  win.loadFile("src/index.html");
+
+  // Create menu
+  createMenu(iconPath);
 
   ipcMain.removeAllListeners("preview-state-changed");
   ipcMain.on("preview-state-changed", (event, payload) => {
@@ -771,8 +826,30 @@ ipcMain.handle("set-startup-enabled", (event, enabled) => {
   }
 });
 
+// Listen for language change from renderer process
+ipcMain.on("language-changed", (event, lang) => {
+  if (loadLanguage(lang)) {
+    const iconPath =
+      process.platform === "win32"
+        ? path.join(__dirname, "src", "assets", "logo", "app-logo.ico")
+        : path.join(__dirname, "src", "assets", "logo", "app-logo-512.png");
+    
+    // Rebuild menu with new language
+    createMenu(iconPath);
+    
+    // Rebuild tray with new language
+    if (tray && process.platform !== "darwin") {
+      tray.destroy();
+      createTray();
+    }
+  }
+});
+
 // 应用就绪
 app.whenReady().then(() => {
+  // Initialize language before creating window
+  initLanguage();
+  
   createWindow();
 
   // macOS应用激活

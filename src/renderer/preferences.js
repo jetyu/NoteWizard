@@ -224,7 +224,7 @@ function loadAISettings() {
   
   // 加载系统提示词
   if (systemPromptInput) {
-    systemPromptInput.value = settings.systemPrompt;
+    systemPromptInput.value = settings.systemPrompt || '';
   }
   
   // 更新相关字段的可用性状态
