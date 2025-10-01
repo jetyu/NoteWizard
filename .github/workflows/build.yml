@@ -34,10 +34,15 @@ jobs:
             artifact_pattern: 'dist/*.exe'
           - os: ubuntu-latest
             platform: linux
-            artifact_pattern: 'dist/*{.AppImage,.deb,.rpm}'
+            artifact_pattern: |
+              dist/*.AppImage
+              dist/*.deb
+              dist/*.rpm
           - os: macos-latest
             platform: mac
-            artifact_pattern: 'dist/*{.dmg,.zip}'
+            artifact_pattern: |
+              dist/*.dmg
+              dist/*.zip
 
     steps:
       - name: Checkout code

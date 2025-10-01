@@ -3,6 +3,7 @@ import { renderPreview } from './preview/preview.js';
 import * as vfs from './vfs.js';
 import * as tree from './tree.js';
 import * as outline from './outline.js';
+import { t } from './i18n.js';
 
 const electronAPI = window.electronAPI;
 
@@ -105,27 +106,27 @@ function showContextMenu(node, e) {
   // 1. 工作区（空白区域）
   if (isRoot) {
     menuHTML.push(
-      '<div class="menu-item" data-action="new-note">新建笔记</div>',
-      '<div class="menu-item" data-action="new-notebook">新建笔记本</div>'
+      `<div class="menu-item" data-action="new-note">${t('contextMenu.newNote')}</div>`,
+      `<div class="menu-item" data-action="new-notebook">${t('contextMenu.newNotebook')}</div>`
     );
   }
   // 2. 笔记文件
   else if (isFile) {
     menuHTML.push(
-      '<div class="menu-item" data-action="open">打开</div>',
-      '<div class="menu-item" data-action="rename">重命名</div>',
-      '<div class="menu-item" data-action="delete">删除</div>',
-      '<div class="menu-item" data-action="showInFolder">打开文件所在位置</div>',
-      '<div class="menu-item" data-action="properties">属性</div>'
+      `<div class="menu-item" data-action="open">${t('contextMenu.open')}</div>`,
+      `<div class="menu-item" data-action="rename">${t('contextMenu.rename')}</div>`,
+      `<div class="menu-item" data-action="delete">${t('contextMenu.delete')}</div>`,
+      `<div class="menu-item" data-action="showInFolder">${t('contextMenu.showInFolder')}</div>`,
+      `<div class="menu-item" data-action="properties">${t('contextMenu.properties')}</div>`
     );
   }
   // 3. 笔记本文件夹
   else if (isFolder) {
     menuHTML.push(
-      '<div class="menu-item" data-action="new-note">新建笔记</div>',
-      '<div class="menu-item" data-action="new-notebook">新建笔记本</div>',
-      '<div class="menu-item" data-action="rename">重命名</div>',
-      '<div class="menu-item" data-action="delete">删除</div>'
+      `<div class="menu-item" data-action="new-note">${t('contextMenu.newNote')}</div>`,
+      `<div class="menu-item" data-action="new-notebook">${t('contextMenu.newNotebook')}</div>`,
+      `<div class="menu-item" data-action="rename">${t('contextMenu.rename')}</div>`,
+      `<div class="menu-item" data-action="delete">${t('contextMenu.delete')}</div>`
     );
   }
 
@@ -423,8 +424,8 @@ function initializeFileWorkspace() {
     menu.style.top = (rect.bottom + 6) + 'px';
     menu.style.zIndex = '1000';
     menu.innerHTML = `
-      <div class="menu-item" data-action="new-note">新建笔记</div>
-      <div class="menu-item" data-action="new-notebook">新建笔记本</div>
+      <div class="menu-item" data-action="new-note">${t('contextMenu.newNote')}</div>
+      <div class="menu-item" data-action="new-notebook">${t('contextMenu.newNotebook')}</div>
     `;
     document.body.appendChild(menu);
 

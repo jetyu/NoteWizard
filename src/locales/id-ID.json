@@ -131,5 +131,12 @@
   "menu.help.changelog": "Log Perubahan",
   "menu.help.about": "Tentang NoteWizard",
   "tray.open": "Buka NoteWizard",
-  "tray.quit": "Keluar"
+  "tray.quit": "Keluar",
+  "contextMenu.newNote": "Catatan Baru",
+  "contextMenu.newNotebook": "Buku Catatan Baru",
+  "contextMenu.open": "Buka",
+  "contextMenu.rename": "Ubah Nama",
+  "contextMenu.delete": "Hapus",
+  "contextMenu.showInFolder": "Tampilkan di Folder",
+  "contextMenu.properties": "Properti"
 }

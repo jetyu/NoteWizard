@@ -131,5 +131,12 @@
   "menu.help.changelog": "Registro delle modifiche",
   "menu.help.about": "Informazioni su NoteWizard",
   "tray.open": "Apri NoteWizard",
-  "tray.quit": "Esci"
+  "tray.quit": "Esci",
+  "contextMenu.newNote": "Nuova nota",
+  "contextMenu.newNotebook": "Nuovo quaderno",
+  "contextMenu.open": "Apri",
+  "contextMenu.rename": "Rinomina",
+  "contextMenu.delete": "Elimina",
+  "contextMenu.showInFolder": "Mostra nella cartella",
+  "contextMenu.properties": "Proprietà"
 }

@@ -131,5 +131,12 @@
   "menu.help.changelog": "Nhật ký thay đổi",
   "menu.help.about": "Giới thiệu về NoteWizard",
   "tray.open": "Mở NoteWizard",
-  "tray.quit": "Thoát"
+  "tray.quit": "Thoát",
+  "contextMenu.newNote": "Ghi chú mới",
+  "contextMenu.newNotebook": "Sổ tay mới",
+  "contextMenu.open": "Mở",
+  "contextMenu.rename": "Đổi tên",
+  "contextMenu.delete": "Xóa",
+  "contextMenu.showInFolder": "Hiển thị trong thư mục",
+  "contextMenu.properties": "Thuộc tính"
 }

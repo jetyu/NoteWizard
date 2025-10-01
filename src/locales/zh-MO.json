@@ -131,5 +131,12 @@
   "menu.help.changelog": "更新日誌",
   "menu.help.about": "關於 NoteWizard",
   "tray.open": "開啟 NoteWizard",
-  "tray.quit": "結束"
+  "tray.quit": "結束",
+  "contextMenu.newNote": "新增筆記",
+  "contextMenu.newNotebook": "新增筆記本",
+  "contextMenu.open": "開啟",
+  "contextMenu.rename": "重新命名",
+  "contextMenu.delete": "刪除",
+  "contextMenu.showInFolder": "在資料夾中顯示",
+  "contextMenu.properties": "屬性"
 }

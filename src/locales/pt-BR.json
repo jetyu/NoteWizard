@@ -128,8 +128,15 @@
   "menu.help.website": "Site Oficial",
   "menu.help.feedback": "Enviar Feedback",
   "menu.help.update": "Atualização de Software",
-  "menu.help.changelog": "Registro de Alterações",
+  "menu.help.changelog": "Registro de alterações",
   "menu.help.about": "Sobre o NoteWizard",
   "tray.open": "Abrir NoteWizard",
-  "tray.quit": "Sair"
+  "tray.quit": "Sair",
+  "contextMenu.newNote": "Nova nota",
+  "contextMenu.newNotebook": "Novo caderno",
+  "contextMenu.open": "Abrir",
+  "contextMenu.rename": "Renomear",
+  "contextMenu.delete": "Excluir",
+  "contextMenu.showInFolder": "Mostrar na pasta",
+  "contextMenu.properties": "Propriedades"
 }

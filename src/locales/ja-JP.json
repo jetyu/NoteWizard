@@ -131,5 +131,12 @@
   "menu.help.changelog": "変更履歴",
   "menu.help.about": "NoteWizardについて",
   "tray.open": "NoteWizardを開く",
-  "tray.quit": "終了"
+  "tray.quit": "終了",
+  "contextMenu.newNote": "新しいノート",
+  "contextMenu.newNotebook": "新しいノートブック",
+  "contextMenu.open": "開く",
+  "contextMenu.rename": "名前を変更",
+  "contextMenu.delete": "削除",
+  "contextMenu.showInFolder": "フォルダーで表示",
+  "contextMenu.properties": "プロパティ"
 }

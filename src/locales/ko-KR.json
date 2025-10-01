@@ -123,13 +123,4 @@
   "menu.edit.copy": "복사",
   "menu.edit.paste": "붙여넣기",
   "menu.help": "도움말",
-  "menu.help.tutorial": "튜토리얼",
-  "menu.help.devTools": "개발자 도구",
-  "menu.help.website": "공식 웹사이트",
-  "menu.help.feedback": "피드백 보내기",
-  "menu.help.update": "소프트웨어 업데이트",
-  "menu.help.changelog": "변경 로그",
-  "menu.help.about": "NoteWizard 정보",
-  "tray.open": "NoteWizard 열기",
-  "tray.quit": "종료"
 }
