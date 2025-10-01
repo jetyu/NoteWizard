@@ -11,8 +11,6 @@
 
 </div>
 
-
-
 ## 功能特点
 - **Markdown支持**：实时预览 Markdown 渲染效果
 - **跨平台**：支持 Windows、macOS 和 Linux 系统
@@ -30,7 +28,16 @@
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
 
 ## 下载地址
+支持的平台: Windows、Linux、macOS
+
 [下载地址](https://github.com/jetyu/NoteWizard/releases)
+
+### 1. **Windows (Windows 11/Windows 10 64bit)**
+- **构建脚本**: `npm run dist:win`
+### 2. **Linux (Debian/Ubuntu/RedHat/Fedora)** 
+- **构建脚本**: `npm run dist:linux`
+### 3. **macOS (Intel 芯片/Apple Silicon)**
+- **构建脚本**: `npm run dist:mac`
 
 ## 快速开始
 
