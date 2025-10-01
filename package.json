@@ -1,6 +1,6 @@
 {
   "name": "notewizard",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "NoteWizard Installer",
   "license": "MIT License",
@@ -39,7 +39,6 @@
   "build": {
     "appId": "com.app.notewizard",
     "productName": "NoteWizard",
-    "artifactName": "NoteWizard_${version}_${os}_${arch}_Setup.${ext}",
     "copyright": "Copyright © 2025 ${author}",
     "directories": {
       "output": "dist",
@@ -55,6 +54,7 @@
           ]
         }
       ],
+      "artifactName": "NoteWizard_${version}_Windows_${arch}_Setup.${ext}",
       "icon": "src/assets/logo/app-logo.ico",
       "publisherName": "NoteWizard",
       "verifyUpdateCodeSignature": false,
@@ -80,6 +80,7 @@
           ]
         }
       ],
+      "artifactName": "NoteWizard_${version}_macOS_${arch}_Setup.${ext}",
       "icon": "src/assets/logo/app-logo.icns",
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
@@ -126,6 +127,7 @@
           ]
         }
       ],
+      "artifactName": "NoteWizard_${version}_Linux_${arch}_Setup.${ext}",
       "icon": "src/assets/logo/app-logo-512.png",
       "category": "Office",
       "maintainer": "NoteWizard Team",
