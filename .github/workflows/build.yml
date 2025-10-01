@@ -1,26 +1,17 @@
-name: NoteWizard - Build Multi-Platform Installer
+name: NoteWizard - Build Multi-Platform Installer v1.0.0
 
 on:
   push:
     tags:
-      - 'v*' # 仅在 v 开头的 tag 推送时触发
-  workflow_dispatch: # 允许手动触发
-
-permissions:
-  contents: write # 允许创建 release
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-
+    
     strategy:
-      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
         include:
@@ -33,7 +24,7 @@ jobs:
           - os: macos-latest
             platform: mac
             artifact_pattern: 'dist/*.{dmg,zip}'
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,73 +32,68 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: npm ci
 
       - name: Build for ${{ matrix.platform }}
-        run: npm run dist:${{ matrix.platform }} --verbose
+        run: npm run dist:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          CSC_FOR_PULL_REQUEST: true
-          # macOS 关闭签名和 license（避免 dmg-license 报错）
-          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
-          USE_HARD_LINKS: false
 
       - name: List dist directory (Debug)
         run: |
           echo "Contents of dist directory:"
-          ls -R dist/
+          ls -la dist/
         shell: bash
 
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: NoteWizard-${{ matrix.platform }}-${{ github.sha }}
-          path: ${{ matrix.artifact_pattern }}
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.dmg
+            dist/*.zip
           retention-days: 30
           if-no-files-found: warn
 
   release:
-    name: Create GitHub Release
+    name: Create Release
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: List downloaded artifacts (Debug)
-        run: |
-          echo "Artifacts downloaded:"
-          ls -R artifacts/
-        shell: bash
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
           draft: false
-          prerelease: false
+          prerelease: true
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
