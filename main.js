@@ -797,7 +797,16 @@ ipcMain.handle("app:showItemInFolder", (_event, targetPath) => shell.showItemInF
 
 // 获取默认笔记保存路径
 ipcMain.handle("get-default-save-path", () => {
-  return path.join(app.getPath("documents"), "NoteWizard");
+  const appName = 'NoteWizard';
+  const homeDir = os.homedir();
+  
+  if (process.platform === 'win32') {
+    return path.join(homeDir, 'Documents', appName);
+  }
+  if (process.platform === 'darwin') {
+    return path.join(homeDir, 'Library', 'Application Support', appName);
+  }
+  return path.join(homeDir, `.${appName}`);
 });
 
 // 查询当前开机启动设置
