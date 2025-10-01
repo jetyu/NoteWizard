@@ -40,7 +40,7 @@
 | 平台 | 支持版本 | 架构/芯片类型 | 安装包类型 | 兼容性 |
 |------|-----------|----------------|--------------|----------|
 | **Windows** | Windows 10 / Windows 11 | x64 | `.exe` | ✅ 完全支持 |
-| **Linux** | Debian / Ubuntu / RedHat / Fedora | x64 | `.deb` / `.AppImage` | ✅ 完全支持 |
+| **Linux** | Debian / Ubuntu / RedHat / Fedora | x64 | `.deb` / `.rpm` / `.AppImage` | ✅ 完全支持 |
 | **macOS** | macOS（Intel 芯片 / Apple Silicon） | x64 / arm64 | `.dmg` | ✅ 完全支持 |
 
 > 💡 **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
