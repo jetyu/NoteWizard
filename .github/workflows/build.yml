@@ -1,13 +1,13 @@
-name: Auto Build Multi-Platform Installer
+name: NoteWizard - Build Multi-Platform Installer
 
 on:
   push:
     tags:
-      - 'v*'
-  workflow_dispatch:
+      - 'v*' # 仅在 v 开头的 tag 推送时触发
+  workflow_dispatch: # 允许手动触发
 
 permissions:
-  contents: write
+  contents: write # 允许创建 release
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +18,7 @@ jobs:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -33,23 +33,27 @@ jobs:
           - os: macos-latest
             platform: mac
             artifact_pattern: 'dist/*.{dmg,zip}'
-    
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - uses: actions/cache@v3
+      - name: Cache node_modules
+        uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build for ${{ matrix.platform }}
         run: npm run dist:${{ matrix.platform }} --verbose
@@ -57,11 +61,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           CSC_FOR_PULL_REQUEST: true
+          # macOS 关闭签名和 license（避免 dmg-license 报错）
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
+          USE_HARD_LINKS: false
 
       - name: List dist directory (Debug)
-        run: ls -la dist/
+        run: |
+          echo "Contents of dist directory:"
+          ls -R dist/
+        shell: bash
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: NoteWizard-${{ matrix.platform }}-${{ github.sha }}
           path: ${{ matrix.artifact_pattern }}
@@ -69,23 +80,31 @@ jobs:
           if-no-files-found: warn
 
   release:
-    name: Create Release
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - run: ls -R artifacts/
+      - name: List downloaded artifacts (Debug)
+        run: |
+          echo "Artifacts downloaded:"
+          ls -R artifacts/
+        shell: bash
 
-      - uses: softprops/action-gh-release@v1
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
           name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           files: artifacts/**/*
           draft: false
           prerelease: false
