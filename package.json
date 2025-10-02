@@ -1,6 +1,6 @@
 {
   "name": "notewizard",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "description": "NoteWizard Installer",
   "license": "MIT License",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "codemirror": "^5.65.16",
+    "electron-updater": "^6.3.6",
     "icon-gen": "^5.0.0",
     "marked": "^12.0.2",
     "mkdirp": "^3.0.1",

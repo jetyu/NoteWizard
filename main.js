@@ -4,10 +4,12 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { createAutoUpdaterManager } from "./src/modules/updater/auto-updater.js";
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const RELEASE_PAGE_URL = "https://github.com/jetyu/NoteWizard/releases";
 
 // ==================== 国际化支持 ====================
 const DEFAULT_LANG = "zh-CN";
@@ -65,6 +67,26 @@ app.setName("NoteWizard");
 // 主窗口和托盘引用
 let win = null;
 let tray = null;
+let autoUpdaterManager = null;
+
+function getAutoUpdaterManager() {
+  if (!autoUpdaterManager) {
+    autoUpdaterManager = createAutoUpdaterManager({
+      app,
+      dialog,
+      shell,
+      t,
+      releasePageUrl: RELEASE_PAGE_URL,
+      getWindow: () => win,
+    });
+  }
+  return autoUpdaterManager;
+}
+
+async function handleManualUpdateCheck() {
+  const manager = getAutoUpdaterManager();
+  await manager.checkForUpdates();
+}
 
 // 只允许一个实例运行
 const gotTheLock = app.requestSingleInstanceLock();
@@ -544,8 +566,8 @@ function createMenu(iconPath) {
         { type: "separator" },
         {
           label: t("menu.help.update"),
-          click: () => {
-            shell.openExternal("https://github.com/jetyu/NoteWizard/releases");
+          click: async () => {
+            await handleManualUpdateCheck();
           },
         },
         {
