@@ -70,10 +70,6 @@ jobs:
           USE_HARD_LINKS: false
           EP_DRAFT: false
           EP_PRE_RELEASE: true
-          RELEASE_NOTES: |
-            查看 [更新日志](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md) 了解详细更新内容。
-            
-            See [CHANGELOG](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md) for details.
 
       - name: List dist directory (Debug)
         run: |

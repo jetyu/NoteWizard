@@ -50,7 +50,9 @@
         "provider": "github",
         "owner": "jetyu",
         "repo": "NoteWizard",
-        "releaseType": "prerelease"
+        "releaseType": "prerelease",
+        "vPrefixedTagName": true,
+        "releaseNotesFile": ".github/template/RELEASE_NOTES.md"
       }
     ],
     "win": {
