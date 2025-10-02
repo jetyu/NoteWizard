@@ -4,8 +4,8 @@
   <p>一款基于Electron开发的现代化跨平台笔记应用，数据本地存储，让数据始终安全可控。</p>
   
 
-
-[![GitHub release](https://img.shields.io/github/release/jetyu/NoteWizard.svg)](https://github.com/jetyu/NoteWizard/releases)
+[![GitHub release](https://img.shields.io/github/v/release/jetyu/NoteWizard?style=flat-square)](https://github.com/jetyu/NoteWizard/releases/latest)
+[![GitHub pre-release](https://img.shields.io/github/v/release/jetyu/NoteWizard?include_prereleases&style=flat-square&label=pre-release)](https://github.com/jetyu/NoteWizard/releases)
 [![Downloads](https://img.shields.io/github/downloads/jetyu/NoteWizard/total?style=flat-square&logo=github)](https://github.com/jetyu/NoteWizard/releases/)
 ![GitHub license](https://img.shields.io/github/license/jetyu/NoteWizard?style=flat-square)
 ![GitHub last commit](https://img.shields.io/github/last-commit/jetyu/NoteWizard)
@@ -40,17 +40,16 @@
 | 平台 | 支持版本 | 架构/芯片类型 | 安装包类型 |
 |------|-----------|----------------|--------------|
 | **Windows** | Windows 10 / Windows 11 | x64 | `.exe` |
-| **macOS** | macOS（Intel 芯片 / Apple Silicon） | x64 / arm64 | `.dmg` |
+| **macOS** | macOS（Intel / Apple Silicon） | x64 / arm64 | `.dmg` |
 | **Linux** | Debian / Ubuntu / RedHat / Fedora | x64 | `.deb` / `.rpm` / `.AppImage` |
 
 > 💡 **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
 
-## 下载地址
-使用`Github Workflows`自动构建操作系统平台安装包
+## 下载安装
 
-**请根据对应平台下载相应安装包。**
+使用 `GitHub Workflows` 自动构建多平台安装包，请根据您的操作系统选择对应的安装包：
 
-[下载地址](https://github.com/jetyu/NoteWizard/releases)
+- [下载最新版本](https://github.com/jetyu/NoteWizard/releases/latest) 
 
 ## 快速开始
 

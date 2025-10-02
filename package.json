@@ -45,6 +45,13 @@
       "buildResources": "assets"
     },
     "compression": "maximum",
+    "publish": {
+      "provider": "github",
+      "owner": "jetyu",
+      "repo": "NoteWizard",
+      "releaseType": "prerelease",
+      "releaseNotes": "查看 [更新日志](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md) 了解详细更新内容。\n\nSee [CHANGELOG](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md) for details."
+    },
     "win": {
       "target": [
         {
@@ -54,7 +61,7 @@
           ]
         }
       ],
-      "artifactName": "NoteWizard_${version}_Windows_${arch}_Setup.${ext}",
+      "artifactName": "NoteWizard-Windows-${arch}.${ext}",
       "icon": "src/assets/logo/app-logo.ico",
       "publisherName": "NoteWizard",
       "verifyUpdateCodeSignature": false,
@@ -80,7 +87,7 @@
           ]
         }
       ],
-      "artifactName": "NoteWizard_${version}_macOS_${arch}_Setup.${ext}",
+      "artifactName": "NoteWizard-macOS-${arch}.${ext}",
       "icon": "src/assets/logo/app-logo.icns",
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
@@ -127,7 +134,7 @@
           ]
         }
       ],
-      "artifactName": "NoteWizard_${version}_Linux_${arch}_Setup.${ext}",
+      "artifactName": "NoteWizard-Linux-${arch}.${ext}",
       "icon": "src/assets/logo/app-logo-512.png",
       "category": "Office",
       "maintainer": "NoteWizard Team",

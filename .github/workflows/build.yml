@@ -1,4 +1,4 @@
-name: NoteWizard - Build Multi-Platform Installer
+name: Build
 
 on:
   push:
@@ -68,6 +68,9 @@ jobs:
           CSC_FOR_PULL_REQUEST: true
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
           USE_HARD_LINKS: false
+          EP_DRAFT: false
+          EP_PRE_RELEASE: true
+          EP_GH_IGNORE_TIME: true
 
       - name: List dist directory (Debug)
         run: |
@@ -82,35 +85,3 @@ jobs:
           path: ${{ matrix.artifact_pattern }}
           retention-days: 30
           if-no-files-found: warn
-
-  release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: List downloaded artifacts (Debug)
-        run: |
-          echo "Artifacts downloaded:"
-          ls -R artifacts/
-        shell: bash
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: ${{ github.ref_name }}
-          files: artifacts/**/*
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
