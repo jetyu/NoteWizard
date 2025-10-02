@@ -49,7 +49,9 @@
       "provider": "github",
       "owner": "jetyu",
       "repo": "NoteWizard",
-      "releaseType": "prerelease",
+      "releaseType": "prerelease"
+    },
+    "releaseInfo": {
       "releaseNotes": "查看 [更新日志](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md) 了解详细更新内容。\n\nSee [CHANGELOG](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md) for details."
     },
     "win": {
