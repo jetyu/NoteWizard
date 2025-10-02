@@ -63,7 +63,7 @@ function showFileProperties(filePath) {
   try {
     // 检查文件是否存在
     if (!electronFs.existsSync(filePath)) {
-      throw new Error(`文件不存在: ${filePath}`);
+      throw new Error(`${t('file.notExist')}: ${filePath}`);
     }
 
     const stats = electronFs.statSync(filePath);
@@ -71,14 +71,14 @@ function showFileProperties(filePath) {
     const modifiedTime = new Date(stats.mtime).toLocaleString();
 
     const props = `
-      位置: ${electronPath.dirname(filePath)}
-      大小: ${sizeInKB} KB
-      修改时间: ${modifiedTime}
+      ${t('property.location')}: ${electronPath.dirname(filePath)}
+      ${t('property.size')}: ${sizeInKB} KB
+      ${t('property.modifiedTime')}: ${modifiedTime}
     `;
 
-    alert(`文件属性:\n${props}`);
+    alert(`${t('dialog.fileProperties')}:\n${props}`);
   } catch (error) {
-    const errorMessage = `无法获取文件属性: ${error.message}\n路径: ${filePath}`;
+    const errorMessage = `${t('dialog.cannotGetProperties')}: ${error.message}\n${t('dialog.path')}: ${filePath}`;
     alert(errorMessage);
   }
 }
@@ -161,7 +161,7 @@ function showContextMenu(node, e) {
           }
           
           if (!filePath) {
-            updateStatus('无法获取文件路径');
+            updateStatus(t('file.cannotGetPath'));
             return;
           }
           switch (act) {
@@ -176,7 +176,7 @@ function showContextMenu(node, e) {
               break;
           }
         } catch (err) {
-          updateStatus('操作失败: ' + err.message);
+          updateStatus(t('file.operationFailed') + ': ' + err.message);
         }
         return;
       }
@@ -186,18 +186,18 @@ function showContextMenu(node, e) {
       if (node) parentId = node.type === 'folder' ? node.id : node.parentId;
 
       if (act === 'new-note') {
-        const n = vfs.createFile(parentId, '新建笔记');
+        const n = vfs.createFile(parentId, t('default.newNote'));
         tree.renderTree();
         selectNode(n);
       } else if (act === 'new-notebook') {
         const targetParentId = node && node.type === 'folder' ? node.id : null;
-        const folder = vfs.createFolder(targetParentId, '新建笔记本');
+        const folder = vfs.createFolder(targetParentId, t('default.newNotebook'));
         tree.renderTree();
       } else if (act === 'rename') {
         setTimeout(() => tree.startInlineRename(node.id), 0);
       } else if (act === 'delete' && node) {
-        const displayName = node.name || '此项目';
-        if (!confirm(`确定要删除 "${displayName}" 吗？`)) {
+        const displayName = node.name || t('default.thisItem');
+        if (!confirm(t('dialog.deleteConfirm').replace('{name}', displayName))) {
           return;
         }
 
@@ -220,10 +220,10 @@ function showContextMenu(node, e) {
             renderPreview();
           }
 
-          updateStatus('已移至回收站');
+          updateStatus(t('file.movedToTrash'));
         } catch (err) {
           console.error('删除节点失败:', err);
-          updateStatus('删除失败，请检查日志');
+          updateStatus(t('file.deleteFailed'));
         }
 
         return;
@@ -251,7 +251,7 @@ function selectNode(node) {
   if (!node) return;
   if (node.type === 'folder') {
     if (state.editor) state.editor.setValue('');
-    updateStatus(`打开文件夹: ${node.name}`);
+    updateStatus(`${t('file.openedFolder')}: ${node.name}`);
     renderPreview();
     return;
   }
@@ -267,7 +267,7 @@ function selectNode(node) {
   if (state.editor) {
     state.editor.setValue(content || '');
     state.fileContents.set(node.id, content || '');
-    updateStatus(`加载文件: ${node.name}`);
+    updateStatus(`${t('file.loadedFile')}: ${node.name}`);
   }
   renderPreview();
 }
@@ -284,12 +284,12 @@ function handleFileAction(action, fileItem) {
 
   switch (action) {
     case 'rename': {
-      const input = prompt('请输入新文件名:', oldName);
+      const input = prompt(t('dialog.renamePrompt'), oldName);
       if (!input || input === oldName) return;
       const finalName = input.toLowerCase().endsWith('.md') ? input : input + '.md';
       const newPath = electronPath.join(dir, finalName);
       if (electronFs.existsSync(newPath)) {
-        alert('已存在同名文件，请换一个名称。');
+        alert(t('file.fileExists'));
         return;
       }
       try {
@@ -307,18 +307,18 @@ function handleFileAction(action, fileItem) {
           state.fileContents.set(finalName, cache);
         }
         if (state.currentFileItem === fileItem) state.currentFilePath = newPath;
-        updateStatus(`文件重命名为: ${finalName}`);
+        updateStatus(`${t('file.renamed')}: ${finalName}`);
       } catch (e) {
-        alert('重命名失败，请检查权限或文件是否被占用。');
+        alert(t('file.renameFailed'));
       }
       break;
     }
     case 'delete': {
-      if (!confirm(`确定要删除文件 "${oldName}" 吗？此操作不可恢复。`)) return;
+      if (!confirm(t('dialog.deleteFileConfirm').replace('{name}', oldName))) return;
       try {
         if (oldPath && electronFs.existsSync(oldPath)) electronFs.unlinkSync(oldPath);
       } catch (e) {
-        alert('删除失败，请检查权限或文件是否被占用。');
+        alert(t('file.deleteFailed2'));
         return;
       }
       if (state.fileContents.has(oldName)) state.fileContents.delete(oldName);
@@ -334,10 +334,10 @@ function handleFileAction(action, fileItem) {
           if (state.editor) state.editor.setValue('');
           state.currentFileItem = null;
           state.currentFilePath = null;
-          updateStatus('文件已删除');
+          updateStatus(t('file.deleted'));
         }
       } else {
-        updateStatus('文件已删除');
+        updateStatus(t('file.deleted'));
       }
       break;
     }
@@ -366,7 +366,7 @@ function initializeFileWorkspace() {
       tree.renderTree();
       // 选择新创建的节点
       selectNode(node);
-      updateStatus(`已打开导入文件: ${fileName}`);
+      updateStatus(`${t('file.imported')}: ${fileName}`);
   });
 
   // 新建按钮
@@ -383,7 +383,7 @@ function initializeFileWorkspace() {
 
   try {
     const { root } = vfs.initWorkspace();
-    updateStatus(`工作区: ${root}`);
+    updateStatus(`${t('status.workspace')}: ${root}`);
 
     tree.setHandlers({
       onSelect: (node) => selectNode(node),
@@ -398,7 +398,7 @@ function initializeFileWorkspace() {
           while (p) { if (p === sourceId) return; const pn = vfs.getNodeById(p); p = pn ? pn.parentId : null; }
           vfs.moveNode(sourceId, targetNode.id, Date.now());
           tree.renderTree();
-          updateStatus(`已移动到: ${targetNode.name}`);
+          updateStatus(`${t('file.moved')}: ${targetNode.name}`);
         } catch (err) { }
       },
       onInlineRenameCommit: (node, newName) => {
@@ -407,7 +407,7 @@ function initializeFileWorkspace() {
           const keep = vfs.getNodeById(node.id);
           tree.renderTree();
           if (keep) selectNode(keep);
-          updateStatus('已重命名');
+          updateStatus(t('file.renamedStatus'));
         } catch (err) { }
       },
     });
@@ -441,7 +441,7 @@ function initializeFileWorkspace() {
       try {
         if (act === 'new-note') {
           // 在根目录下创建新笔记
-          const node = vfs.createFile(null, '新建笔记');
+          const node = vfs.createFile(null, t('default.newNote'));
           // 重新渲染树
           tree.renderTree();
           // 选择新创建的笔记
@@ -452,12 +452,12 @@ function initializeFileWorkspace() {
               selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
           }, 50);
-          updateStatus('已在根目录创建新笔记');
+          updateStatus(t('status.createdNoteInRoot'));
         } else if (act === 'new-notebook') {
           // 在根目录下创建新笔记本
-          const folder = vfs.createFolder(null, '新建笔记本');
+          const folder = vfs.createFolder(null, t('default.newNotebook'));
           tree.renderTree();
-          updateStatus('已在根目录创建新笔记本');
+          updateStatus(t('status.createdNotebookInRoot'));
         }
       } catch (err) {
       }
@@ -502,10 +502,10 @@ function setupEditorEvents() {
         try {
           if (node.contentId) {
             vfs.writeContent(node.contentId, state.editor.getValue());
-            updateStatus(`已自动保存: ${node.name}`);
+            updateStatus(`${t('file.autoSaved')}: ${node.name}`);
           }
         } catch (e) {
-          updateStatus('自动保存失败，请检查磁盘权限');
+          updateStatus(t('file.autoSaveFailed'));
         }
       }, 800);
     });

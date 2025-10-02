@@ -1,4 +1,4 @@
-import i18n from '../i18n.js';
+import i18n, { t } from '../i18n.js';
 import * as vfs from '../vfs.js';
 import state from '../state.js';
 import { renderTree } from '../tree.js';
@@ -58,14 +58,14 @@ function bindModalEvents(modal) {
   const emptyBtn = modal.querySelector('#empty-trash-btn');
   if (emptyBtn) {
     emptyBtn.addEventListener('click', async () => {
-      if (!confirm('确定要清空回收站吗？此操作无法撤销！')) return;
+      if (!confirm(t('trash.emptyConfirm'))) return;
       try {
         const removed = vfs.emptyTrash();
         await loadTrashItems();
         renderTree();
         ipcRenderer.send('trash-updated', { removed });
       } catch (error) {
-        console.error('清空回收站失败:', error);
+        console.error(t('trash.emptyFailed') + ':', error);
       }
     });
   }
@@ -107,7 +107,7 @@ async function ensureModalExists() {
   try {
     const htmlContent = electronFs.readFileSync(templatePath, 'utf8');
     if (!document.body) {
-      console.warn('document.body 不存在，无法挂载回收站模板');
+      console.warn(t('trash.bodyNotExist'));
       return null;
     }
 
@@ -115,7 +115,7 @@ async function ensureModalExists() {
     container.innerHTML = htmlContent.trim();
     const createdModal = container.firstElementChild;
     if (!createdModal) {
-      console.warn('回收站模板内容为空');
+      console.warn(t('trash.templateEmpty'));
       return null;
     }
 
@@ -129,7 +129,7 @@ async function ensureModalExists() {
     bindModalEvents(modalElement);
     return modalElement;
   } catch (error) {
-    console.error('加载回收站模板失败:', error);
+    console.error(t('trash.loadTemplateFailed') + ':', error);
     return null;
   }
 }
@@ -205,7 +205,7 @@ async function loadTrashItems() {
       btn.addEventListener('click', async (event) => {
         event.stopPropagation();
         const id = btn.getAttribute('data-id');
-        if (id && confirm('确定要恢复此项目吗？')) {
+        if (id && confirm(t('trash.restoreConfirm'))) {
           vfs.restoreNode(id);
           await loadTrashItems();
           renderTree();
@@ -218,7 +218,7 @@ async function loadTrashItems() {
       btn.addEventListener('click', async (event) => {
         event.stopPropagation();
         const id = btn.getAttribute('data-id');
-        if (id && confirm('确定要永久删除此项目吗？此操作无法撤销！')) {
+        if (id && confirm(t('trash.permanentDeleteConfirm'))) {
           vfs.deleteNode(id, true);
           await loadTrashItems();
           renderTree();
@@ -231,7 +231,7 @@ async function loadTrashItems() {
       i18n.applyI18n(tbody);
     }
   } catch (error) {
-    console.error('加载回收站项目失败:', error);
+    console.error(t('trash.loadFailed') + ':', error);
   }
 }
 
@@ -239,7 +239,7 @@ async function showTrashDialog() {
   try {
     const modal = await ensureModalExists();
     if (!modal) {
-      console.error('无法创建回收站对话框');
+      console.error(t('trash.cannotCreateDialog'));
       return;
     }
 
@@ -260,7 +260,7 @@ async function showTrashDialog() {
 
     await loadTrashItems();
   } catch (error) {
-    console.error('显示回收站对话框时出错:', error);
+    console.error(t('trash.showDialogError') + ':', error);
   }
 }
 

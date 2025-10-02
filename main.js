@@ -37,16 +37,7 @@ function t(key) {
 
 // 从首选项获取用户的首选语言
 function getUserLanguage() {
-  try {
-    const prefsPath = path.join(app.getPath("userData"), "preferences.json");
-    if (fs.existsSync(prefsPath)) {
-      const prefs = JSON.parse(fs.readFileSync(prefsPath, "utf8"));
-      return prefs.language || DEFAULT_LANG;
-    }
-  } catch (error) {
-    console.error("Failed to read user language preference:", error);
-  }
-  return DEFAULT_LANG;
+  return getPreference('language', DEFAULT_LANG);
 }
 
 // 初始化语言
@@ -54,7 +45,7 @@ function initLanguage() {
   const userLang = getUserLanguage();
   if (!loadLanguage(userLang)) {
     loadLanguage(DEFAULT_LANG);
-  }
+  } 
 }
 // ==================== 国际化支持结束 ====================
 
@@ -89,6 +80,72 @@ if (!gotTheLock) {
     }
   });
 }
+
+// ==================== 配置管理 ====================
+// 获取配置文件路径
+function getPreferencesPath() {
+  return path.join(app.getPath("userData"), "preferences.json");
+}
+
+// 读取所有配置
+function loadPreferences() {
+  try {
+    const prefsPath = getPreferencesPath();
+    if (fs.existsSync(prefsPath)) {
+      const data = fs.readFileSync(prefsPath, "utf8");
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error("[Preferences] Failed to load preferences:", error);
+  }
+  return {};
+}
+
+// 保存所有配置
+function savePreferences(prefs) {
+  try {
+    const prefsPath = getPreferencesPath();
+    fs.writeFileSync(prefsPath, JSON.stringify(prefs, null, 2), "utf8");
+    return true;
+  } catch (error) {
+    console.error("[Preferences] Failed to save preferences:", error);
+    return false;
+  }
+}
+
+// 获取单个配置项
+function getPreference(key, defaultValue = null) {
+  const prefs = loadPreferences();
+  return prefs[key] !== undefined ? prefs[key] : defaultValue;
+}
+
+// 设置单个配置项
+function setPreference(key, value) {
+  const prefs = loadPreferences();
+  prefs[key] = value;
+  return savePreferences(prefs);
+}
+
+// IPC 处理器：获取所有配置
+ipcMain.handle("preferences:getAll", () => {
+  return loadPreferences();
+});
+
+// IPC 处理器：获取单个配置
+ipcMain.handle("preferences:get", (event, key, defaultValue) => {
+  return getPreference(key, defaultValue);
+});
+
+// IPC 处理器：设置单个配置
+ipcMain.handle("preferences:set", (event, key, value) => {
+  return setPreference(key, value);
+});
+
+// IPC 处理器：保存所有配置
+ipcMain.handle("preferences:saveAll", (event, prefs) => {
+  return savePreferences(prefs);
+});
+// ==================== 配置管理结束 ====================
 
 // 添加获取用户数据路径的IPC处理程序
 ipcMain.handle("get-user-data-path", () => {
@@ -853,6 +910,8 @@ ipcMain.on("language-changed", (event, lang) => {
       tray.destroy();
       createTray();
     }
+    // 保存语言设置到 preferences.json
+    setPreference('language', lang);
   }
 });
 

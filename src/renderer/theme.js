@@ -1,9 +1,12 @@
-function getStoredMode() {
-  return localStorage.getItem('themeMode');
+const electronAPI = window.electronAPI;
+const { ipcRenderer } = electronAPI;
+
+async function getStoredMode() {
+  return await ipcRenderer.invoke('preferences:get', 'themeMode', null);
 }
 
-function storeMode(mode) {
-  localStorage.setItem('themeMode', mode);
+async function storeMode(mode) {
+  await ipcRenderer.invoke('preferences:set', 'themeMode', mode);
 }
 
 function getSystemPrefersDark() {
@@ -30,8 +33,8 @@ function cycleMode(mode) {
 function setupSystemListener() {
   if (!window.matchMedia) return;
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  const handler = () => {
-    const mode = getStoredMode() || 'system';
+  const handler = async () => {
+    const mode = await getStoredMode() || 'system';
     if (mode === 'system') {
       applyThemeByMode(mode);
     }
@@ -40,18 +43,18 @@ function setupSystemListener() {
   else if (mq.addListener) mq.addListener(handler);
 }
 
-function initTheme() {
-  const stored = getStoredMode();
+async function initTheme() {
+  const stored = await getStoredMode();
   const initialMode = stored || 'system';
   applyThemeByMode(initialMode);
   setupSystemListener();
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const btn = e.target.closest('#theme-toggle');
     if (!btn) return;
-    const current = getStoredMode() || 'system';
+    const current = await getStoredMode() || 'system';
     const next = cycleMode(current);
-    storeMode(next);
+    await storeMode(next);
     applyThemeByMode(next);
   });
 }

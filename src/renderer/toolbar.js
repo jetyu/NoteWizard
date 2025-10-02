@@ -51,13 +51,6 @@ function insertImage() {
 function setupToolbar() {
   const toolbar = document.getElementById('toolbar');
   if (!toolbar) return;
-  const applyTheme = (theme) => {
-    const root = document.documentElement;
-    if (theme === 'dark') root.setAttribute('data-theme', 'dark');
-    else root.removeAttribute('data-theme');
-  };
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  applyTheme(savedTheme);
 
   toolbar.addEventListener('click', (e) => {
     const btn = e.target.closest('button');

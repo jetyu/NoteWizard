@@ -10,7 +10,6 @@ const {
   fs: electronFs,
 } = electronAPI;
 
-const STORAGE_KEY = "lang";
 const DEFAULT_LANG = "zh-CN";
 
 function resolveFilePath(relativePath) {
@@ -47,7 +46,10 @@ async function loadLanguage(lang) {
 // 初始化语言包
 async function initLanguage() {
   try {
-    currentLang = localStorage.getItem(STORAGE_KEY) || navigator.language || DEFAULT_LANG;
+    // 从 preferences.json 读取语言设置
+    const savedLang = await ipcRenderer.invoke('preferences:get', 'language', null);
+    currentLang = savedLang || navigator.language || DEFAULT_LANG;
+    
     // 确保语言在支持的语言列表中
     const supportedLangs = getSupportedLanguages();
     if (!supportedLangs.includes(currentLang)) {
@@ -85,7 +87,9 @@ async function setLanguage(lang) {
     
     // 更新当前语言
     currentLang = lang;
-    localStorage.setItem(STORAGE_KEY, lang);
+    
+    // 保存到 preferences.json
+    await ipcRenderer.invoke('preferences:set', 'language', lang);
     
     // 应用新的语言
     await applyI18n();
@@ -167,7 +171,7 @@ async function initI18n() {
 
 async function ensureI18nInitialized() {
     try {
-      const savedLang = localStorage.getItem(STORAGE_KEY);
+      const savedLang = await ipcRenderer.invoke('preferences:get', 'language', null);
       if (savedLang) {
         await setLanguage(savedLang);
       } else {
@@ -236,7 +240,6 @@ export {
   t,
   applyI18n,
   initI18n,
-  STORAGE_KEY,
   DEFAULT_LANG,
   ensureI18nInitialized as ensureInitialized,
   getLanguageDisplayName as getCurrentLanguageName,
@@ -250,7 +253,6 @@ const i18nAPI = {
   t,
   applyI18n,
   initI18n,
-  STORAGE_KEY,
   DEFAULT_LANG,
   ensureInitialized: ensureI18nInitialized,
   get currentLanguage() {

@@ -1,5 +1,8 @@
 import { t } from './i18n.js';
 
+const electronAPI = window.electronAPI;
+const { ipcRenderer } = electronAPI;
+
 export class AIAssistant {
   constructor() {
     this.isEnabled = false;
@@ -24,9 +27,9 @@ export class AIAssistant {
   }
 
   // 加载设置
-  loadSettings() {
+  async loadSettings() {
     try {
-      const aiSettings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+      const aiSettings = await ipcRenderer.invoke('preferences:get', 'aiSettings', {});
       this.isEnabled = aiSettings.enabled === true; // 默认禁用
       this.typingDelay = parseInt(aiSettings.typingDelay) || 2000;
       this.minInputLength = parseInt(aiSettings.minInputLength) || 10;
@@ -128,7 +131,7 @@ export class AIAssistant {
     this.isProcessing = true;
 
     try {
-      const aiSettings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+      const aiSettings = await ipcRenderer.invoke('preferences:get', 'aiSettings', {});
 
       if (!aiSettings.apiKey || !aiSettings.endpoint || !aiSettings.model) {
         return;

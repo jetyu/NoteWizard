@@ -30,23 +30,23 @@ async function getDefaultSavePath() {
   }
 }
 
-// 加载保存的笔记路径
 async function loadNoteSavePath() {
   const pathInput = document.getElementById('pref-note-save-path');
   if (!pathInput) return;
 
   try {
-    // 尝试从localStorage加载保存的路径
-    let savedPath = localStorage.getItem('noteSavePath');
+    // 从 preferences.json 读取保存的路径
+    let savedPath = await ipcRenderer.invoke('preferences:get', 'noteSavePath', null);
 
     // 如果没有保存的路径，使用默认路径
     if (!savedPath) {
       savedPath = await getDefaultSavePath();
-      localStorage.setItem('noteSavePath', savedPath);
+      await ipcRenderer.invoke('preferences:set', 'noteSavePath', savedPath);
     }
 
     pathInput.value = savedPath;
   } catch (error) {
+    console.error('Failed to load noteSavePath:', error);
   }
 }
 
@@ -55,8 +55,9 @@ async function saveNoteSavePath(path, showConfirmation = true) {
   if (!path) return;
 
   // 保存当前路径，以便在取消时恢复
-  const currentPath = localStorage.getItem('noteSavePath');
+  const currentPath = await ipcRenderer.invoke('preferences:get', 'noteSavePath', null);
   if (currentPath) {
+    // 使用 localStorage 保存临时回退路径（不重要）
     localStorage.setItem('previousNoteSavePath', currentPath);
   }
 
@@ -65,8 +66,8 @@ async function saveNoteSavePath(path, showConfirmation = true) {
     pathInput.value = path;
   }
 
-  // 保存到 localStorage
-  localStorage.setItem('noteSavePath', path);
+  // 保存到 preferences.json
+  await ipcRenderer.invoke('preferences:set', 'noteSavePath', path);
 
   try {
     // 通过主进程确保目录存在
@@ -81,7 +82,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
     // 更新状态
     const statusElement = document.getElementById('status');
     if (statusElement) {
-      statusElement.textContent = `笔记保存路径已更新: ${root}`;
+      statusElement.textContent = `${i18n.t('noteSavePathUpdated')}: ${root}`;
     }
 
     // 发送事件通知其他组件路径已更新
@@ -90,7 +91,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
 
     let confirmed = true;
     if (showConfirmation) {
-      confirmed = confirm('笔记保存路径已更新，需要重启应用使更改生效。是否立即重启？');
+      confirmed = confirm(i18n.t('noteSavePathUpdateConfirm'));
     }
 
     if (confirmed) {
@@ -99,16 +100,16 @@ async function saveNoteSavePath(path, showConfirmation = true) {
       } catch (err) {
         // 如果重启失败，回退到之前的路径
         const previousPath = localStorage.getItem('previousNoteSavePath') || await getDefaultSavePath();
-        localStorage.setItem('noteSavePath', previousPath);
+        await ipcRenderer.invoke('preferences:set', 'noteSavePath', previousPath);
         const statusElement = document.getElementById('status');
         if (statusElement) {
-          statusElement.textContent = `已取消修改，保持原路径: ${previousPath}`;
+          statusElement.textContent = `${i18n.t('cancelledKeepPath')}: ${previousPath}`;
         }
       }
     } else {
       // 用户取消重启，回退到之前的路径
       const previousPath = localStorage.getItem('previousNoteSavePath') || await getDefaultSavePath();
-      localStorage.setItem('noteSavePath', previousPath);
+      await ipcRenderer.invoke('preferences:set', 'noteSavePath', previousPath);
 
       // 更新输入框显示
       const pathInput = document.getElementById('pref-note-save-path');
@@ -119,7 +120,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
       // 更新状态
       const statusElement = document.getElementById('status');
       if (statusElement) {
-        statusElement.textContent = `已取消修改，保持原路径: ${previousPath}`;
+        statusElement.textContent = `${i18n.t('cancelledKeepPath')}: ${previousPath}`;
       }
 
       // 通知其他组件路径已恢复
@@ -130,7 +131,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
     // 恢复之前的路径
     const previousPath = localStorage.getItem('previousNoteSavePath');
     if (previousPath) {
-      localStorage.setItem('noteSavePath', previousPath);
+      await ipcRenderer.invoke('preferences:set', 'noteSavePath', previousPath);
       const pathInput = document.getElementById('pref-note-save-path');
       if (pathInput) {
         pathInput.value = previousPath;
@@ -139,7 +140,7 @@ async function saveNoteSavePath(path, showConfirmation = true) {
 
     const statusElement = document.getElementById('status');
     if (statusElement) {
-      statusElement.textContent = `保存路径失败`;
+      statusElement.textContent = i18n.t('savePathFailed');
     }
   }
 }
@@ -188,7 +189,7 @@ function updateAIFieldsState() {
   });
 }
 
-function loadAISettings() {
+async function loadAISettings() {
   const modelInput = document.getElementById('pref-ai-model');
   const apiKeyInput = document.getElementById('pref-ai-api-key');
   const endpointInput = document.getElementById('pref-ai-endpoint');
@@ -201,7 +202,8 @@ function loadAISettings() {
     return;
   }
 
-  const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+  // 从 preferences.json 读取 AI 设置
+  const settings = await ipcRenderer.invoke('preferences:get', 'aiSettings', {});
     
   // 加载模型、API密钥和端点
   if (settings.model) modelInput.value = settings.model;
@@ -288,7 +290,7 @@ async function testAIConnection() {
   }
 }
 // 保存AI设置
-function saveAISettings() {
+async function saveAISettings() {
   const aiEnabledInput = document.getElementById('pref-ai-enabled');
   const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
   const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
@@ -312,7 +314,8 @@ function saveAISettings() {
     systemPrompt: systemPromptInput ? systemPromptInput.value.trim() : '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。每次最多返回一句话。'
   };
 
-  localStorage.setItem('aiSettings', JSON.stringify(settings));
+  // 保存到 preferences.json
+  await ipcRenderer.invoke('preferences:set', 'aiSettings', settings);
   
   // 触发设置变更事件，通知AI助手
   const event = new CustomEvent('ai-settings-changed', {
@@ -322,33 +325,33 @@ function saveAISettings() {
 }
 
 // 应用编辑器字体大小
-function applyEditorFont(size) {
+async function applyEditorFont(size) {
   const fontSize = Math.min(Math.max(parseInt(size, 10), 10), 24); // 限制在10-24px之间
   if (isNaN(fontSize)) return;
   document.documentElement.style.setProperty('--editor-font-size', `${fontSize}px`);
-  localStorage.setItem('editorFontSize', fontSize.toString());
+  await ipcRenderer.invoke('preferences:set', 'editorFontSize', fontSize);
 }
 
 // 应用预览区字体大小
-function applyPreviewFont(size) {
+async function applyPreviewFont(size) {
   const fontSize = Math.min(Math.max(parseInt(size, 10), 10), 24); // 限制在10-24px之间
   if (isNaN(fontSize)) return;
   document.documentElement.style.setProperty('--preview-font-size', `${fontSize}px`);
-  localStorage.setItem('previewFontSize', fontSize.toString());
+  await ipcRenderer.invoke('preferences:set', 'previewFontSize', fontSize);
 }
 
 // 应用编辑器字体
-function applyEditorFontFamily(font) {
+async function applyEditorFontFamily(font) {
   if (!font) return;
   document.documentElement.style.setProperty('--editor-font-family', font);
-  localStorage.setItem('editorFontFamily', font);
+  await ipcRenderer.invoke('preferences:set', 'editorFontFamily', font);
 }
 
 // 应用预览区字体
-function applyPreviewFontFamily(font) {
+async function applyPreviewFontFamily(font) {
   if (!font) return;
   document.documentElement.style.setProperty('--preview-font-family', font);
-  localStorage.setItem('previewFontFamily', font);
+  await ipcRenderer.invoke('preferences:set', 'previewFontFamily', font);
 }
 
 function applyTheme(theme) {
@@ -363,14 +366,13 @@ function getSystemPrefersDark() {
 }
 
 let systemListenerSetup = false;
-function setupSystemWatcher() {
+async function setupSystemWatcher() {
   if (systemListenerSetup) return;
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  const handler = () => {
-    const mode = localStorage.getItem('themeMode') || 'light';
+  const handler = async () => {
+    const mode = await ipcRenderer.invoke('preferences:get', 'themeMode', 'light');
     if (mode === 'system') {
       const effective = getSystemPrefersDark() ? 'dark' : 'light';
-      localStorage.setItem('theme', effective);
       applyTheme(effective);
     }
   };
@@ -418,8 +420,8 @@ async function ensureModalExists() {
   }
 }
 
-function openModal() {
-  ensureModalExists();
+async function openModal() {
+  await ensureModalExists();
   const modal = document.getElementById('preferences-modal');
   const sidebarItems = modal.querySelectorAll('.pref-sidebar li');
   const panes = modal.querySelectorAll('.pref-pane');
@@ -438,23 +440,23 @@ function openModal() {
   const langSelect = document.getElementById('pref-lang');
   if (!modal || !select) return;
 
-  const mode = localStorage.getItem('themeMode');
+  // 从 preferences.json 读取主题设置
+  const mode = await ipcRenderer.invoke('preferences:get', 'themeMode', null);
   if (mode) {
     select.value = mode;
   } else {
-    const t = localStorage.getItem('theme') || 'light';
-    select.value = t === 'dark' ? 'dark' : 'light';
+    select.value = 'light';
   }
 
-  // 初始化字体大小输入
-  const ef = parseInt(localStorage.getItem('editorFontSize') || '14', 10);
-  const pf = parseInt(localStorage.getItem('previewFontSize') || '14', 10);
-  if (editorFontInput) editorFontInput.value = isNaN(ef) ? 14 : ef;
-  if (previewFontInput) previewFontInput.value = isNaN(pf) ? 14 : pf;
+  // 从 preferences.json 读取字体大小
+  const ef = await ipcRenderer.invoke('preferences:get', 'editorFontSize', 14);
+  const pf = await ipcRenderer.invoke('preferences:get', 'previewFontSize', 14);
+  if (editorFontInput) editorFontInput.value = ef;
+  if (previewFontInput) previewFontInput.value = pf;
 
-  // 初始化字体设置
-  const editorFont = localStorage.getItem('editorFontFamily') || "'Microsoft YaHei', '微软雅黑', sans-serif";
-  const previewFont = localStorage.getItem('previewFontFamily') || "'Microsoft YaHei', '微软雅黑', sans-serif";
+  // 从 preferences.json 读取字体设置
+  const editorFont = await ipcRenderer.invoke('preferences:get', 'editorFontFamily', "'Microsoft YaHei', '微软雅黑', sans-serif");
+  const previewFont = await ipcRenderer.invoke('preferences:get', 'previewFontFamily', "'Microsoft YaHei', '微软雅黑', sans-serif");
   if (editorFontFamilySelect) editorFontFamilySelect.value = editorFont;
   if (previewFontFamilySelect) previewFontFamilySelect.value = previewFont;
 
@@ -611,17 +613,14 @@ if (testButton) {
   }
 
   if (select) {
-    // 设置初始值
-    const savedMode = localStorage.getItem('themeMode') || 'system';
-    select.value = savedMode;
-
-    select.addEventListener('change', () => {
+    // 设置初始值 (已在 openModal 中从 preferences.json 读取)
+    select.addEventListener('change', async () => {
       const val = select.value; 
-      localStorage.setItem('themeMode', val);
+      await ipcRenderer.invoke('preferences:set', 'themeMode', val);
       applyThemeByMode(val);
 
       if (val === 'system') {
-        setupSystemWatcher();
+        await setupSystemWatcher();
       }
     });
   }
@@ -629,6 +628,7 @@ if (testButton) {
   if (editorFontInput) {
     editorFontInput.addEventListener('input', () => applyEditorFont(editorFontInput.value));
   }
+  // 字体设置事件监听
 
   if (editorFontFamilySelect) {
     editorFontFamilySelect.addEventListener('change', () => {
@@ -693,27 +693,21 @@ if (testButton) {
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
       try {
+        // 从 preferences.json 读取所有配置
+        const allPrefs = await ipcRenderer.invoke('preferences:getAll');
+        
         // 收集所有首选项
         const preferences = {
-          themeMode: localStorage.getItem('themeMode') || 'system',
-          editorFontSize: localStorage.getItem('editorFontSize') || '14',
-          editorFontFamily: localStorage.getItem('editorFontFamily') || "'Microsoft YaHei', '微软雅黑', sans-serif",
-          previewFontSize: localStorage.getItem('previewFontSize') || '14',
-          previewFontFamily: localStorage.getItem('previewFontFamily') || "'Microsoft YaHei', '微软雅黑', sans-serif",
-          noteSavePath: localStorage.getItem('noteSavePath') || await getDefaultSavePath(),
-          language: i18n ? i18n.currentLanguage : 'zh-CN',
-          aiSettings: {},
-          startupOnLogin: (localStorage.getItem('startupOnLogin') || 'false') === 'true'
+          themeMode: allPrefs.themeMode || 'system',
+          editorFontSize: allPrefs.editorFontSize || 14,
+          editorFontFamily: allPrefs.editorFontFamily || "'Microsoft YaHei', '微软雅黑', sans-serif",
+          previewFontSize: allPrefs.previewFontSize || 14,
+          previewFontFamily: allPrefs.previewFontFamily || "'Microsoft YaHei', '微软雅黑', sans-serif",
+          noteSavePath: allPrefs.noteSavePath || await getDefaultSavePath(),
+          language: allPrefs.language || 'zh-CN',
+          aiSettings: allPrefs.aiSettings || {},
+          startupOnLogin: allPrefs.startupOnLogin || false
         };
-
-        // 添加AI设置
-        const modelInput = document.getElementById('pref-ai-model');
-        const apiKeyInput = document.getElementById('pref-ai-api-key');
-        const endpointInput = document.getElementById('pref-ai-endpoint');
-     
-        if (modelInput) preferences.aiSettings.model = modelInput.value;
-        if (apiKeyInput) preferences.aiSettings.apiKey = apiKeyInput.value;
-        if (endpointInput) preferences.aiSettings.endpoint = endpointInput.value;
 
         // 调用主进程导出
         const result = await ipcRenderer.invoke('export-preferences', preferences);
@@ -755,13 +749,13 @@ if (testButton) {
           const prefs = result.preferences;
           if (prefs.themeMode) {
             document.getElementById('pref-theme-mode').value = prefs.themeMode;
-            localStorage.setItem('themeMode', prefs.themeMode);
+            await ipcRenderer.invoke('preferences:set', 'themeMode', prefs.themeMode);
             applyThemeByMode(prefs.themeMode);
           }
 
           // 提示用户重启应用
           if (confirm(i18n.t('restartAppNotify'))) {
-            ipcRenderer.send('relaunch-app');
+            await ipcRenderer.invoke('relaunch-app');
           }
         } else {
           if (statusElement) {
@@ -795,20 +789,14 @@ if (testButton) {
         // 语言 -> zh-CN
         if (i18n) {
           try {
-            i18n.setLanguage('zh-CN');
+            await i18n.setLanguage('zh-CN');
             i18n.applyI18n();
           } catch { }
-        } else {
-          localStorage.setItem('lang', 'zh-CN');
-          document.documentElement.setAttribute('lang', 'zh-CN');
         }
         if (langSelect) langSelect.value = 'zh-CN';
 
         // 主题 -> 系统
-        localStorage.setItem('themeMode', 'system');
-        const effective = getSystemPrefersDark() ? 'dark' : 'light';
-        localStorage.setItem('theme', effective);
-        applyTheme(effective);
+        await ipcRenderer.invoke('preferences:set', 'themeMode', 'system');
         if (select) select.value = 'system';
         applyThemeByMode('system');
 
@@ -817,29 +805,48 @@ if (testButton) {
         const defaultFontFamily = 'Arial, sans-serif';
 
         // 重置编辑器字体
-        localStorage.setItem('editorFontSize', defaultFontSize);
-        localStorage.setItem('editorFontFamily', defaultFontFamily);
-        applyEditorFont(defaultFontSize);
-        applyEditorFontFamily(defaultFontFamily);
+        await applyEditorFont(defaultFontSize);
+        await applyEditorFontFamily(defaultFontFamily);
         if (editorFontInput) editorFontInput.value = defaultFontSize;
         if (editorFontFamilySelect) editorFontFamilySelect.value = defaultFontFamily;
 
         // 重置预览字体
-        localStorage.setItem('previewFontSize', defaultFontSize);
-        localStorage.setItem('previewFontFamily', defaultFontFamily);
-        applyPreviewFont(defaultFontSize);
-        applyPreviewFontFamily(defaultFontFamily);
+        await applyPreviewFont(defaultFontSize);
+        await applyPreviewFontFamily(defaultFontFamily);
         if (previewFontInput) previewFontInput.value = defaultFontSize;
         if (previewFontFamilySelect) previewFontFamilySelect.value = defaultFontFamily;
 
-        // 重置API密钥
-        localStorage.removeItem('aiSettings');
+        // 重置AI设置 - 恢复默认值
+        const defaultAISettings = {
+          enabled: false,
+          typingDelay: 2000,
+          minInputLength: 10,
+          model: '',
+          apiKey: '',
+          endpoint: '',
+          systemPrompt: ''
+        };
+        await ipcRenderer.invoke('preferences:set', 'aiSettings', defaultAISettings);
+        
+        // 清空所有 AI 输入框
+        const aiEnabledInput = document.getElementById('pref-ai-enabled');
+        const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
+        const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
+        const systemPromptInput = document.getElementById('pref-ai-system-prompt');
+        
+        if (aiEnabledInput) aiEnabledInput.checked = false;
+        if (aiTypingDelayInput) aiTypingDelayInput.value = 2000;
+        if (aiTypingLengthInput) aiTypingLengthInput.value = 10;
+        if (modelInput) modelInput.value = '';
         if (apiKeyInput) apiKeyInput.value = '';
         if (endpointInput) endpointInput.value = '';
-        if (modelInput) modelInput.value = '';
+        if (systemPromptInput) systemPromptInput.value = '';
+        
+        // 更新 AI 字段状态
+        updateAIFieldsState();
 
+        // 重置笔记保存路径
         const defaultPath = await getDefaultSavePath();
-        // 使用 showConfirmation = false 来避免重复确认
         await saveNoteSavePath(defaultPath, false);
       }
     });
@@ -860,47 +867,40 @@ if (testButton) {
   }
 }
 
-function initPreferences() {
-  // 应用保存的主题模式
-  const savedMode = localStorage.getItem('themeMode') || 'system';
+async function initPreferences() {
+  // 从preferences.json 读取并应用主题模式
+  const savedMode = await ipcRenderer.invoke('preferences:get', 'themeMode', 'system');
   applyThemeByMode(savedMode);
 
   // 初始化系统主题监听
-  setupSystemWatcher();
+  await setupSystemWatcher();
 
-  // 启动时应用已保存的字体大小
-  const ef = parseInt(localStorage.getItem('editorFontSize') || '14', 10);
-  const pf = parseInt(localStorage.getItem('previewFontSize') || '14', 10);
+  // 从preferences.json 读取并应用字体大小
+  const ef = await ipcRenderer.invoke('preferences:get', 'editorFontSize', 14);
+  const pf = await ipcRenderer.invoke('preferences:get', 'previewFontSize', 14);
   if (!isNaN(ef)) document.documentElement.style.setProperty('--editor-font-size', `${ef}px`);
   if (!isNaN(pf)) document.documentElement.style.setProperty('--preview-font-size', `${pf}px`);
 
-  // 加载笔记保存路径
-  (async () => {
-    const pathInput = document.getElementById('pref-note-save-path');
-    if (pathInput) {
-      let savedPath = localStorage.getItem('noteSavePath');
-      if (!savedPath) {
-        savedPath = await getDefaultSavePath();
-        localStorage.setItem('noteSavePath', savedPath);
-      }
-      pathInput.value = savedPath;
-    }
-  })();
+  // 从preferences.json 读取并应用字体
+  const editorFont = await ipcRenderer.invoke('preferences:get', 'editorFontFamily', "'Microsoft YaHei', '微软雅黑', sans-serif");
+  const previewFont = await ipcRenderer.invoke('preferences:get', 'previewFontFamily', "'Microsoft YaHei', '微软雅黑', sans-serif");
+  if (editorFont) document.documentElement.style.setProperty('--editor-font-family', editorFont);
+  if (previewFont) document.documentElement.style.setProperty('--preview-font-family', previewFont);
 
   // 字号快捷键：Ctrl+= / Ctrl+- / Ctrl+0
-  window.addEventListener('keydown', (e) => {
+  window.addEventListener('keydown', async (e) => {
     if (!e.ctrlKey) return;
     const key = e.key;
     if (key === '=' || key === '+') {
-      const cur = parseInt(localStorage.getItem('editorFontSize') || '14', 10) || 14;
-      applyEditorFont(cur + 1);
+      const cur = await ipcRenderer.invoke('preferences:get', 'editorFontSize', 14);
+      await applyEditorFont(cur + 1);
       e.preventDefault();
     } else if (key === '-') {
-      const cur = parseInt(localStorage.getItem('editorFontSize') || '14', 10) || 14;
-      applyEditorFont(cur - 1);
+      const cur = await ipcRenderer.invoke('preferences:get', 'editorFontSize', 14);
+      await applyEditorFont(cur - 1);
       e.preventDefault();
     } else if (key === '0') {
-      applyEditorFont(14);
+      await applyEditorFont(14);
       e.preventDefault();
     }
   });
@@ -915,21 +915,15 @@ function initPreferences() {
   }
 
   // 初始化模态框和事件
-  const initUI = () => {
-    ensureModalExists();
+  const initUI = async () => {
+    await ensureModalExists();
     bindEvents();
 
-    // 应用保存的字体设置
-    const editorFont = localStorage.getItem('editorFontFamily');
-    const previewFont = localStorage.getItem('previewFontFamily');
-    if (editorFont) applyEditorFontFamily(editorFont);
-    if (previewFont) applyPreviewFontFamily(previewFont);
-
     // 初始化AI设置
-    loadAISettings();
+    await loadAISettings();
 
     // 加载笔记保存路径
-    loadNoteSavePath();
+    await loadNoteSavePath();
   };
 
   if (document.readyState === 'loading') {
@@ -940,24 +934,24 @@ function initPreferences() {
 }
 
 // 获取当前保存的笔记路径
-function getNoteSavePath() {
-  return localStorage.getItem('noteSavePath') || '';
+async function getNoteSavePath() {
+  return await ipcRenderer.invoke('preferences:get', 'noteSavePath', '');
 }
 
 // 检查并创建笔记保存目录
 async function ensureNoteSaveDir() {
-  let savePath = localStorage.getItem('noteSavePath');
-    if (!savePath) {
-      savePath = await getDefaultSavePath();
-      localStorage.setItem('noteSavePath', savePath);
-    }
+  let savePath = await ipcRenderer.invoke('preferences:get', 'noteSavePath', null);
+  if (!savePath) {
+    savePath = await getDefaultSavePath();
+    await ipcRenderer.invoke('preferences:set', 'noteSavePath', savePath);
+  }
 
-    // 确保目录存在
-    if (!electronFs.existsSync(savePath)) {
-      electronFs.mkdirSync(savePath, { recursive: true });
-    }
+  // 确保目录存在
+  if (!electronFs.existsSync(savePath)) {
+    electronFs.mkdirSync(savePath, { recursive: true });
+  }
 
-    return savePath;
+  return savePath;
 }
 
 // 应用导入的首选项
@@ -981,11 +975,11 @@ async function applyImportedPreferences(prefs) {
     if (prefs.editor) {
       if (prefs.editor.fontSize && document.getElementById('pref-editor-font')) {
         document.getElementById('pref-editor-font').value = prefs.editor.fontSize;
-        applyEditorFont(prefs.editor.fontSize);
+        await applyEditorFont(prefs.editor.fontSize);
       }
       if (prefs.editor.fontFamily && document.getElementById('pref-editor-font-family')) {
         document.getElementById('pref-editor-font-family').value = prefs.editor.fontFamily;
-        applyEditorFontFamily(prefs.editor.fontFamily);
+        await applyEditorFontFamily(prefs.editor.fontFamily);
       }
     }
 
@@ -993,37 +987,28 @@ async function applyImportedPreferences(prefs) {
     if (prefs.preview) {
       if (prefs.preview.fontSize && document.getElementById('pref-preview-font')) {
         document.getElementById('pref-preview-font').value = prefs.preview.fontSize;
-        applyPreviewFont(prefs.preview.fontSize);
+        await applyPreviewFont(prefs.preview.fontSize);
       }
       if (prefs.preview.fontFamily && document.getElementById('pref-preview-font-family')) {
         document.getElementById('pref-preview-font-family').value = prefs.preview.fontFamily;
-        applyPreviewFontFamily(prefs.preview.fontFamily);
+        await applyPreviewFontFamily(prefs.preview.fontFamily);
       }
     }
 
     // 应用AI设置
     if (prefs.ai) {
-      console.log('Applying AI settings:', prefs.ai);
-
-      // 准备设置
-      const settings = {
-        model: prefs.ai.model,
-        apiKey: prefs.ai.apiKey,
-        endpoint: prefs.ai.endpoint
-      };
-
       // 设置AI配置输入框
       const modelInput = document.getElementById('pref-ai-model');
       const apiKeyInput = document.getElementById('pref-ai-api-key');
       const endpointInput = document.getElementById('pref-ai-endpoint');
       
       // 更新输入框值
-      if (modelInput) modelInput.value = settings.model || '';
-      if (apiKeyInput) apiKeyInput.value = settings.apiKey || '';
-      if (endpointInput) endpointInput.value = settings.endpoint || '';
+      if (modelInput) modelInput.value = prefs.ai.model || '';
+      if (apiKeyInput) apiKeyInput.value = prefs.ai.apiKey || '';
+      if (endpointInput) endpointInput.value = prefs.ai.endpoint || '';
       
-      // 保存到localStorage
-      saveAISettings();
+      // 保存到 preferences.json
+      await saveAISettings();
     }
 
     // 应用笔记保存路径
@@ -1031,30 +1016,11 @@ async function applyImportedPreferences(prefs) {
       await saveNoteSavePath(prefs.noteSavePath, false);
     }
 
-    // 保存到localStorage
-    if (prefs.theme) {
-      localStorage.setItem('themeMode', prefs.theme);
-    }
-    if (prefs.editor && prefs.editor.fontSize) {
-      localStorage.setItem('editorFontSize', prefs.editor.fontSize);
-    }
-    if (prefs.editor && prefs.editor.fontFamily) {
-      localStorage.setItem('editorFontFamily', prefs.editor.fontFamily);
-    }
-    if (prefs.preview && prefs.preview.fontSize) {
-      localStorage.setItem('previewFontSize', prefs.preview.fontSize);
-    }
-    if (prefs.preview && prefs.preview.fontFamily) {
-      localStorage.setItem('previewFontFamily', prefs.preview.fontFamily);
-    }
-
     // 应用开机自启设置
     if (typeof prefs.startupOnLogin !== 'undefined') {
       try {
-        // 调用主进程设置系统开机自启
         const res = await ipcRenderer.invoke('set-startup-enabled', !!prefs.startupOnLogin);
         if (res && res.success) {
-          try { localStorage.setItem('startupOnLogin', String(!!prefs.startupOnLogin)); } catch {}
           const checkbox = document.getElementById('pref-startup');
           if (checkbox) checkbox.checked = !!prefs.startupOnLogin;
         }

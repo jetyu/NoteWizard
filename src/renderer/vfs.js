@@ -10,6 +10,7 @@ const {
   fs: electronFs,
   path: electronPath,
   os: electronOs,
+  ipcRenderer,
 } = electronAPI;
 
 function randomId() {
@@ -99,8 +100,18 @@ function persistAllNodes(root, nodesMap) {
   electronFs.renameSync(tmp, nodesFile(root));
 }
 
-function initWorkspace(rootPath) {
-  let root = rootPath || localStorage.getItem('noteSavePath') || getDefaultWorkspaceRoot();
+async function initWorkspace(rootPath) {
+  // 从 preferences.json 读取保存路径
+  let savedPath = null;
+  if (!rootPath) {
+    try {
+      savedPath = await ipcRenderer.invoke('preferences:get', 'noteSavePath', null);
+    } catch (error) {
+      console.error('Failed to get noteSavePath from preferences:', error);
+    }
+  }
+  
+  let root = rootPath || savedPath || getDefaultWorkspaceRoot();
 
   try {
     if (!electronFs.existsSync(root)) {
@@ -116,7 +127,12 @@ function initWorkspace(rootPath) {
   state.workspaceRoot = root;
   state.nodes = nodes;
 
-  localStorage.setItem('noteSavePath', root);
+  // 保存到 preferences.json
+  try {
+    await ipcRenderer.invoke('preferences:set', 'noteSavePath', root);
+  } catch (error) {
+    console.error('Failed to save noteSavePath to preferences:', error);
+  }
 
   return { root, nodes };
 }
