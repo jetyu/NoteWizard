@@ -24,14 +24,17 @@
 - **极简界面**：简单纯粹无广告
 - **国际化**：支持19种语言及地区设置
 
-*NoteWizard 主界面*  
+
+## 界面预览
+**NoteWizard 快速开始**  
+![NoteWizard 快速开始](./doc/getstarted/v0.2.3.webp)
+**NoteWizard 主界面**  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
-*NoteWizard 首选项界面*  
+**NoteWizard 首选项界面**  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_2.png)
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_3.png)
-*NoteWizard 关于界面*  
+**NoteWizard 关于界面**  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
-
 
 ## 支持平台
 
