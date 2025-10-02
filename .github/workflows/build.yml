@@ -89,8 +89,6 @@ jobs:
     name: Release Notes
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,9 +96,8 @@ jobs:
       - name: Update Release Notes
         uses: softprops/action-gh-release@v1
         with:
-          body_path: RELEASE_NOTES.md
+          body_path: .github/template/RELEASE_NOTES.md
           prerelease: true
           append_body: false
-          name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
