@@ -96,6 +96,7 @@ jobs:
       - name: Update Release Notes
         uses: softprops/action-gh-release@v1
         with:
+          name: ${{ github.ref_name }}
           body_path: .github/template/RELEASE_NOTES.md
           prerelease: true
           append_body: false
