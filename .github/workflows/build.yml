@@ -84,3 +84,21 @@ jobs:
           path: ${{ matrix.artifact_pattern }}
           retention-days: 30
           if-no-files-found: warn
+
+  update-release-notes:
+    name: Update Release Notes
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Update Release Body
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

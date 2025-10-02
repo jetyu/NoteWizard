@@ -51,8 +51,7 @@
         "owner": "jetyu",
         "repo": "NoteWizard",
         "releaseType": "prerelease",
-        "vPrefixedTagName": true,
-        "releaseNotesFile": ".github/template/RELEASE_NOTES.md"
+        "vPrefixedTagName": true
       }
     ],
     "win": {
