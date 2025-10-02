@@ -10,9 +10,9 @@
     "start": "electron .",
     "dev": "nodemon --watch main.js --watch src --exec electron .",
     "dist": "node build.js",
-    "dist:win": "electron-builder --win --x64",
-    "dist:mac": "electron-builder --mac --x64 --arm64",
-    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win --x64 --publish always",
+    "dist:mac": "electron-builder --mac --x64 --arm64 --publish always",
+    "dist:linux": "electron-builder --linux --publish always",
     "dist:all": "electron-builder -wml",
     "generate-icons": "node scripts/generate-icons.js",
     "clean": "rimraf dist"
@@ -45,15 +45,14 @@
       "buildResources": "assets"
     },
     "compression": "maximum",
-    "publish": {
-      "provider": "github",
-      "owner": "jetyu",
-      "repo": "NoteWizard",
-      "releaseType": "prerelease"
-    },
-    "releaseInfo": {
-      "releaseNotes": "查看 [更新日志](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md) 了解详细更新内容。\n\nSee [CHANGELOG](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md) for details."
-    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "jetyu",
+        "repo": "NoteWizard",
+        "releaseType": "prerelease"
+      }
+    ],
     "win": {
       "target": [
         {
