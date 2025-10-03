@@ -28,12 +28,12 @@
 1. **下载安装包**
    - 访问 [GitHub Releases](https://github.com/jetyu/NoteWizard/releases)
    - 根据您的操作系统选择对应的安装包：
-     - **Windows**: `NoteWizard_x.x.x_Windows_x64_Setup.exe`
-     - **macOS**: `NoteWizard_x.x.x_mac_x64_Setup.dmg` (Intel) 或 `NoteWizard_x.x.x_mac_arm64_Setup.dmg` (Apple Silicon)
+     - **Windows**: `NoteWizard_Windows_x64.exe`
+     - **macOS**: `NoteWizard-macOS-x64.dmg` (Intel) 或 `NoteWizard-macOS-arm64.dmg` (Apple Silicon)
      - **Linux**: 
-       - Ubuntu/Debian: `NoteWizard_x.x.x_linux_x64_Setup.deb`
-       - Fedora/RHEL: `NoteWizard_x.x.x_linux_x64_Setup.rpm`
-       - 通用: `NoteWizard_x.x.x_linux_x64_Setup.AppImage`
+       - Ubuntu/Debian: `NoteWizard-Linux-amd64.deb`
+       - Fedora/RHEL: `NoteWizard-Linux-x86_64.rpm`
+       - 通用: `NoteWizard-Linux-x86_64.AppImage`
 
 2. **安装步骤**
    
