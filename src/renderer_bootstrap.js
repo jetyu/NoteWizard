@@ -164,47 +164,38 @@ function setupPreviewIpcHandlers() {
   });
 }
 
+async function runAppInitialization() {
+  setupLeftPanelUI();
+  setupPreviewWidthPersistence();
+  setupPreviewLeftEdgeDrag();
+  setupPreviewIpcHandlers();
+  initI18n();
+  applyI18n();
+  onDomReadyInitEditor();
+  await initializeFileWorkspace();
+  setupEditorEvents();
+  initPreview();
+  setupToolbar();
+  initPreferences();
+  initTrash();
+  setupOutlineWhenReady();
+  try {
+    const visible = document.getElementById('preview-panel')?.style.display !== 'none';
+    ipcRenderer.send('preview-state-changed', { visible });
+  } catch {}
+}
+
 function bootstrap() {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setupLeftPanelUI();
-      setupPreviewWidthPersistence();
-      setupPreviewLeftEdgeDrag();
-      setupPreviewIpcHandlers();
-      initI18n();
-      applyI18n();
-      onDomReadyInitEditor();
-      initializeFileWorkspace();
-      setupEditorEvents();
-      initPreview();
-      setupToolbar();
-      initPreferences();
-      initTrash();
-      setupOutlineWhenReady();
-      try {
-        const visible = document.getElementById('preview-panel')?.style.display !== 'none';
-        ipcRenderer.send('preview-state-changed', { visible });
-      } catch {}
+  const start = () => {
+    runAppInitialization().catch((err) => {
+      console.error('Failed to initialize renderer process:', err);
     });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    setupLeftPanelUI();
-    setupPreviewWidthPersistence();
-    setupPreviewLeftEdgeDrag();
-    setupPreviewIpcHandlers();
-    initI18n();
-    applyI18n();
-    onDomReadyInitEditor();
-    initializeFileWorkspace();
-    setupEditorEvents();
-    initPreview();
-    setupToolbar();
-    initPreferences();
-    initTrash();
-    setupOutlineWhenReady();
-    try {
-      const visible = document.getElementById('preview-panel')?.style.display !== 'none';
-      ipcRenderer.send('preview-state-changed', { visible });
-    } catch {}
+    start();
   }
 }
 

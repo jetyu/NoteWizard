@@ -31,18 +31,16 @@ function extractSection(historyContent, versionWithoutPrefix) {
   return sectionBody;
 }
 
-function buildReleaseNotes({ tag, sectionBody }) {
-  const header = `# Release Notes · NoteWizard ${tag}`;
-  const body = sectionBody.length > 0 ? sectionBody : '_No additional notes._';
+function buildReleaseNotes({ sectionBody }) {
+  const header = '### NoteWizard Release Notes';
+  const body = sectionBody.trim();
   const footer = [
-    '---',
-    '',
-    'See full changelog:',
+    '#### See full changelog:',
     '- [English](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md)',
-    '- [中文](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md)'
+    '- [简体中文](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md)'
   ].join('\n');
 
-  return `${header}\n\n${body}\n\n${footer}\n`;
+  return `${header}\n\n${body ? `${body}\n\n` : ''}${footer}\n`;
 }
 
 function main() {
@@ -56,7 +54,7 @@ function main() {
   const historyContent = readFileSync(historyPath, 'utf8');
 
   const sectionBody = extractSection(historyContent, version);
-  const notes = buildReleaseNotes({ tag, sectionBody });
+  const notes = buildReleaseNotes({ sectionBody });
 
   const outputPath = resolve('.github/template/RELEASE_NOTES.md');
   writeFileSync(outputPath, notes, 'utf8');

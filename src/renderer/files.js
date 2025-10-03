@@ -351,38 +351,31 @@ function handleFileAction(action, fileItem) {
  * 设置事件监听器、初始化树形视图和全局快捷键
  * 处理新建文件/文件夹的上下文菜单
  */
-function initializeFileWorkspace() {
-  // 添加文件打开事件监听
-  ipcRenderer.on('file-opened', (event, { content, filePath }) => {
-      // 获取文件名（带扩展名）
-      const fileNameWithExt = electronPath.basename(filePath);
-      // 获取不带扩展名的文件名
-      const fileName = electronPath.basename(filePath, electronPath.extname(filePath));
-      // 使用当前选中的节点作为父节点，如果没有则使用根目录
-      const parentId = state.currentNodeId || null;
-      // 创建新节点，传入带扩展名的文件名
-      const node = vfs.createFile(parentId, fileNameWithExt, content);
-      // 重新渲染树
-      tree.renderTree();
-      // 选择新创建的节点
-      selectNode(node);
-      updateStatus(`${t('file.imported')}: ${fileName}`);
-  });
+async function initializeFileWorkspace() {
+  let newFileBtn = document.getElementById('new-file-btn');
+  let fileSearch = document.getElementById('file-search');
+  let treeContainer = document.getElementById('tree');
 
-  // 新建按钮
-  const newFileBtn = document.getElementById('new-file-btn');
-  // 搜索框
-  const fileSearch = document.getElementById('file-search');
-  // 树形视图
-  const treeContainer = document.getElementById('tree');
-
-  if (!newFileBtn || !fileSearch || !treeContainer) {
-    setTimeout(initializeFileWorkspace, 100);
-    return;
+  while (!newFileBtn || !fileSearch || !treeContainer) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    newFileBtn = document.getElementById('new-file-btn');
+    fileSearch = document.getElementById('file-search');
+    treeContainer = document.getElementById('tree');
   }
 
+  ipcRenderer.removeAllListeners('file-opened');
+  ipcRenderer.on('file-opened', (event, { content, filePath }) => {
+    const fileNameWithExt = electronPath.basename(filePath);
+    const fileName = electronPath.basename(filePath, electronPath.extname(filePath));
+    const parentId = state.currentNodeId || null;
+    const node = vfs.createFile(parentId, fileNameWithExt, content);
+    tree.renderTree();
+    selectNode(node);
+    updateStatus(`${t('file.imported')}: ${fileName}`);
+  });
+
   try {
-    const { root } = vfs.initWorkspace();
+    const { root } = await vfs.initWorkspace();
     updateStatus(`${t('status.workspace')}: ${root}`);
 
     tree.setHandlers({

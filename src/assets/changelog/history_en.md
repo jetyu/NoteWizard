@@ -1,3 +1,7 @@
+### [0.2.5] - 2025-10-04
+#### Fixes
+- Fixed an issue introduced in 0.2.2 that caused the note list to not refresh after restarting.
+
 ### [0.2.4] - 2025-10-03
 #### Fixes
 - Fixed an issue where the workspace was incorrectly collapsed when closing the preview panel.
