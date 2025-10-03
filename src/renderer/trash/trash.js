@@ -1,7 +1,6 @@
 import i18n, { t } from '../i18n.js';
-import * as vfs from '../vfs.js';
-import state from '../state.js';
-import { renderTree } from '../tree.js';
+import * as vfs from '../workspace/vfs.js';
+import { renderTree } from '../workspace/tree.js';
 
 const electronAPI = window.electronAPI;
 

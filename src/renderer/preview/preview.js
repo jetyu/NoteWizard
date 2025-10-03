@@ -18,6 +18,52 @@ function ensureStyleInjected() {
   styleInjected = true;
 }
 
+function toFileUrl(absolutePath) {
+  if (!absolutePath) return null;
+  return `file://${absolutePath.replace(/\\/g, '/')}`;
+}
+
+function resolveImageSrc(src) {
+  if (!src || src.startsWith('file://') || src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) {
+    return null;
+  }
+
+  const electronAPI = window.electronAPI;
+  const pathAPI = electronAPI?.path;
+  if (!pathAPI || !state.workspaceRoot) return null;
+
+  const trimmedSrc = src.trim();
+  const databaseRoot = pathAPI.join(state.workspaceRoot, 'Database');
+  const objectsDir = pathAPI.join(databaseRoot, 'objects');
+
+  if (trimmedSrc.startsWith('../') || trimmedSrc.startsWith('./')) {
+    const absolutePath = pathAPI.resolve(objectsDir, trimmedSrc);
+    return toFileUrl(absolutePath);
+  }
+
+  if (trimmedSrc.startsWith('/Database/Images/')) {
+    const withoutLeadingSlash = trimmedSrc.replace(/^\//, '');
+    const absolutePath = pathAPI.join(state.workspaceRoot, withoutLeadingSlash);
+    return toFileUrl(absolutePath);
+  }
+
+  if (trimmedSrc.startsWith('Database/Images/')) {
+    const absolutePath = pathAPI.join(state.workspaceRoot, trimmedSrc);
+    return toFileUrl(absolutePath);
+  }
+
+  return null;
+}
+
+function resolveImagePaths(html) {
+  if (!html) return html;
+  return html.replace(/<img\s+[^>]*src="([^"]+)"[^>]*>/gi, (match, src) => {
+    const resolved = resolveImageSrc(src);
+    if (!resolved) return match;
+    return match.replace(src, resolved);
+  });
+}
+
 function renderPreview() {
   ensureStyleInjected();
 
@@ -27,10 +73,12 @@ function renderPreview() {
   if (!previewElement) return;
 
   try {
+    const rawMarkdown = state.editor.getValue();
     if (window.marked && typeof window.marked.parse === 'function') {
-      previewElement.innerHTML = window.marked.parse(state.editor.getValue());
+      const html = window.marked.parse(rawMarkdown);
+      previewElement.innerHTML = resolveImagePaths(html);
     } else {
-      previewElement.textContent = state.editor.getValue();
+      previewElement.textContent = rawMarkdown;
     }
   } catch (error) {
     previewElement.textContent = state.editor.getValue();
@@ -40,7 +88,6 @@ function renderPreview() {
 
 function initPreview() {
   ensureStyleInjected();
-  // 如果编辑器已经存在内容，初始化时渲染一次
   renderPreview();
 }
 

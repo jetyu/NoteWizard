@@ -1,14 +1,44 @@
-import state from './state.js';
-import { renderPreview } from './preview/preview.js';
+import state from '../state.js';
+import { renderPreview } from '../preview/preview.js';
 import * as vfs from './vfs.js';
 import * as tree from './tree.js';
-import * as outline from './outline.js';
-import { t } from './i18n.js';
+import * as outline from '../outline.js';
+import { t } from '../i18n.js';
 
 const electronAPI = window.electronAPI;
 
 if (!electronAPI) {
   throw new Error('electronAPI 未初始化，无法在渲染进程访问受信任的 Node API');
+}
+
+function findFirstFileNode(parentId) {
+  const children = vfs.listChildren(parentId);
+  for (const child of children) {
+    if (child.type === 'file') {
+      return child;
+    }
+    if (child.type === 'folder') {
+      const result = findFirstFileNode(child.id);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return null;
+}
+
+function selectFirstAvailableNote() {
+  if (state.currentNodeId) return;
+  const firstFileNode = findFirstFileNode(null);
+  if (!firstFileNode) return;
+  setTimeout(() => {
+    const row = document.querySelector(`.tree-item[data-node-id="${firstFileNode.id}"] .tree-row`);
+    if (row) {
+      row.click();
+    } else {
+      selectNode(firstFileNode);
+    }
+  }, 0);
 }
 
 const {
@@ -405,6 +435,7 @@ async function initializeFileWorkspace() {
       },
     });
     tree.renderTree();
+    selectFirstAvailableNote();
   } catch (e) { }
 
   newFileBtn.addEventListener('click', (e) => {
@@ -508,6 +539,18 @@ function setupEditorEvents() {
 }
 
 /**
+ * 刷新工作区(重新加载数据并渲染)
+ */
+async function refreshWorkspace() {
+  try {
+    await vfs.initWorkspace();
+    tree.renderTree();
+  } catch (error) {
+    updateStatus(t('file.refreshFailed'));
+  }
+}
+
+/**
  * 文件操作相关的公共接口
  */
 export {
@@ -518,4 +561,5 @@ export {
   initializeFileWorkspace,
   setupEditorEvents,
   selectNode as selectFile,
+  refreshWorkspace,
 };

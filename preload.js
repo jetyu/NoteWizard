@@ -102,6 +102,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         showMessageBox: (options) => ipcRenderer.invoke('dialog:showMessageBox', options)
     },
 
+    images: {
+        saveImageFromPaste: (payload) => ipcRenderer.invoke('images:save-paste', payload)
+    },
+
     app: {
         getPath: (name) => ipcRenderer.invoke('app:getPath', name),
         getAppPath: () => ipcRenderer.invoke('app:getAppPath'),

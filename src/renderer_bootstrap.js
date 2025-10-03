@@ -1,6 +1,6 @@
-import { onDomReadyInitEditor } from './renderer/editor.js';
+import { onDomReadyInitEditor } from './renderer/editor/editor.js';
 import { setupOutlineWhenReady } from './renderer/outline.js';
-import { initializeFileWorkspace, setupEditorEvents } from './renderer/files.js';
+import { initializeFileWorkspace, setupEditorEvents } from './renderer/workspace/files.js';
 import { setupToolbar } from './renderer/toolbar.js';
 import { initI18n, applyI18n } from './renderer/i18n.js';
 import { initPreferences } from './renderer/preferences.js';
