@@ -40,7 +40,7 @@
   "toolbar.insertLink": "Chèn liên kết",
   "toolbar.insertImage": "Chèn hình ảnh",
   "about.title": "Giới thiệu về NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "Phiên bản",
   "about.description": "Một ứng dụng ghi chú Markdown tập trung vào quyền riêng tư, tích hợp các dịch vụ AI tùy chỉnh, giữ dữ liệu của bạn an toàn và trong tầm kiểm soát.",
   "about.electron": "Electron",

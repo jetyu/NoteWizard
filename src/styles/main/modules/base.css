@@ -191,11 +191,12 @@ input.tree-rename:focus {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--border), transparent);
 }
-
 /* --------------------------------------------
    ## 左侧面板
    -------------------------------------------- */
 #left-panel {
+  flex: 0 0 280px;
+  flex-shrink: 0;
   width: 280px;
   border-right: 1px solid var(--border);
   transition: none;
@@ -216,6 +217,7 @@ input.tree-rename:focus {
 }
 
 #left-panel.collapsed {
+  flex: 0 0 50px;
   width: 50px;
 }
 
@@ -466,7 +468,6 @@ input.tree-rename:focus {
   background: var(--accent);
   margin-right: 8px;
 }
-
 /* 移除了pulse动画 */
 /* --------------------------------------------
    ## 状态详情

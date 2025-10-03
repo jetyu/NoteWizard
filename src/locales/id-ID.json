@@ -40,7 +40,7 @@
   "toolbar.insertLink": "Sisipkan Tautan",
   "toolbar.insertImage": "Sisipkan Gambar",
   "about.title": "Tentang NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "Versi",
   "about.description": "Aplikasi pencatat Markdown yang berfokus pada privasi, dengan layanan AI kustom terintegrasi, menjaga data Anda tetap aman dan di bawah kendali Anda.",
   "about.electron": "Electron",

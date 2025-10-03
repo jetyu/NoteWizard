@@ -40,7 +40,7 @@
   "toolbar.insertLink": "插入連結",
   "toolbar.insertImage": "插入圖片",
   "about.title": "關於 NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "版本",
   "about.description": "一款專注於隱私保護的 Markdown 筆記應用程式，整合自訂 AI 服務，讓您的資料始終安全且可控。",
   "about.electron": "Electron",

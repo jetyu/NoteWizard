@@ -40,7 +40,7 @@
   "toolbar.insertLink": "Insérer un lien",
   "toolbar.insertImage": "Insérer une image",
   "about.title": "À propos de NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "Version",
   "about.description": "Une application de prise de notes Markdown axée sur la confidentialité, intégrant des services IA personnalisés pour garder vos données sécurisées et sous votre contrôle.",
   "about.electron": "Electron",

@@ -40,7 +40,7 @@
   "toolbar.insertLink": "リンクを挿入",
   "toolbar.insertImage": "画像を挿入",
   "about.title": "NoteWizardについて",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "バージョン",
   "about.description": "プライバシーに焦点を当てたMarkdownノートアプリで、カスタムAIサービスを統合し、データは常に安全で管理可能です。",
   "about.electron": "Electron",

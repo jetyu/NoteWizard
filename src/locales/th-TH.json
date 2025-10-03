@@ -40,7 +40,7 @@
   "toolbar.insertLink": "แทรกลิงก์",
   "toolbar.insertImage": "แทรกรูปภาพ",
   "about.title": "เกี่ยวกับ NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "รุ่น",
   "about.description": "แอปพลิเคชันจดโน้ต Markdown ที่เน้นความเป็นส่วนตัว พร้อมบริการ AI ที่กำหนดเองได้ในตัว ทำให้ข้อมูลของคุณปลอดภัยและอยู่ภายใต้การควบคุมของคุณ",
   "about.electron": "Electron",

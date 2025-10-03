@@ -93,7 +93,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         buttons: [t("update.button.downloadNow"), t("update.button.later")],
         defaultId: 0,
         cancelId: 1,
-        title: t("update.title.available"),
+        title: t("appName"),
         message: t("update.message.available"),
         detail: detail ?? undefined,
         noLink: true,
@@ -122,7 +122,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         type: "info",
         buttons: [t("update.button.confirm")],
         defaultId: 0,
-        title: t("update.title.latest"),
+        title: t("appName"),
         message: t("update.message.latest"),
         noLink: true,
       });
@@ -154,7 +154,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         buttons: [t("update.button.restartNow"), t("update.button.remindLater")],
         defaultId: 0,
         cancelId: 1,
-        title: t("update.title.downloaded"),
+        title: t("appName"),
         message: t("update.message.downloaded"),
         noLink: true,
       });
@@ -174,7 +174,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         buttons: [t("update.button.openReleasePage"), t("update.button.cancel")],
         defaultId: 0,
         cancelId: 1,
-        title: t("update.devMode.title"),
+        title: t("appName"),
         message: t("update.devMode.message"),
         detail: t("update.devMode.detail"),
         noLink: true,
@@ -192,7 +192,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         type: "info",
         buttons: [t("update.button.confirm")],
         defaultId: 0,
-        title: t("update.title.inProgress"),
+        title: t("appName"),
         message: t("update.message.inProgress"),
         noLink: true,
       });
@@ -204,7 +204,7 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
         type: "info",
         buttons: [t("update.button.confirm")],
         defaultId: 0,
-        title: t("update.title.downloading"),
+        title: t("appName"),
         message: t("update.message.downloading"),
         noLink: true,
       });

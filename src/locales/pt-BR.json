@@ -40,7 +40,7 @@
   "toolbar.insertLink": "Inserir Link",
   "toolbar.insertImage": "Inserir Imagem",
   "about.title": "Sobre o NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "Versão",
   "about.description": "Um aplicativo de anotações Markdown focado em privacidade, com serviços de IA personalizados integrados, mantendo seus dados seguros e sob seu controle.",
   "about.electron": "Electron",

@@ -1,3 +1,5 @@
-查看 [更新日志](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md) 了解详细更新内容。
+# Release Notes · NoteWizard v${VERSION} · ${DATE}
 
-See [Changelog](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md) for details.
+See full changelog:
+- [English](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md)
+- [中文](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md)

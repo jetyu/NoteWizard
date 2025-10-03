@@ -79,8 +79,6 @@ function setupEditorEventListeners(editor, aiAssistant) {
 function handleTabKey(cm) {
   const aiAssistant = getAIAssistant();
   
-  console.log('Tab键被按下, 当前AI建议:', aiAssistant?.currentSuggestion);
-
   // 如果有AI建议，应用建议
   if (aiAssistant && aiAssistant.currentSuggestion) {
     aiAssistant.applySuggestion();
@@ -96,9 +94,6 @@ function handleTabKey(cm) {
 // 处理ESC键
 function handleEscKey(cm) {
   const aiAssistant = getAIAssistant();
-  
-  console.log('ESC键被按下, 当前AI建议:', aiAssistant?.currentSuggestion);
-  
   // 如果有AI建议，取消建议
   if (aiAssistant && aiAssistant.currentSuggestion) {
     aiAssistant.hideSuggestion();

@@ -40,7 +40,7 @@
   "toolbar.insertLink": "링크 삽입",
   "toolbar.insertImage": "이미지 삽입",
   "about.title": "NoteWizard 정보",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "버전",
   "about.description": "프라이버시를 중시하는 Markdown 노트 앱으로, 맞춤형 AI 서비스를 통합하여 데이터를 항상 안전하고 관리 가능하게 유지합니다.",
   "about.electron": "Electron",

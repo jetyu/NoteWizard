@@ -40,7 +40,7 @@
   "toolbar.insertLink": "Вставить ссылку",
   "toolbar.insertImage": "Вставить изображение",
   "about.title": "О NoteWizard",
-  "about.appName": "NoteWizard",
+  "appName": "NoteWizard",
   "about.version": "Версия",
   "about.description": "Приложение для заметок в формате Markdown с акцентом на конфиденциальность, интегрированное с настраиваемыми сервисами ИИ, обеспечивающее безопасность и контроль над вашими данными.",
   "about.electron": "Electron",

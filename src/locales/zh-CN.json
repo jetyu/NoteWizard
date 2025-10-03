@@ -1,4 +1,5 @@
-{
+{ 
+  "appName": "NoteWizard",
   "workspace": "工作区",
   "outline": "大纲",
   "collapsePanel": "折叠面板",
@@ -40,7 +41,7 @@
   "toolbar.insertLink": "插入链接",
   "toolbar.insertImage": "插入图片",
   "about.title": "关于 NoteWizard",
-  "about.appName": "NoteWizard",
+ 
   "about.version": "版本",
   "about.description": "一款专注于隐私保护的Markdown笔记应用，集成自定义AI服务，让您的数据始终安全可控。",
   "about.electron": "Electron",
@@ -192,7 +193,7 @@
   "update.detail.releaseNotesFallback": "请前往发布页面查看更新内容。",
   "update.button.downloadNow": "立即下载",
   "update.button.later": "稍后",
-  "update.title.latest": "已是最新版本",
+  "update.title.latest": "NoteWizard已是最新版本",
   "update.message.latest": "当前版本已经是最新版本。",
   "update.button.confirm": "确定",
   "update.title.inProgress": "正在检查",
