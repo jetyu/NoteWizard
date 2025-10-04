@@ -1,6 +1,6 @@
 import i18n from './i18n.js';
 import { applyThemeByMode } from './theme.js';
-import * as vfs from './vfs.js';
+import * as vfs from './workspace/vfs.js';
 
 const electronAPI = window.electronAPI;
 
@@ -696,6 +696,17 @@ if (testButton) {
         // 从 preferences.json 读取所有配置
         const allPrefs = await ipcRenderer.invoke('preferences:getAll');
         
+        const aiSettings = allPrefs.aiSettings || {};
+        const completeAISettings = {
+          enabled: aiSettings.enabled || false,
+          model: aiSettings.model || '',
+          apiKey: aiSettings.apiKey || '',
+          endpoint: aiSettings.endpoint || '',
+          systemPrompt: aiSettings.systemPrompt || '',
+          typingDelay: aiSettings.typingDelay || 2000,
+          minInputLength: aiSettings.minInputLength || 10
+        };
+        
         // 收集所有首选项
         const preferences = {
           themeMode: allPrefs.themeMode || 'system',
@@ -705,7 +716,7 @@ if (testButton) {
           previewFontFamily: allPrefs.previewFontFamily || "'Microsoft YaHei', '微软雅黑', sans-serif",
           noteSavePath: allPrefs.noteSavePath || await getDefaultSavePath(),
           language: allPrefs.language || 'zh-CN',
-          aiSettings: allPrefs.aiSettings || {},
+          aiSettings: completeAISettings,
           startupOnLogin: allPrefs.startupOnLogin || false
         };
 
@@ -747,10 +758,11 @@ if (testButton) {
 
           // 重新加载设置
           const prefs = result.preferences;
-          if (prefs.themeMode) {
-            document.getElementById('pref-theme-mode').value = prefs.themeMode;
-            await ipcRenderer.invoke('preferences:set', 'themeMode', prefs.themeMode);
-            applyThemeByMode(prefs.themeMode);
+          if (prefs.theme || prefs.themeMode) {
+            const themeValue = prefs.theme || prefs.themeMode;
+            document.getElementById('pref-theme-mode').value = themeValue;
+            await ipcRenderer.invoke('preferences:set', 'themeMode', themeValue);
+            applyThemeByMode(themeValue);
           }
 
           // 提示用户重启应用
@@ -968,6 +980,7 @@ async function applyImportedPreferences(prefs) {
     // 应用主题设置
     if (prefs.theme && document.getElementById('pref-theme-mode')) {
       document.getElementById('pref-theme-mode').value = prefs.theme;
+      await ipcRenderer.invoke('preferences:set', 'themeMode', prefs.theme);
       applyThemeByMode(prefs.theme);
     }
 
@@ -996,19 +1009,31 @@ async function applyImportedPreferences(prefs) {
     }
 
     // 应用AI设置
-    if (prefs.ai) {
+    const aiSettings = prefs.aiSettings;
+    if (aiSettings) {
       // 设置AI配置输入框
       const modelInput = document.getElementById('pref-ai-model');
       const apiKeyInput = document.getElementById('pref-ai-api-key');
       const endpointInput = document.getElementById('pref-ai-endpoint');
+      const systemPromptInput = document.getElementById('pref-ai-system-prompt');
+      const aiEnabledInput = document.getElementById('pref-ai-enabled');
+      const aiTypingDelayInput = document.getElementById('pref-ai-typing-delay');
+      const aiTypingLengthInput = document.getElementById('pref-ai-typing-length');
       
       // 更新输入框值
-      if (modelInput) modelInput.value = prefs.ai.model || '';
-      if (apiKeyInput) apiKeyInput.value = prefs.ai.apiKey || '';
-      if (endpointInput) endpointInput.value = prefs.ai.endpoint || '';
+      if (modelInput) modelInput.value = aiSettings.model || '';
+      if (apiKeyInput) apiKeyInput.value = aiSettings.apiKey || '';
+      if (endpointInput) endpointInput.value = aiSettings.endpoint || '';
+      if (systemPromptInput) systemPromptInput.value = aiSettings.systemPrompt || '';
+      if (aiEnabledInput) aiEnabledInput.checked = aiSettings.enabled === true;
+      if (aiTypingDelayInput) aiTypingDelayInput.value = aiSettings.typingDelay || 2000;
+      if (aiTypingLengthInput) aiTypingLengthInput.value = aiSettings.minInputLength || 10;
       
       // 保存到 preferences.json
       await saveAISettings();
+      
+      // 更新AI字段状态
+      updateAIFieldsState();
     }
 
     // 应用笔记保存路径

@@ -1,3 +1,7 @@
+### [0.2.6] - 2025-10-04
+#### Optimized
+- Optimized the editor experience.
+
 ### [0.2.5] - 2025-10-03
 #### Fixed
 - Fixed an issue introduced in version 0.2.2 that caused the note list in the workspace not to refresh in real time after restarting.

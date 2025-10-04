@@ -235,10 +235,14 @@ ipcMain.handle("export-preferences", async (event, preferences) => {
           fontSize: preferences.previewFontSize || "16",
           fontFamily: preferences.previewFontFamily || "'Arial', sans-serif",
         },
-        ai: {
+        aiSettings: {
+          enabled: preferences.aiSettings?.enabled || false,
           model: preferences.aiSettings?.model || "",
           apiKey: preferences.aiSettings?.apiKey || "",
           endpoint: preferences.aiSettings?.endpoint || "",
+          systemPrompt: preferences.aiSettings?.systemPrompt || "",
+          typingDelay: preferences.aiSettings?.typingDelay || 2000,
+          minInputLength: preferences.aiSettings?.minInputLength || 10,
         },
         noteSavePath: preferences.noteSavePath || "",
         startupOnLogin: !!preferences.startupOnLogin,
@@ -839,6 +843,89 @@ ipcMain.handle("fs:mkdirSync", (_event, targetPath, options) => {
 ipcMain.handle("fs:rename", async (_event, oldPath, newPath) => {
   await fs.promises.rename(oldPath, newPath);
   return true;
+});
+
+function ensureDirSync(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    return true;
+  } catch (error) {
+    console.error('创建目录失败:', dirPath, error);
+    return false;
+  }
+}
+
+function sanitizeNameSegment(segment, fallback = 'image') {
+  if (!segment || typeof segment !== 'string') {
+    return fallback;
+  }
+  const normalized = segment.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const cleaned = normalized.replace(/[^a-zA-Z0-9-_]+/g, '_').replace(/^_+|_+$/g, '');
+  return cleaned || fallback;
+}
+
+ipcMain.handle('images:save-paste', async (_event, payload = {}) => {
+  try {
+    const {
+      bytes,
+      originalName = '',
+      mimeType = 'image/png',
+      workspaceRoot,
+      contentId,
+      noteName = '',
+    } = payload;
+
+    if (!workspaceRoot) {
+      return { success: false, error: '未提供工作区路径' };
+    }
+    if (!contentId) {
+      return { success: false, error: '未提供笔记标识 contentId' };
+    }
+    if (!Array.isArray(bytes) || !bytes.length) {
+      return { success: false, error: '未接收到图片数据' };
+    }
+
+    const buffer = Buffer.from(bytes);
+    const safeExt = mimeType === 'image/png'
+      ? '.png'
+      : mimeType === 'image/jpeg'
+        ? '.jpg'
+        : mimeType === 'image/gif'
+          ? '.gif'
+          : mimeType === 'image/webp'
+            ? '.webp'
+            : path.extname(originalName) || '.png';
+
+    const sanitizedNote = sanitizeNameSegment(noteName, 'note');
+    const fileNameBase = sanitizeNameSegment(path.parse(originalName).name || '', sanitizedNote);
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).slice(2, 8);
+    const fileName = `${fileNameBase}-${timestamp}-${randomSuffix}${safeExt}`;
+
+    const databaseDir = path.join(workspaceRoot, 'Database');
+    const imagesDir = path.join(databaseDir, 'images', sanitizeNameSegment(contentId, 'note'));
+    if (!ensureDirSync(imagesDir)) {
+      return { success: false, error: '无法创建图片目录' };
+    }
+
+    const filePath = path.join(imagesDir, fileName);
+    await fs.promises.writeFile(filePath, buffer);
+
+    const objectsDir = path.join(databaseDir, 'objects');
+    const relativeFromObjects = path.relative(objectsDir, filePath).replace(/\\/g, '/');
+    const markdownPath = relativeFromObjects.startsWith('.') ? relativeFromObjects : `./${relativeFromObjects}`;
+
+    return {
+      success: true,
+      filePath,
+      markdownPath,
+    };
+  } catch (error) {
+    console.error('粘贴图片保存失败:', error);
+    return { success: false, error: error.message };
+  }
 });
 
 // --- 路径处理器 ---

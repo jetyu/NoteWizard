@@ -1,4 +1,4 @@
-import state from './state.js';
+import state from '../state.js';
 
 const electronAPI = window.electronAPI;
 
