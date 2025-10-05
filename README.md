@@ -35,11 +35,11 @@
 ## 支持平台
 
 本项目当前支持以下操作系统与架构：
-| 平台 | 最低支持版本 | 架构 | 安装包格式 | 备注 |
+| 操作系统平台 | 支持版本 | 架构 | 安装包格式 | 备注 |
 |------|-------------|------|-----------|------|
-| **Windows** | Windows 10 及以上 | x64 | `.exe` | 不支持 Windows XP/Vista/7/8/8.1 |
-| **macOS** | macOS Big Sur (11.0) 及以上 | x64,arm64 | `.dmg`, `.zip` | 支持 Intel 和 Apple Silicon |
-| **Linux** | Ubuntu 18.04 / Debian 10 / Fedora 32 及以上 / 兼容主流Linux发行版  | x64 | `.deb`,`.rpm`,`.AppImage` | 依赖 glibc ≥ 2.28 的Linux发行版 |
+| **Windows** | Windows 10 及以上 | x64 | `.exe` | 不支持 Windows XP ~ 8.1|
+| **macOS** | macOS Big Sur (11.0) 及以上 | x64 / arm64 | `.dmg`, `.zip` | 支持 Intel 和 Apple Silicon |
+| **Linux** | Ubuntu 18.04 / Debian 10 / Fedora 32 及以上 | x64 | `.deb`,`.rpm`,`.AppImage` | 兼容支持主流Linux发行版  |
 
 >  **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
 
