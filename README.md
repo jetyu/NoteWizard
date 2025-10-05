@@ -74,8 +74,6 @@ Built automatically using `Workflows`, click to download the latest package for 
 [![NoteWizard-Linux-x64.AppImage](https://img.shields.io/badge/NoteWizard--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.AppImage)
 
 
-
-
 >   [View All Releases](https://github.com/jetyu/NoteWizard/releases/latest)
 
 

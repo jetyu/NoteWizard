@@ -74,9 +74,7 @@
 [![NoteWizard-Linux-x64.AppImage](https://img.shields.io/badge/NoteWizard--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.AppImage)
 
 
-
-
->   [查看全部发布版本](https://github.com/jetyu/NoteWizard/releases/latest)
+>   [查看全部版本](https://github.com/jetyu/NoteWizard/releases)
 
 
 ## 快速开始

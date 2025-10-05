@@ -35,7 +35,7 @@ function buildReleaseNotes({ sectionBody }) {
   const header = '### NoteWizard Release Notes';
   const body = sectionBody.trim();
   const footer = [
-    '#### See full changelog:',
+    '#### Full Changelog',
     '- [English](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_en.md)',
     '- [简体中文](https://github.com/jetyu/NoteWizard/blob/main/src/assets/changelog/history_cn.md)'
   ].join('\n');
