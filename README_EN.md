@@ -7,7 +7,7 @@
 <div align="center">
   <img src="src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="72">
   <h2> NoteWizard </h2>
-  <p>一款基于Electron开发的现代化跨平台笔记应用，数据本地存储，让数据始终安全可控。</p>
+  <p>A modern cross-platform note-taking application built with Electron, featuring local data storage for complete security and control.</p>
   
 [![GitHub Release](https://img.shields.io/github/v/release/jetyu/NoteWizard?style=flat-square)](https://github.com/jetyu/NoteWizard/releases/latest)
 [![GitHub pre-release](https://img.shields.io/github/v/release/jetyu/NoteWizard?include_prereleases&style=flat-square&label=pre-release)](https://github.com/jetyu/NoteWizard/releases)
@@ -19,44 +19,44 @@
 
 </div>
 
-## 功能特点
-- **极简界面**：简单纯粹无广告
-- **跨平台**：支持 Windows、macOS 和 Linux 系统
-- **Markdown支持**：实时预览 Markdown 渲染效果
-- **AI智能辅助写作**：AI智能辅助写作，让您的写作更轻松
-- **本地存储**：所有笔记数据保存在本地，方便数据导入导出
-- **国际化**：支持全球19种语言及地区设置
+## Features
+- **Minimalist Interface**: Simple, clean, and ad-free
+- **Cross-Platform**: Supports Windows, macOS, and Linux
+- **Markdown Support**: Real-time Markdown preview and rendering
+- **AI-Powered Writing Assistant**: Intelligent writing assistance for enhanced productivity
+- **Local Storage**: All notes stored locally for easy data import/export
+- **Internationalization**: Supports 19 languages and regional settings
 
-## 界面预览
-**NoteWizard 快速上手(v0.2.6)**  
-![NoteWizard 快速上手](./doc/getstarted/v0.2.6.webp)
-**NoteWizard 主界面**  
-![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
-**NoteWizard 首选项界面**  
-![NoteWizard 界面预览](./doc/preview/NoteWizard_2.png)
-![NoteWizard 界面预览](./doc/preview/NoteWizard_3.png)
-**NoteWizard 关于界面**  
-![NoteWizard 界面预览](./doc/preview/NoteWizard_4.png)
+## Screenshots
+**NoteWizard Quick Start (v0.2.6)**  
+![NoteWizard Quick Start](./doc/getstarted/v0.2.6.webp)
+**NoteWizard Main Interface**  
+![NoteWizard Preview](./doc/preview/NoteWizard_1.png)
+**NoteWizard Preferences**  
+![NoteWizard Preview](./doc/preview/NoteWizard_2.png)
+![NoteWizard Preview](./doc/preview/NoteWizard_3.png)
+**NoteWizard About**  
+![NoteWizard Preview](./doc/preview/NoteWizard_4.png)
 
-## 支持平台
+## Supported Platforms
 
-本项目当前支持以下操作系统与架构：
-| 操作系统 | 支持版本 | 架构 | 安装包格式 | 备注 |
-|------|-------------|------|-----------|------|
-| **Windows** | Windows 10 及以上 | x64 | `.exe` | 不支持 Windows XP ~ 8.1|
-| **macOS** | macOS Big Sur (11.0) 及以上 | x64,arm64 | `.dmg`, `.zip` | 支持 Intel 和 Apple Silicon |
-| **Linux** | Ubuntu 18.04 / Debian 10 / Fedora 32 及以上 | x64 | `.deb`,`.rpm`,`.AppImage` | 兼容支持主流Linux发行版  |
+Current supported operating systems and architectures:
+| Platform | Supported Versions | Architecture | Package Format | Notes |
+|----------|-------------------|--------------|----------------|-------|
+| **Windows** | Windows 10 and above | x64 | `.exe` | Windows XP ~ 8.1 not supported |
+| **macOS** | macOS Big Sur (11.0) and above | x64 / arm64 | `.dmg`, `.zip` | Supports Intel and Apple Silicon |
+| **Linux** | Ubuntu 18.04 / Debian 10 / Fedora 32 and above | x64 | `.deb`, `.rpm`, `.AppImage` | Compatible with mainstream Linux distributions |
 
->  **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
+>  **Note:** Please download the appropriate package for your platform and ensure your system meets the minimum version requirements.
 
-## 下载安装
-使用 `Workflows` 自动构建操作系统平台最新安装包，点击对应平台的安装包下载：
+## Download & Installation
+Built automatically using `Workflows`, click to download the latest package for your platform:
 
-### Windows操作系统
+### Windows
 
 [![NoteWizard-Windows-x64.exe](https://img.shields.io/badge/NoteWizard--Windows--x64.exe-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Windows-x64.exe)
 
-### macOS操作系统
+### macOS
 
 **Intel Chip**
 
@@ -69,59 +69,59 @@
 [![NoteWizard-macOS-arm64.zip](https://img.shields.io/badge/NoteWizard--macOS--arm64.zip-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-arm64.zip)
 
 
-### Linux操作系统
+### Linux
 
-**DEB 包 (Debian/Ubuntu)**  
+**DEB Package (Debian/Ubuntu)**  
 [![NoteWizard-Linux-x64.deb](https://img.shields.io/badge/NoteWizard--Linux--x64.deb-FCC624?style=flat-square&logo=debian&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.deb)
 
-**RPM 包 (Fedora/RHEL)**  
+**RPM Package (Fedora/RHEL)**  
 [![NoteWizard-Linux-x64.rpm](https://img.shields.io/badge/NoteWizard--Linux--x64.rpm-FCC624?style=flat-square&logo=redhat&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.rpm)
 
-**AppImage (通用格式)**  
+**AppImage (Universal)**  
 [![NoteWizard-Linux-x64.AppImage](https://img.shields.io/badge/NoteWizard--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.AppImage)
 
 
 
 
->   [查看全部发布版本](https://github.com/jetyu/NoteWizard/releases/latest)
+>   [View All Releases](https://github.com/jetyu/NoteWizard/releases/latest)
 
 
-## 快速开始
+## Quick Start
 
-### 环境要求
+### Requirements
 
-- Node.js (v20 或更高版本)
-- npm (v10 或更高版本)
-- Git (用于克隆仓库)
+- Node.js (v20 or higher)
+- npm (v10 or higher)
+- Git (for cloning the repository)
 
-## 主要依赖
+## Main Dependencies
 
-- **Electron** - 使用 JavaScript, HTML 和 CSS 构建跨平台桌面应用
-- **CodeMirror** - 功能丰富的代码编辑器
-- **Marked** - Markdown 解析器和编译器
+- **Electron** - Build cross-platform desktop apps with JavaScript, HTML, and CSS
+- **CodeMirror** - Feature-rich code editor
+- **Marked** - Markdown parser and compiler
 
-## 参与贡献
+## Contributing
 
-我们非常欢迎和感谢所有贡献！无论是报告 Bug、讨论功能，还是提交代码，您的支持都是项目前进的动力。
+We welcome and appreciate all contributions! Whether it's reporting bugs, discussing features, or submitting code, your support drives the project forward.
 
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/新功能`)
-3. 提交更改 (`git commit -m '添加新功能'`)
-4. 推送到分支 (`git push origin feature/新功能`)
-5. 提交 Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 开源协议
+## License
 
-本项目采用 MIT 开源协议，详情请参阅 `LICENSE` 文件。
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-## 致谢
+## Acknowledgments
 
-感谢以下开源项目的支持：
+Thanks to the following open source projects:
 - [Electron](https://www.electronjs.org/)
 - [CodeMirror](https://codemirror.net/)
 - [Marked](https://marked.js.org/)
 
 ---
 
-### 成长轨迹
+### Star History
 [![Star History Chart](https://api.star-history.com/svg?repos=jetyu/NoteWizard)](https://star-history.com/#jetyu/NoteWizard)  
