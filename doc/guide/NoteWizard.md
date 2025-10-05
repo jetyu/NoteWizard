@@ -3,7 +3,7 @@
 <div align="center">
   <img src="../../src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="96">
   <h3>现代化跨平台 Markdown 笔记应用</h3>
-  <p>简单、纯粹、安全的笔记体验</p>
+  <p>简单、纯粹、安全</p>
 </div>
 
 ---

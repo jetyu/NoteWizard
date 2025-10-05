@@ -3,8 +3,7 @@
   <h2> NoteWizard </h2>
   <p>一款基于Electron开发的现代化跨平台笔记应用，数据本地存储，让数据始终安全可控。</p>
   
-
-[![GitHub release](https://img.shields.io/github/v/release/jetyu/NoteWizard?style=flat-square)](https://github.com/jetyu/NoteWizard/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/jetyu/NoteWizard?style=flat-square)](https://github.com/jetyu/NoteWizard/releases/latest)
 [![GitHub pre-release](https://img.shields.io/github/v/release/jetyu/NoteWizard?include_prereleases&style=flat-square&label=pre-release)](https://github.com/jetyu/NoteWizard/releases)
 [![Build Status](https://github.com/jetyu/NoteWizard/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/jetyu/NoteWizard/actions/workflows/build.yml)
 [![Downloads](https://img.shields.io/github/downloads/jetyu/NoteWizard/total?style=flat-square&logo=github)](https://github.com/jetyu/NoteWizard/releases/)
@@ -15,17 +14,16 @@
 </div>
 
 ## 功能特点
-- **Markdown支持**：实时预览 Markdown 渲染效果
-- **跨平台**：支持 Windows、macOS 和 Linux 系统
-- **本地存储**：所有笔记安全保存在本地
-- **主题切换**：随心切换您偏好的界面主题
 - **极简界面**：简单纯粹无广告
-- **国际化**：支持19种语言及地区设置
-
+- **跨平台**：支持 Windows、macOS 和 Linux 系统
+- **Markdown支持**：实时预览 Markdown 渲染效果
+- **AI智能辅助写作**：AI智能辅助写作，让您的写作更轻松
+- **本地存储**：所有笔记数据保存在本地，方便数据导入导出
+- **国际化**：支持全球19种语言及地区设置
 
 ## 界面预览
-**NoteWizard 快速开始(v0.2.6)**  
-![NoteWizard 快速开始](./doc/getstarted/v0.2.6.webp)
+**NoteWizard 快速上手(v0.2.6)**  
+![NoteWizard 快速上手](./doc/getstarted/v0.2.6.webp)
 **NoteWizard 主界面**  
 ![NoteWizard 界面预览](./doc/preview/NoteWizard_1.png)
 **NoteWizard 首选项界面**  
@@ -39,27 +37,27 @@
 本项目当前支持以下操作系统与架构：
 | 平台 | 最低支持版本 | 架构 | 安装包格式 | 备注 |
 |------|-------------|------|-----------|------|
-| ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows11&logoColor=white&labelColor=0078D6) | Windows 10 及以上 | x64 | `.exe` | 不支持 Windows XP/Vista/7/8/8.1 |
-| ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white&labelColor=000000) | macOS Big Sur (11.0) 及以上 | x64,arm64 | `.dmg`, `.zip` | 支持 Intel 和 Apple Silicon |
-| ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black&labelColor=FCC624) | Ubuntu 18.04 / Debian 10 / Fedora 32 及以上 / 兼容主流Linux发行版  | x64 | `.deb`,`.rpm`,`.AppImage` | 依赖 glibc ≥ 2.28 的Linux发行版 |
+| **Windows** | Windows 10 及以上 | x64 | `.exe` | 不支持 Windows XP/Vista/7/8/8.1 |
+| **macOS** | macOS Big Sur (11.0) 及以上 | x64,arm64 | `.dmg`, `.zip` | 支持 Intel 和 Apple Silicon |
+| **Linux** | Ubuntu 18.04 / Debian 10 / Fedora 32 及以上 / 兼容主流Linux发行版  | x64 | `.deb`,`.rpm`,`.AppImage` | 依赖 glibc ≥ 2.28 的Linux发行版 |
 
 >  **提示：** 请根据对应平台下载相应安装包，并确保系统满足最低版本要求。
 
 ## 下载安装
+使用 `Workflows` 自动构建操作系统平台最新安装包，点击对应平台的安装包下载：
 
-使用 `Workflows` 自动构建操作系统平台最新安装包，点击对应平台的安装包下载链接：
-
-### Windows操作系统
+#### Windows操作系统
 [![NoteWizard-Windows-x64.exe](https://img.shields.io/badge/NoteWizard--Windows--x64.exe-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Windows-x64.exe)
 
-### macOS操作系统
+#### macOS操作系统
 [![NoteWizard-macOS-x64.dmg](https://img.shields.io/badge/NoteWizard--macOS--x64.dmg-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-x64.dmg)
 [![NoteWizard-macOS-x64.zip](https://img.shields.io/badge/NoteWizard--macOS--x64.zip-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-x64.zip)
 
-### Linux操作系统
+#### Linux操作系统
 [![NoteWizard-Linux-x64.deb](https://img.shields.io/badge/NoteWizard--Linux--x64.deb-FCC624?style=flat-square&logo=debian&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.deb)
 [![NoteWizard-Linux-x64.rpm](https://img.shields.io/badge/NoteWizard--Linux--x64.rpm-FCC624?style=flat-square&logo=redhat&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.rpm)
 [![NoteWizard-Linux-x64.AppImage](https://img.shields.io/badge/NoteWizard--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.AppImage)
+
 
 >   [查看全部发布版本](https://github.com/jetyu/NoteWizard/releases/latest)
 
@@ -98,7 +96,6 @@
 - [Electron](https://www.electronjs.org/)
 - [CodeMirror](https://codemirror.net/)
 - [Marked](https://marked.js.org/)
-- 所有为项目做出贡献的开发者
 
 ---
 
