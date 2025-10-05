@@ -50,8 +50,13 @@
 [![NoteWizard-Windows-x64.exe](https://img.shields.io/badge/NoteWizard--Windows--x64.exe-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Windows-x64.exe)
 
 #### macOS操作系统
+**Intel x64**
 [![NoteWizard-macOS-x64.dmg](https://img.shields.io/badge/NoteWizard--macOS--x64.dmg-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-x64.dmg)
 [![NoteWizard-macOS-x64.zip](https://img.shields.io/badge/NoteWizard--macOS--x64.zip-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-x64.zip)
+
+**Apple Silicon**
+[![NoteWizard-macOS-arm64.dmg](https://img.shields.io/badge/NoteWizard--macOS--arm64.dmg-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-arm64.dmg)
+[![NoteWizard-macOS-arm64.zip](https://img.shields.io/badge/NoteWizard--macOS--arm64.zip-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-macOS-arm64.zip)
 
 #### Linux操作系统
 [![NoteWizard-Linux-x64.deb](https://img.shields.io/badge/NoteWizard--Linux--x64.deb-FCC624?style=flat-square&logo=debian&logoColor=black)](https://github.com/jetyu/NoteWizard/releases/latest/download/NoteWizard-Linux-x64.deb)
