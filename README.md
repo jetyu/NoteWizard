@@ -1,6 +1,6 @@
 <div align="center">
 
-**Language / 语言:** [English](README.md) | [简体中文](README_zh.md)
+**Language / 语言:** [English](README.md) | [简体中文](README_CN.md)
 
 </div>
 
@@ -20,12 +20,13 @@
 </div>
 
 ## Features
-- **Minimalist Interface**: Simple, clean, and ad-free
-- **Cross-Platform**: Supports Windows, macOS, and Linux OS Platform
-- **Markdown Support**: Real-time Markdown preview and rendering
-- **AI-Powered Writing Assistant**: Intelligent writing assistance for enhanced productivity
-- **Local Storage**: All notes stored locally for easy data import/export
-- **Internationalization**: Supports 19 languages and regional settings
+- **Minimalist Interface**: Simple, pure, and ad-free
+- **Cross-Platform**: Supports Windows, macOS, and Linux
+- **Easy Migration**: Supports complete NoteWizard proprietary format (.nwp) for full import/export, as well as Markdown (.md) format import/export
+- **Local Storage**: All note data is stored locally under control of user
+- **Markdown Support**: Real-time preview of Markdown rendering
+- **AI-Powered Writing Assistant**: AI-powered writing assistance to make your writing easier
+- **Internationalization**: Supports 19 languages and regional settings worldwide
 
 ## Screenshots
 **NoteWizard Quick Start**  

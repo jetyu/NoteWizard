@@ -1,4 +1,5 @@
 import i18n, { t } from '../i18n.js';
+import state from '../state.js';
 import * as vfs from '../workspace/vfs.js';
 import { renderTree } from '../workspace/tree.js';
 
@@ -160,17 +161,39 @@ async function loadTrashItems() {
 
     tbody.innerHTML = '';
 
+    // 只显示根节点（没有被删除的父节点的节点）
     const trashedNodes = [];
     for (const [id, node] of state.nodes) {
       if (node.trashed) {
-        trashedNodes.push({
-          id,
-          name: node.name,
-          type: node.type,
-          trashedAt: node.trashedAt || new Date().toISOString(),
-          fileName: node.fileName || '',
-          parentId: node.parentId,
-        });
+        // 检查父节点是否也被删除
+        const parent = node.parentId ? state.nodes.get(node.parentId) : null;
+        const isRootTrashedNode = !parent || !parent.trashed;
+        
+        if (isRootTrashedNode) {
+          // 统计子项数量
+          let childCount = 0;
+          const countChildren = (nodeId) => {
+            for (const [childId, childNode] of state.nodes) {
+              if (childNode.parentId === nodeId && childNode.trashed) {
+                childCount++;
+                if (childNode.type === 'folder') {
+                  countChildren(childId);
+                }
+              }
+            }
+          };
+          countChildren(id);
+          
+          trashedNodes.push({
+            id,
+            name: node.name,
+            type: node.type,
+            trashedAt: node.trashedAt || new Date().toISOString(),
+            fileName: node.fileName || '',
+            parentId: node.parentId,
+            childCount: childCount,
+          });
+        }
       }
     }
 
@@ -189,8 +212,15 @@ async function loadTrashItems() {
     trashedNodes.forEach((item) => {
       const row = document.createElement('tr');
       const fileName = item.type === 'file' ? (item.fileName || `${item.name}.md`) : '-';
+      
+      // 显示名称，如果是文件夹且有子项，显示子项数量
+      let displayName = item.name;
+      if (item.type === 'folder' && item.childCount > 0) {
+        displayName = `${item.name} (${item.childCount} ${t('trash.items')})`;
+      }
+      
       row.innerHTML = `
-        <td>${item.name}</td>
+        <td>${displayName}</td>
         <td>${fileName}</td>
         <td class="trash-modal__actions">
           <button class="trash-modal__btn trash-modal__btn--restore" data-id="${item.id}" data-i18n="trash.restore">恢复</button>

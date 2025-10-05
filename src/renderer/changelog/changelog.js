@@ -1,5 +1,5 @@
 import { initI18n, applyI18n, t, getLanguage } from "../i18n.js";
-import { marked } from "../utils/marked.js";
+import { marked } from "../../utils/marked.js";
 
 const CONFIG = {
   LANGUAGE_EN_US: "en-US",

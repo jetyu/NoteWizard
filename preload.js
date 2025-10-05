@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         mkdirSync: (targetPath, options) => fs.mkdirSync(targetPath, options),
         renameSync: (oldPath, newPath) => fs.renameSync(oldPath, newPath),
         unlinkSync: (targetPath) => fs.unlinkSync(targetPath),
+        rmSync: (targetPath, options) => fs.rmSync(targetPath, options),
         readdirSync: (dirPath, options) => fs.readdirSync(dirPath, options),
         statSync: (targetPath) => fs.statSync(targetPath)
     },

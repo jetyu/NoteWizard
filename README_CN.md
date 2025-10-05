@@ -1,6 +1,6 @@
 <div align="center">
 
-**Language / 语言:** [English](README.md) | [简体中文](README_zhCN.md)
+**Language / 语言:** [English](README.md) | [简体中文](README_CN.md)
 
 </div>
 
@@ -22,9 +22,10 @@
 ## 功能特点
 - **极简界面**：简单纯粹无广告
 - **跨平台**：支持 Windows、macOS 和 Linux 系统
+- **便捷迁移**：支持NoteWizard专有格式(.nwp)完整导入导出，也支持Markdown(.md)格式导入导出
+- **本地存储**：所有笔记数据保存在本地，安全可控
 - **Markdown支持**：实时预览 Markdown 渲染效果
 - **AI智能辅助写作**：AI智能辅助写作，让您的写作更轻松
-- **本地存储**：所有笔记数据保存在本地，方便数据导入导出
 - **国际化**：支持全球19种语言及地区设置
 
 ## 界面预览

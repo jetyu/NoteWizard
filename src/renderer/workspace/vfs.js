@@ -150,8 +150,8 @@ function listChildren(parentId, includeTrashed = false) {
 
 function saveNode(node) {
   node.updatedAt = Date.now();
-  if (node.type === 'file' && !node.fileName) {
-    node.fileName = node.name.endsWith('.md') ? node.name : `${node.name}.md`;
+  if (node.type === 'file' && !node.fileName && node.contentId) {
+    node.fileName = `${node.contentId}.md`;
   }
   state.nodes.set(node.id, node);
   persistAllNodes(state.workspaceRoot, state.nodes);
@@ -184,7 +184,7 @@ function createFile(parentId, name, content = '') {
     id: randomId(),
     type: 'file',
     name: displayName,
-    fileName: name.endsWith('.md') ? name : `${name}.md`,
+    fileName: `${contentId}.md`,
     parentId,
     order: Date.now(),
     createdAt: Date.now(),
@@ -218,6 +218,15 @@ function restoreNode(id) {
   const node = getNodeById(id);
   if (!node || !node.trashed) return false;
 
+  // 先恢复所有父级节点（如果父级节点也被删除了）
+  if (node.parentId) {
+    const parent = getNodeById(node.parentId);
+    if (parent && parent.trashed) {
+      restoreNode(node.parentId);
+    }
+  }
+
+  // 恢复当前节点
   node.trashed = false;
   delete node.trashedAt;
 
@@ -230,6 +239,7 @@ function restoreNode(id) {
     }
   }
 
+  // 恢复所有子节点
   const children = listChildren(id, true);
   for (const child of children) {
     restoreNode(child.id);
@@ -249,6 +259,17 @@ function deleteNode(id, permanent = false) {
       const contentPath = electronPath.join(baseDir, `${node.contentId}.md`);
       if (electronFs.existsSync(contentPath)) {
         electronFs.unlinkSync(contentPath);
+      }
+      
+      // 删除对应的图片文件夹
+      const imagesDir = electronPath.join(state.workspaceRoot, 'Database', 'images', node.contentId);
+      if (electronFs.existsSync(imagesDir)) {
+        try {
+          electronFs.rmSync(imagesDir, { recursive: true, force: true });
+          console.log(`[VFS] 已删除图片文件夹: ${imagesDir}`);
+        } catch (error) {
+          console.warn(`[VFS] 删除图片文件夹失败: ${imagesDir}`, error);
+        }
       }
     }
     state.nodes.delete(id);

@@ -397,11 +397,32 @@ async function initializeFileWorkspace() {
   ipcRenderer.on('file-opened', (event, { content, filePath }) => {
     const fileNameWithExt = electronPath.basename(filePath);
     const fileName = electronPath.basename(filePath, electronPath.extname(filePath));
-    const parentId = state.currentNodeId || null;
+    
+    // 确定父节点：如果当前选中的是文件，使用其父节点；如果是文件夹，使用该文件夹
+    let parentId = null;
+    if (state.currentNodeId) {
+      const currentNode = vfs.getNodeById(state.currentNodeId);
+      if (currentNode) {
+        if (currentNode.type === 'folder') {
+          parentId = currentNode.id;
+        } else {
+          // 当前是文件，使用其父节点
+          parentId = currentNode.parentId;
+        }
+      }
+    }
+    
     const node = vfs.createFile(parentId, fileNameWithExt, content);
     tree.renderTree();
     selectNode(node);
     updateStatus(`${t('file.imported')}: ${fileName}`);
+  });
+
+  // 监听刷新工作区事件（导入笔记后）
+  ipcRenderer.removeAllListeners('refresh-workspace');
+  ipcRenderer.on('refresh-workspace', async () => {
+    await refreshWorkspace();
+    updateStatus(t('file.workspaceRefreshed') || '工作区已刷新');
   });
 
   try {

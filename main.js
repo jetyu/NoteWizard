@@ -5,8 +5,10 @@ import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { createAutoUpdaterManager } from "./src/modules/updater/auto-updater.js";
+import { createImportExportManager } from "./src/modules/import-export/index.js";
 
 const require = createRequire(import.meta.url);
+const AdmZip = require('adm-zip');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const RELEASE_PAGE_URL = "https://github.com/jetyu/NoteWizard/releases";
@@ -68,6 +70,7 @@ app.setName("NoteWizard");
 let win = null;
 let tray = null;
 let autoUpdaterManager = null;
+let importExportManager = null;
 
 function getAutoUpdaterManager() {
   if (!autoUpdaterManager) {
@@ -82,6 +85,21 @@ function getAutoUpdaterManager() {
   }
   return autoUpdaterManager;
 }
+
+function getImportExportManager() {
+  if (!importExportManager) {
+    importExportManager = createImportExportManager({
+      app,
+      dialog,
+      getPreference,
+      t,
+      getWindow: () => win,
+      AdmZip,
+    });
+  }
+  return importExportManager;
+}
+
 
 async function handleManualUpdateCheck() {
   const manager = getAutoUpdaterManager();
@@ -447,6 +465,121 @@ function createMenu(iconPath) {
           click: () => {
             win.webContents.send("save-file");
           },
+        },
+        { type: "separator" },
+        {
+          label: t("menu.file.exportNotes"),
+          submenu: [
+            {
+              label: t("menu.file.exportNotes.package"),
+              click: async () => {
+                const manager = getImportExportManager();
+                const result = await manager.exportNotes();
+                if (result.success) {
+                  let message = t("export.notewizard.success.message").replace('{count}', result.noteCount);
+                  if (result.activeNotes > 0 || result.trashedNotes > 0) {
+                    message += '\n' + t("export.notewizard.success.breakdown")
+                      .replace('{active}', result.activeNotes)
+                      .replace('{trashed}', result.trashedNotes);
+                  }
+                  dialog.showMessageBox(win, {
+                    type: 'info',
+                    title: t("export.notewizard.success.title"),
+                    message: message,
+                    detail: t("export.notewizard.success.path").replace('{path}', result.filePath)
+                  });
+                } else if (!result.cancelled) {
+                  dialog.showMessageBox(win, {
+                    type: 'error',
+                    title: t("export.notewizard.error.title"),
+                    message: result.error
+                  });
+                }
+              },
+            },
+            {
+              label: t("menu.file.exportNotes.markdown"),
+              click: async () => {
+                const manager = getImportExportManager();
+                const result = await manager.exportMarkdown();
+                if (result.success) {
+                  dialog.showMessageBox(win, {
+                    type: 'info',
+                    title: t("export.markdown.success.title"),
+                    message: t("export.markdown.success.message").replace('{count}', result.noteCount),
+                    detail: t("export.markdown.success.path").replace('{path}', result.exportPath)
+                  });
+                } else if (!result.cancelled) {
+                  dialog.showMessageBox(win, {
+                    type: 'error',
+                    title: t("export.markdown.error.title"),
+                    message: result.error
+                  });
+                }
+              },
+            },
+          ],
+        },
+        {
+          label: t("menu.file.importNotes"),
+          submenu: [
+            {
+              label: t("menu.file.importNotes.package"),
+              click: async () => {
+                const manager = getImportExportManager();
+                const result = await manager.importNotes();
+                if (result.success) {
+                  let message = t("import.notewizard.success.message").replace('{count}', result.noteCount);
+                  if (result.activeNotes > 0 || result.trashedNotes > 0) {
+                    message += '\n' + t("import.notewizard.success.breakdown")
+                      .replace('{active}', result.activeNotes)
+                      .replace('{trashed}', result.trashedNotes);
+                  }
+                  if (result.conflictCount > 0) {
+                    message += '\n' + t("import.notewizard.success.conflicts").replace('{count}', result.conflictCount);
+                  }
+                  if (result.skippedCount > 0) {
+                    message += '\n' + t("import.notewizard.success.skipped").replace('{count}', result.skippedCount);
+                  }
+                  dialog.showMessageBox(win, {
+                    type: 'info',
+                    title: t("import.notewizard.success.title"),
+                    message: message
+                  });
+                  // 通知渲染进程刷新工作区
+                  win.webContents.send("refresh-workspace");
+                } else if (!result.cancelled) {
+                  dialog.showMessageBox(win, {
+                    type: 'error',
+                    title: t("import.notewizard.error.title"),
+                    message: result.error
+                  });
+                }
+              },
+            },
+            {
+              label: t("menu.file.importNotes.markdown"),
+              click: async () => {
+                const manager = getImportExportManager();
+                const result = await manager.importMarkdown();
+                if (result.success) {
+                  dialog.showMessageBox(win, {
+                    type: 'info',
+                    title: t("import.markdown.success.title"),
+                    message: t("import.markdown.success.message").replace('{count}', result.noteCount)
+                  });
+                  // 通知渲染进程刷新工作区
+                  win.webContents.send("refresh-workspace");
+                } else if (!result.cancelled) {
+                  dialog.showMessageBox(win, {
+                    type: 'error',
+                    title: t("import.markdown.error.title"),
+                    message: result.error
+                  });
+                }
+              },
+            },
+          ],
         },
         { type: "separator" },
         {
@@ -1002,6 +1135,18 @@ ipcMain.handle("set-startup-enabled", (event, enabled) => {
     return { success: false, error: error.message };
   }
 });
+
+// ==================== 笔记导入导出 IPC 处理器 ====================
+ipcMain.handle("notes:export", async () => {
+  const manager = getImportExportManager();
+  return await manager.exportNotes();
+});
+
+ipcMain.handle("notes:import", async () => {
+  const manager = getImportExportManager();
+  return await manager.importNotes();
+});
+// ==================== 笔记导入导出结束 ====================
 
 // 监听来自渲染进程的语言更改
 ipcMain.on("language-changed", (event, lang) => {
