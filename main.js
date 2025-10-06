@@ -36,7 +36,6 @@ app.commandLine.appendSwitch('log-level', '0');
 if (process.platform === "win32") {
   app.setAppUserModelId("com.app.notewizard");
 }
-app.setName("NoteWizard");
 
 // ==================== 管理器实例 ====================
 const managers = {};
@@ -103,11 +102,23 @@ function initializeManagers() {
         managers.tray.destroyTray();
         managers.tray.createSystemTray();
       }
+
+      // 更新应用名称
+      const appName = managers.i18n.t("appName");
+      if (appName) {
+        app.setName(appName);
+      }
     }
   });
 
   // 初始化语言
   managers.i18n.initLanguage();
+
+  // 初始化应用名称
+  const appName = managers.i18n.t("appName");
+  if (appName) {
+    app.setName(appName);
+  }
 
   // 3. 创建开机启动管理器
   managers.startup = createStartupManager({
