@@ -8,6 +8,7 @@ import { createMarkdownImporter } from './markdown-importer.js';
  * @param {Object} dependencies - 依赖注入
  * @param {Object} dependencies.app - Electron app 实例
  * @param {Object} dependencies.dialog - Electron dialog 实例
+ * @param {Object} dependencies.ipcMain - IPC 主进程模块
  * @param {Function} dependencies.getPreference - 获取配置的函数
  * @param {Function} dependencies.t - 国际化翻译函数
  * @param {Function} dependencies.getWindow - 获取主窗口的函数
@@ -15,6 +16,7 @@ import { createMarkdownImporter } from './markdown-importer.js';
  * @returns {Object} 导入导出管理器实例
  */
 export function createImportExportManager(dependencies) {
+  const { ipcMain } = dependencies;
   const noteWizardExporter = createExporter(dependencies);
   const noteWizardImporter = createImporter(dependencies);
   const markdownExporter = createMarkdownExporter(dependencies);
@@ -78,6 +80,26 @@ export function createImportExportManager(dependencies) {
       };
     }
     return await markdownImporter.importMarkdown(win);
+  }
+
+  /**
+   * 注册 IPC 处理器
+   */
+  function registerIpcHandlers() {
+    // 导出笔记
+    ipcMain.handle("notes:export", async () => {
+      return await exportNotes();
+    });
+
+    // 导入笔记
+    ipcMain.handle("notes:import", async () => {
+      return await importNotes();
+    });
+  }
+
+  // 自动注册 IPC 处理器
+  if (ipcMain) {
+    registerIpcHandlers();
   }
 
   return {
