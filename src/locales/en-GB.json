@@ -55,7 +55,7 @@
   "labelAIModel": "AI Model",
   "labelAIApiKey": "API Key",
   "labelAIEndpoint": "API Endpoint",
-  "labelNoteSavePath": "Note Save Path",
+  "labelNoteSavePath": "Note Storage Path",
   "btnBrowse": "Browse...",
   "btnExportSetting": "Export",
   "btnImportSetting": "Import",
