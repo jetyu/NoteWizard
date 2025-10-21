@@ -14,6 +14,7 @@ export class GeneralSettingsManager {
     
     this.systemListenerSetup = false;
     this.isInitialized = false;
+    this.eventsbound = false;
   }
 
   /**
@@ -131,6 +132,9 @@ export class GeneralSettingsManager {
    * 绑定事件
    */
   bindEvents() {
+    // 防止重复绑定
+    if (this.eventsBound) return;
+    
     const modalElement = this.modal.getModal();
     if (!modalElement) return;
 
@@ -142,6 +146,8 @@ export class GeneralSettingsManager {
     
     // 开机自启
     this.bindStartupEvents(modalElement);
+    
+    this.eventsBound = true;
   }
 
   /**
@@ -167,7 +173,14 @@ export class GeneralSettingsManager {
    */
   bindLanguageEvents(modalElement) {
     const langSelect = modalElement.querySelector(SELECTORS.LANG_SELECT);
-    if (!langSelect || !this.i18n) return;
+    if (!langSelect) {
+      console.warn('[GeneralSettingsManager] Language select element not found');
+      return;
+    }
+    if (!this.i18n) {
+      console.warn('[GeneralSettingsManager] i18n not available');
+      return;
+    }
 
     langSelect.addEventListener('change', async () => {
       try {

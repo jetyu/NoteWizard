@@ -169,14 +169,17 @@ async function runAppInitialization() {
   setupPreviewWidthPersistence();
   setupPreviewLeftEdgeDrag();
   setupPreviewIpcHandlers();
-  initI18n();
-  applyI18n();
+  
+  await initI18n();
+  
   onDomReadyInitEditor();
   await initializeFileWorkspace();
   setupEditorEvents();
   initPreview();
   setupToolbar();
+  
   await initPreferences({ i18n });
+  
   initTrash();
   setupOutlineWhenReady();
   try {

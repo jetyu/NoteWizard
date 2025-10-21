@@ -80,6 +80,9 @@ export class PreferencesManager {
       // 初始化面板控制器
       this.pane.init();
       
+      this.general.bindEvents();
+      this.appearance.bindEvents();
+      
       // 初始化需要 DOM 的管理器
       await this.path.init();
       await this.ai.init();

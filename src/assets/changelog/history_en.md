@@ -1,3 +1,16 @@
+### [0.3.0] - 2025-10-23
+#### Added
+- Added note import and export functionality, supporting the import and export of NoteWizard Package (.nwp) and Markdown (.md) formats.
+#### Fixed
+- Fixed known issues.
+- Fixed translation issues in other languages.
+#### Optimized
+- Refactored the Preferences panel code.
+- Optimized the Recycle Bin experience.
+- Optimized the update log module loading performance.
+- Optimized VFS performance.
+- Optimized the IPC module.
+
 ### [0.2.6] - 2025-10-04
 #### Optimized
 - Optimized the editor experience.

@@ -3,7 +3,6 @@
  * 负责编辑器和预览区的字体设置
  */
 import { SELECTORS, DEFAULTS, FONT_SIZE, CSS_VARS } from '../constants.js';
-import { domCache } from '../../../utils/DOMCache.js';
 
 export class AppearanceSettingsManager {
   constructor(deps) {
@@ -12,6 +11,7 @@ export class AppearanceSettingsManager {
     this.modal = deps.modal;
     
     this.isInitialized = false;
+    this.eventsBound = false;
   }
 
   /**
@@ -78,6 +78,9 @@ export class AppearanceSettingsManager {
    * 绑定事件
    */
   bindEvents() {
+    // 防止重复绑定
+    if (this.eventsBound) return;
+    
     const modalElement = this.modal.getModal();
     if (!modalElement) return;
 
@@ -112,6 +115,8 @@ export class AppearanceSettingsManager {
         this.handlePreviewFontFamilyChange(previewFontFamilySelect.value);
       });
     }
+    
+    this.eventsBound = true;
   }
 
   /**
