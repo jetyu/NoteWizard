@@ -12,6 +12,9 @@ const {
 
 const DEFAULT_LANG = "zh-CN";
 
+// 防止重复初始化的标志
+let isI18nInitialized = false;
+
 function resolveFilePath(relativePath) {
   let pathname = decodeURIComponent(new URL(relativePath, import.meta.url).pathname);
   if (/^\/[A-Za-z]:/.test(pathname)) {
@@ -150,6 +153,11 @@ async function applyI18n() {
 }
 
 async function initI18n() {
+  // 防止重复初始化
+  if (isI18nInitialized) {
+    return currentLang;
+  }
+  
   try {
     // 初始化语言
     await initLanguage();
@@ -157,10 +165,8 @@ async function initI18n() {
     // 应用当前语言
     await applyI18n();
     
-    // 监听语言切换事件
-    ipcRenderer.on('change-language', async (event, lang) => {
-      await setLanguage(lang);
-    });
+    // 标记为已初始化
+    isI18nInitialized = true;
     
     return currentLang;
   } catch (error) {
@@ -185,10 +191,8 @@ async function ensureI18nInitialized() {
 
 
 
-// 启动时初始化
-document.addEventListener('DOMContentLoaded', () => {
-  ensureI18nInitialized().catch(() => {});
-});
+// 注意: 初始化由 renderer_bootstrap.js 统一管理
+// 不再在此处自动初始化,避免重复初始化和时序问题
 
 // 加载语言提供者配置
 let localesProviders = {};

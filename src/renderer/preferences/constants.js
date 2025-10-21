@@ -66,7 +66,7 @@ export const DEFAULTS = {
     model: '',
     apiKey: '',
     endpoint: '',
-    systemPrompt: '你是一个AI写作助手，请根据用户提供的上下文，续写或完善文本。只需要返回续写的部分，不要重复用户的文本。每次最多返回一句话。'
+    systemPrompt: ''
   },
   
   STARTUP_ON_LOGIN: false,
