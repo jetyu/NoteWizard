@@ -25,7 +25,7 @@
 - **Easy Migration**: Supports complete NoteWizard proprietary format (.nwp) for full import/export, as well as Markdown (.md) format import/export
 - **Local Storage**: All note data is stored locally under control of user
 - **Markdown Support**: Real-time preview of Markdown rendering
-- **AI-Powered Writing Assistant**: AI-powered writing assistance to make your writing easier
+- **AI-Powered Writing Assistant**: AI-powered writing assistance to make your writing easier (Off by default)
 - **Internationalization**: Supports 19 languages and regional settings worldwide
 
 ## Screenshots
