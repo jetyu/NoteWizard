@@ -1,3 +1,9 @@
+### [0.3.1] - 2025-11-02
+#### Fixed
+- Fixed missing translation issues in other languages.
+#### Optimized
+- Optimized the interactive experience of the Check for Updates panel.
+
 ### [0.3.0] - 2025-10-24
 #### Added
 - Added note import and export functionality, supporting the import and export of NoteWizard Package (.nwp) and Markdown (.md) formats.
