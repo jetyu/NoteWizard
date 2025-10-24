@@ -29,7 +29,9 @@
 - **Internationalization**: Supports 19 languages and regional settings worldwide
 
 ## Screenshots
-**NoteWizard Quick Start 0.2.6**  
+**NoteWizard Quick Start**  
+> Tips: software is continuously updated to enhance performance and user experience. Listed features are for reference only and may evolve with technological advancements and user needs.
+
 ![NoteWizard Quick Start](./doc/getstarted/v0.2.6.webp)
 
 ## Supported Platforms
