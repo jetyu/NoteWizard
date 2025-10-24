@@ -1,4 +1,4 @@
-### [0.3.0] - 2025-10-23
+### [0.3.0] - 2025-10-24
 #### Added
 - Added note import and export functionality, supporting the import and export of NoteWizard Package (.nwp) and Markdown (.md) formats.
 #### Fixed
