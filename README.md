@@ -29,7 +29,7 @@
 - **Internationalization**: Supports 19 languages and regional settings worldwide
 
 ## Screenshots
-**NoteWizard Quick Start**  
+**NoteWizard Quick Start 0.2.6**  
 ![NoteWizard Quick Start](./doc/getstarted/v0.2.6.webp)
 
 ## Supported Platforms
