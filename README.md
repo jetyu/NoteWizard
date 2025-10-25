@@ -7,7 +7,7 @@
 <div align="center">
   <img src="src/assets/logo/app-logo-128.png" alt="NoteWizard Logo" width="72">
   <h2> NoteWizard </h2>
-  <p>A modern cross-platform note-taking application built with Electron, featuring local data storage for complete security and control.</p>
+  <p>A modern cross-platform note-taking desktop application built with Electron, featuring local data storage for complete security and control.</p>
   
 [![GitHub Release](https://img.shields.io/github/v/release/jetyu/NoteWizard?style=flat-square)](https://github.com/jetyu/NoteWizard/releases/latest)
 [![GitHub pre-release](https://img.shields.io/github/v/release/jetyu/NoteWizard?include_prereleases&style=flat-square&label=pre-release)](https://github.com/jetyu/NoteWizard/releases)
