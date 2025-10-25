@@ -1,4 +1,8 @@
-### [0.3.1] - 2025-11-02
+### [0.3.2] - 2025-10-26
+#### Optimized
+- Optimized the performance of the editor.
+
+### [0.3.1] - 2025-10-25
 #### Fixed
 - Fixed missing translation issues in other languages.
 #### Optimized

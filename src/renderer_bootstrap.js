@@ -1,7 +1,7 @@
 import { onDomReadyInitEditor } from './renderer/editor/editor.js';
 import { setupOutlineWhenReady } from './renderer/outline.js';
 import { initializeFileWorkspace, setupEditorEvents } from './renderer/workspace/files.js';
-import { setupToolbar } from './renderer/toolbar.js';
+import { setupToolbar } from './renderer/editor/toolbar.js';
 import i18n, { initI18n, applyI18n } from './renderer/i18n.js';
 import { initPreferences } from './renderer/preferences/index.js';
 import { initTrash } from './renderer/trash/trash.js';
