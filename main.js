@@ -150,7 +150,8 @@ function initializeManagers() {
     shell,
     t: managers.i18n.t,
     getWindow: () => managers.window.getMainWindow(),
-    releasePageUrl: RELEASE_PAGE_URL
+    releasePageUrl: RELEASE_PAGE_URL,
+    currentVersion: app.getVersion()
   });
 
   // 7. 创建导入导出管理器

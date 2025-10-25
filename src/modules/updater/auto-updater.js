@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { autoUpdater } = require("electron-updater");
 
-function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePageUrl }) {
+function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePageUrl, currentVersion }) {
   let isCheckingForUpdates = false;
   let isDownloadingUpdate = false;
   let autoUpdaterInitialized = false;
@@ -39,35 +39,17 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
       return null;
     }
 
-    const releaseNotes = (() => {
-      if (Array.isArray(info.releaseNotes)) {
-        return info.releaseNotes
-          .map((note) => {
-            if (typeof note === "string") {
-              return note;
-            }
-            if (note && typeof note.note === "string") {
-              return note.note;
-            }
-            return null;
-          })
-          .filter(Boolean)
-          .join("\n\n");
-      }
-      if (typeof info.releaseNotes === "string") {
-        return info.releaseNotes;
-      }
-      return t("update.detail.releaseNotesFallback");
-    })();
-
     const pieces = [];
     if (info.version) {
       pieces.push(`${t("update.detail.newVersion")}: ${info.version}`);
     }
-    if (releaseNotes) {
-      pieces.push(`${t("update.detail.releaseNotes")}: ${releaseNotes}`);
+    if (currentVersion) {
+      pieces.push(`${t("update.detail.currentVersion")}: ${currentVersion}`);
     }
-    return pieces.length > 0 ? pieces.join("\n\n") : null;
+    if (releasePageUrl) {
+      pieces.push(`${t("update.detail.viewChangelog")}: ${releasePageUrl}/latest`);
+    }
+    return pieces.length > 0 ? pieces.join("\n") : null;
   }
 
   function initialize() {
@@ -90,13 +72,16 @@ function createAutoUpdaterManager({ app, dialog, shell, t, getWindow, releasePag
       const detail = formatReleaseNotes(info);
       const { response } = await dialog.showMessageBox(getActiveWindow() ?? undefined, {
         type: "info",
-        buttons: [t("update.button.downloadNow"), t("update.button.later")],
+        buttons: [
+          t("update.button.downloadNow"),
+          t("update.button.later")
+        ],
         defaultId: 0,
         cancelId: 1,
         title: t("appName"),
         message: t("update.message.available"),
         detail: detail ?? undefined,
-        noLink: true,
+        noLink: false,
       });
 
       if (response === 0) {
