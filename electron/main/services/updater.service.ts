@@ -79,6 +79,9 @@ class UpdaterService {
     this.currentUpdateChannel = channel;
 
     autoUpdater.channel = targetChannel;
+    // electron-updater enables downgrades whenever channel is assigned.
+    // Snaptium channels must still follow strict SemVer ordering.
+    autoUpdater.allowDowngrade = false;
     autoUpdater.setFeedURL({
       provider: 'generic',
       url: feedUrl,
