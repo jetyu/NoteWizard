@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { formatKeybinding } from '@renderer/core/utils/formatKeybinding.utils';
 
 interface Props {
   modelValue?: string;
@@ -50,9 +51,9 @@ const recordedKeys = ref<string[]>([]);
 
 const displayValue = computed(() => {
   if (isRecording.value && recordedKeys.value.length > 0) {
-    return recordedKeys.value.join('+');
+    return formatKeybinding(recordedKeys.value.join('+'));
   }
-  return props.modelValue;
+  return formatKeybinding(props.modelValue);
 });
 
 function startRecording() {
