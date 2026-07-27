@@ -1,5 +1,5 @@
 import { settingsService } from '../settings.service.js';
-import { loggerService } from '../logger.service.js';
+import { loggerService } from '../log/logger.service.js';
 import { sppxExportService } from './sppx-export.service.js';
 import { sppxImportService } from './sppx-import.service.js';
 import { markdownExportService } from './markdown-export.service.js';

@@ -19,6 +19,10 @@ import { AI_PROVIDERS, type AiProvider } from '@shared/ai-provider.constants';
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
 import { DEFAULT_SYNC_SETTINGS, type SyncProvider } from '@shared/sync.constants';
 import { DEFAULT_UPDATE_CHANNEL, type UpdateChannel } from '@shared/updater.constants';
+import {
+  DIAGNOSTIC_EXPORT_STATUS,
+  type DiagnosticLogExportResult,
+} from '@shared/diagnostic-log.constants';
 import { UPDATER_CONSTANTS } from '@renderer/features/updater/constants/updater.constants';
 import {
   APP_SHELL_MAX_CUSTOM_MODULES,
@@ -277,6 +281,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const config = ref<AppSettings>(createDefaultConfig());
 
   const isLoading = ref(false);
+  const isExportingDiagnosticLogs = ref(false);
 
   const sourceSupportsCapability = (source: AISource, capability: string): boolean => {
     return source.capabilities.length === 0 || source.capabilities.includes(capability);
@@ -615,6 +620,26 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const openLogDir = (): Promise<boolean | undefined> => settingsService.openLogDir();
 
+  const exportDiagnosticLogs = async (): Promise<DiagnosticLogExportResult | null> => {
+    if (isExportingDiagnosticLogs.value) {
+      return null;
+    }
+
+    isExportingDiagnosticLogs.value = true;
+    try {
+      return await settingsService.exportDiagnosticLogs();
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      settingsLogger.error(`Failed to export diagnostic logs: ${message}`);
+      return {
+        status: DIAGNOSTIC_EXPORT_STATUS.FAILED,
+        error: message,
+      };
+    } finally {
+      isExportingDiagnosticLogs.value = false;
+    }
+  };
+
   const exportSettings = (): Promise<boolean> => settingsService.exportConfig();
 
   const importSettings = async (): Promise<boolean> => {
@@ -650,6 +675,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     config,
     isLoading,
+    isExportingDiagnosticLogs,
     loadSettings,
     saveSettings,
     setLanguage,
@@ -665,6 +691,7 @@ export const useSettingsStore = defineStore('settings', () => {
     updateAiSource,
     testConnection,
     openLogDir,
+    exportDiagnosticLogs,
     exportSettings,
     importSettings,
     resetSettings,

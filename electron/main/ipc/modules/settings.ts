@@ -1,6 +1,6 @@
 import { ipcMain, app } from 'electron';
 import { settingsService } from '../../services/settings.service.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 
 const logger = loggerService.createLogger('Electron:Settings IPC');

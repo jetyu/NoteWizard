@@ -3,7 +3,7 @@ import path from 'node:path';
 import { BrowserWindow, dialog, type SaveDialogOptions } from 'electron';
 import { $t } from '../../utils/i18n.js';
 import { getErrorMessage } from '../error.service.js';
-import { loggerService } from '../logger.service.js';
+import { loggerService } from '../log/logger.service.js';
 import { sanitizeFsName } from './markdown.utils.js';
 
 const logger = loggerService.createLogger('Main:Single Note PDF Export Service');

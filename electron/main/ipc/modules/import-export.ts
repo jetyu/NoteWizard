@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { importExportService } from '../../services/import-export/import-export.service.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { z } from 'zod';
 
 const logger = loggerService.createLogger('Electron:ImportExport IPC');

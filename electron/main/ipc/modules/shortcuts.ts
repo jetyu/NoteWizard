@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import { shortcutsService } from '../../services/shortcuts.service.js';
 import { getAllCommands, getCommandsByCategory } from '../../constants/commands.constants.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../../shared/utils/error.utils.js';
 
 const logger = loggerService.createLogger('Electron:Shortcuts IPC');

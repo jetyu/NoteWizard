@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { $t } from '../utils/i18n.js';
 import { IPC_CHANNELS } from '../constants/ipc.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Tray Service');
 

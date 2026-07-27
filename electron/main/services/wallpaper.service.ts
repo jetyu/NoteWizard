@@ -1,7 +1,7 @@
 import { app, nativeImage } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../../shared/utils/error.utils.js';
 
 export interface WallpaperRequestOptions {

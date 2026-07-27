@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, type IpcMainEvent } from 'electron';
 import { IPC_CHANNELS } from '../constants/ipc.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Quick Capture Service');
 

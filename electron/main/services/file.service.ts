@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:File Service');
 

@@ -1,4 +1,4 @@
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 import { isElectronNetworkRequestError, mainProcessFetch } from './network.service.js';
 

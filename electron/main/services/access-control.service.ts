@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { ACCESS_CONTROL_TIMEOUT_OPTIONS, type AccessControlTimeout } from '../../shared/e2ee.constants.js';
 import { IPC_CHANNELS } from '../constants/ipc.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { keyManagerService } from './key-manager.service.js';
 import { cryptoService } from './crypto.service.js';
 import { settingsService, type AccessControlConfig } from './settings.service.js';

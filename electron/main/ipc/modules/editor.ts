@@ -2,7 +2,7 @@ import { dialog, ipcMain, clipboard, type BrowserWindow } from 'electron';
 import { z } from 'zod';
 import { readUtf8, writeUtf8 } from '../../services/file.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Editor IPC');
 const clipboardTextSchema = z.string();

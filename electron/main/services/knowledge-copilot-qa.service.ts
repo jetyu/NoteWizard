@@ -2,7 +2,7 @@ import { aiConfigService } from './ai-config.service.js';
 import { createProviderChatModel } from './ai-provider.service.js';
 import { knowledgeCopilotIndexService } from './knowledge-copilot-index.service.js';
 import { assessKnowledgeEvidence } from './knowledge-evidence-assessment.service.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { buildKnowledgeAnswerPrompt, buildKnowledgeConversationSummaryPrompt, buildKnowledgeFollowupRewritePrompt } from '../prompts/index.js';
 import { $t } from '../utils/i18n.js';
 import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';

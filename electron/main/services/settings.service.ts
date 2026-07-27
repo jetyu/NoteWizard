@@ -25,7 +25,7 @@ import { getErrorCode, getErrorMessage } from '../../shared/utils/error.utils.js
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
 import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
 import { type AccessControlTimeout } from '../../shared/e2ee.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { previewPolicyService } from './preview-policy.service.js';
 import { keyManagerService } from './key-manager.service.js';
 import type { KeySlots } from './crypto.service.js';

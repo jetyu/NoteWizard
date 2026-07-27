@@ -13,7 +13,7 @@ import {
   E2EE_RECOVERY_KEY_SEPARATOR,
   E2EE_SALT_LENGTH,
 } from '../../shared/e2ee.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Crypto Service');
 
