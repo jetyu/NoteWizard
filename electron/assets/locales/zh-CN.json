@@ -728,7 +728,7 @@
   "text.knowledgeCopilotChatModel": "用于 Knowledge Ask 的检索增强回答模型",
   "text.knowledgeCopilotChunkOverlap": "相邻文本块的重叠字符数",
   "text.knowledgeCopilotChunkSize": "每个文本块的字符数",
-  "text.knowledgeCopilotEmbeddingModel": "用于理解和检索笔记内容，必需",
+  "text.knowledgeCopilotEmbeddingModel": "用于理解和检索笔记内容的向量化模型",
   "text.knowledgeCopilotIndexOnSave": "编辑笔记保存后立即更新该笔记索引",
   "text.knowledgeCopilotIndexStatus": "查看当前索引状态并重建索引",
   "text.knowledgeCopilotIndexTuning": "实验性，修改后需要重建索引",
