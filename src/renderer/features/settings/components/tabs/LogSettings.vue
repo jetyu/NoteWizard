@@ -55,8 +55,8 @@
       <!-- Open Log Directory -->
       <section class="setting-card">
         <div class="setting-copy">
-          <p class="setting-label">{{ t('button.openLogFolder') }}</p>
-          <p class="setting-description">{{ t('contextMenu.showInFolder') }}</p>
+          <p class="setting-label">{{ t('label.logFilePath') }}</p>
+          <p class="setting-description">{{ t('label.logFilePathDescription') }}</p>
         </div>
         <button class="action-button" @click="handleOpenLogDir">
           {{ t('button.openLogFolder') }}
