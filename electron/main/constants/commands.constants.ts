@@ -112,7 +112,7 @@ export const COMMANDS = {
   },
   APP_QUICK_CAPTURE: {
     id: 'app.quickCapture',
-    category: COMMAND_CATEGORIES.APP,
+    category: COMMAND_CATEGORIES.FILE,
     scope: COMMAND_SCOPES.GLOBAL,
     defaultKeybinding: 'CommandOrControl+Shift+Z',
   },
