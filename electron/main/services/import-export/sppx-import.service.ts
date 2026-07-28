@@ -4,11 +4,11 @@ import { promises as fs } from 'node:fs';
 import { BrowserWindow, dialog, type OpenDialogOptions } from 'electron';
 import { $t } from '../../utils/i18n.js';
 import { VFS_CONSTANTS } from '../../constants/vfs.constants.js';
-import { loggerService } from '../logger.service.js';
+import { loggerService } from '../log/logger.service.js';
 import { vfsService } from '../vfs.service.js';
 import { knowledgeCopilotIndexService } from '../knowledge-copilot-index.service.js';
 import { syncStateService } from '../sync/state.service.js';
-import { extractZipArchiveToDirectory } from './zip.utils.js';
+import { extractZipArchiveToDirectory } from '../../utils/zip.utils.js';
 import { createSecureTempDirectory } from './temp-directory.utils.js';
 import { getErrorCode, getErrorMessage } from '../../services/error.service.js';
 

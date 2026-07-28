@@ -1,6 +1,6 @@
 import { app, shell } from 'electron';
 import { getAppDistribution, type AppDistribution } from '../../shared/updater.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:AppEnvInfo Service');
 const MICROSOFT_STORE_URL = 'https://apps.microsoft.com/detail/9p4hw1mddgnn';

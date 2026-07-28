@@ -1,5 +1,5 @@
 import { remoteAiService } from './remote-ai.service.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 
 const logger = loggerService.createLogger('Electron:Embedding Service');

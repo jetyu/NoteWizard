@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { vfsService } from '../../services/vfs.service.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { z } from 'zod';
 import { isNotebookIconColor } from '../../../shared/notebook-icon.constants.js';
 

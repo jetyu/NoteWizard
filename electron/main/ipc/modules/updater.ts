@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import { z } from 'zod';
 import { updaterService } from '../../services/updater.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Updater IPC');
 const updaterConfigSchema = z.object({

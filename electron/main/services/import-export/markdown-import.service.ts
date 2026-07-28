@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import { BrowserWindow, dialog, type OpenDialogOptions } from 'electron';
 import { $t } from '../../utils/i18n.js';
 import { VFS_CONSTANTS } from '../../constants/vfs.constants.js';
-import { loggerService } from '../logger.service.js';
+import { loggerService } from '../log/logger.service.js';
 import { vfsService } from '../vfs.service.js';
 import {
   isExternalResourcePath,

@@ -47,6 +47,7 @@ export const IPC_CHANNELS = {
   LICENSE_REFRESH_DEVICES: 'license:refresh-devices',
   LICENSE_STATE_CHANGED: 'license:state-changed',
   LICENSE_VALIDATE: 'license:validate',
+  LOGGER_EXPORT_DIAGNOSTICS: 'logger:export-diagnostics',
   LOGGER_LOG: 'logger:log',
   LOGGER_OPEN_DIR: 'logger:open-dir',
   MENU_CHECK_FOR_UPDATES: 'menu:check-for-updates',

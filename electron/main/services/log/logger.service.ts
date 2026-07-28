@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { app, shell } from 'electron';
-import { formatTimestamp } from '../utils/formatTools.js';
-import { getErrorMessage } from '../services/error.service.js';
+import { formatTimestamp } from '../../utils/formatTools.js';
+import { getErrorMessage } from '../error.service.js';
 
 const LOG_AUTO_CLEAR_DAY_OPTIONS = new Set([0, 10, 20]);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -238,6 +238,10 @@ class LoggerService {
     shell.openPath(this.logDir).catch((error: unknown) => {
       console.error(`Failed to open log directory: ${getErrorMessage(error)}`);
     });
+  }
+
+  getLogDirectory(): string {
+    return this.logDir;
   }
 
   info(source: string, message: LogMessage, context?: LogContext): void { this.log('info', source, message, context); }

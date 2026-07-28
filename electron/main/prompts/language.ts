@@ -1,4 +1,4 @@
-import { loggerService } from '../services/logger.service.js';
+import { loggerService } from '../services/log/logger.service.js';
 
 export type PromptTemplateLanguage = 'zh-CN' | 'en-US';
 
