@@ -1,13 +1,12 @@
-# Snaptium — Local-first AI Markdown Notes & Knowledge Management
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium 软件图标" width="88">
+</p>
+<h1 align="center">Snaptium</h1>
 
 <p align="center">
   <strong>Language / 语言：</strong>
   <a href="README.md">English</a> |
   <a href="README_CN.md">简体中文</a>
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium application logo" width="88">
 </p>
 
 <p align="center"><strong>Open-source Markdown note-taking app for Windows, macOS, and Linux</strong></p>

@@ -1,4 +1,7 @@
-# Snaptium — 本地优先的 AI Markdown 笔记与知识管理工具
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium 软件图标" width="88">
+</p>
+<h1 align="center">Snaptium</h1>
 
 <p align="center">
   <strong>Language / 语言：</strong>
@@ -6,31 +9,18 @@
   <a href="README_CN.md">简体中文</a>
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium 软件图标" width="88">
-</p>
+<p align="center"><strong>支持 Windows、macOS 和 Linux 的开源 AI Markdown 笔记软件</strong></p>
 
-<p align="center"><strong>支持 Windows、macOS 和 Linux 的开源 Markdown 笔记软件</strong></p>
+<p align="center">
+  <a href="https://github.com/jetyu/Snaptium">
+    <img src="https://img.shields.io/badge/在_GitHub_上支持_Snaptium-181717?style=for-the-badge&logo=github&logoColor=white" alt="添加 Star">
+  </a>
+</p>
 
 <p align="center">
   <a href="https://snaptium.com">官方网站</a> ·
   <a href="https://snaptium.com/docs">使用文档</a> ·
   <a href="https://snaptium.com/#download">下载 Snaptium</a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Windows-x64.exe">
-    <img src="https://img.shields.io/badge/下载_Windows_x64_版本-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows x64 版本">
-  </a>
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-macOS-arm64.dmg">
-    <img src="https://img.shields.io/badge/下载_macOS_Apple_Silicon_版本-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Apple Silicon 版本">
-  </a>
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Linux-x86_64.AppImage">
-    <img src="https://img.shields.io/badge/下载_Linux_x86__64_版本-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux x86_64 AppImage 版本">
-  </a>
-  <a href="https://github.com/jetyu/Snaptium">
-    <img src="https://img.shields.io/badge/在_GitHub_上支持_Snaptium-181717?style=for-the-badge&logo=github&logoColor=white" alt="添加 Star">
-  </a>
 </p>
 
 
@@ -49,10 +39,9 @@
 [![Closed Issues](https://img.shields.io/github/issues-closed/jetyu/Snaptium?style=flat&color=brightgreen)](https://github.com/jetyu/Snaptium/issues?q=is%3Aissue%20state%3Aclosed)
 [![License](https://img.shields.io/github/license/jetyu/Snaptium?style=flat)](https://github.com/jetyu/Snaptium/blob/main/LICENSE)
 
+Snaptium 是一款开源、本地优先的 AI智能体驱动的 Markdown 笔记与知识管理软件，集成 CodeMirror 6 编辑器、AI 辅助写作、本地向量知识索引、RAG 知识库问答、快速记录，以及基于 WebDAV/S3 的端到端加密同步。
 
-Snaptium 是一款开源、本地优先的 Markdown 笔记与知识管理软件，集成 CodeMirror 6 编辑器、AI 辅助写作、本地向量知识索引、RAG 知识库问答、快速记录，以及基于 WebDAV/S3 的端到端加密同步。
-
-笔记默认保存在本地，可自定义存储路径，并支持 Markdown 导入导出。Snaptium 可运行于 Windows、macOS 和 Linux，同时支持云端 AI 服务与 Ollama 本地模型。
+笔记默认保存在本地，可自定义存储路径，并支持 Markdown 导入导出。Snaptium 可运行于 Windows、macOS 和 Linux 主流桌面操作系统平台，同时支持云端 AI 服务与 Ollama 本地模型。
 
 > 如果 Snaptium 对你有帮助，欢迎为项目添加 Star，让更多人发现这个项目。
 
@@ -198,8 +187,6 @@ Snaptium 采用 Local First 架构设计：
 
 - LanceDB
 - Apache Arrow
-
-支持未来扩展本地 Embedding 模型与离线 AI 工作流。
 
 ---
 
@@ -365,8 +352,7 @@ npm run test:unit
 
 ## 文档与 Wiki
 
-- Wiki：https://github.com/jetyu/Snaptium/wiki
-- Docs：https://github.com/jetyu/Snaptium/tree/main/docs
+- Docs：https://snaptium.com/docs
 
 ---
 
@@ -396,9 +382,6 @@ npm run test:unit
 
 未来计划包括：
 
-- 本地 AI 模型集成
-- Windows 解压即用便携包
-- 多工作区管理
 - 协作编辑
 - 插件系统
 - 移动端支持
@@ -435,10 +418,4 @@ LICENSE
 <img width="120" src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/images/siliconflow.png" alt="SiliconFlow 硅基流动标志" />
 
 特别感谢 [硅基流动 SiliconFlow](https://siliconFlow.com) 对 Snaptium 的支持，为产品提供 AI 模型服务能力。
-
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=jetyu/Snaptium&type=Date)](https://star-history.com/#jetyu/Snaptium&Date)
 
