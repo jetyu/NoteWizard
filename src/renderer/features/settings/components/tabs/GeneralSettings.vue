@@ -73,6 +73,19 @@
           </select>
         </label>
       </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.appUIFont') }}</p>
+          <p class="setting-description">{{ t('text.appUIFont') }}</p>
+        </div>
+        <label class="select-shell">
+          <select class="settings-select" :value="settingsStore.config.appUIFont" @change="handleappUIFontChange">
+            <option v-for="font in fontOptions" :key="font.id" :value="font.value">
+              {{ font.label }}
+            </option>
+          </select>
+        </label>
+      </section>
 
       <section class="setting-card">
         <div class="setting-copy">
@@ -80,7 +93,8 @@
           <p class="setting-description">{{ windowCloseActionDescription }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select" :value="settingsStore.config.windowCloseAction" @change="handleWindowCloseActionChange">
+          <select class="settings-select" :value="settingsStore.config.windowCloseAction"
+            @change="handleWindowCloseActionChange">
             <option value="minimize">{{ t('option.windowCloseAction.minimize') }}</option>
             <option value="exit">{{ t('option.windowCloseAction.exit') }}</option>
           </select>
@@ -96,10 +110,12 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { languageOptions } from '@renderer/features/i18n';
 import { type AppShellMainViewId } from '@renderer/app/constants/appShell.constants';
+import fontProvider from '@renderer/config/font-provider.json';
 import { useSettingsStore, type AppSettings, type WindowCloseAction } from '../../store/settings.store';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const fontOptions = fontProvider;
 
 const startupViewValue = computed<AppShellMainViewId>(() => {
   return settingsStore.config.appShell.activeMainView === 'workspace' ? 'workspace' : 'workbench';
@@ -141,6 +157,11 @@ const handleThemeChange = async (event: Event) => {
 const handleAccentChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
   await settingsStore.updateSetting('accentMode', target.value as AppSettings['accentMode']);
+};
+
+const handleappUIFontChange = async (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  await settingsStore.updateSetting('appUIFont', target.value);
 };
 
 const handleWindowCloseActionChange = async (event: Event) => {

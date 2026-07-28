@@ -102,6 +102,7 @@ interface AppSettings {
   windowCloseAction: WindowCloseAction;
   themeMode: 'system' | 'light' | 'dark';
   accentMode: AccentMode;
+  appUIFont: string;
   previewAppearance: PreviewAppearanceConfig;
   editorFontSize: number;
   editorFont: string;
@@ -435,6 +436,7 @@ function mergeConfigWithDefaults(defaultConfig: AppSettings, incomingConfig: Set
     ...incomingConfig,
     windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? defaultConfig.windowCloseAction),
     accentMode: normalizeAccentMode(incomingConfig.accentMode ?? defaultConfig.accentMode),
+    appUIFont: String(incomingConfig.appUIFont ?? defaultConfig.appUIFont),
     aiSources: normalizeAiSources(incomingConfig.aiSources ?? defaultConfig.aiSources),
     aiAssistant: normalizeAiAssistantConfig(defaultConfig.aiAssistant, incomingConfig.aiAssistant),
     knowledgeCopilot: normalizeKnowledgeCopilotConfig(defaultConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot),
@@ -530,6 +532,7 @@ export const settingsService = {
       windowCloseAction: DEFAULT_WINDOW_CLOSE_ACTION,
       themeMode: 'system',
       accentMode: 'azureBlue',
+      appUIFont: '',
       previewAppearance: {
         allowHtml: true,
         allowInlineSvg: true,

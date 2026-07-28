@@ -170,6 +170,7 @@ export interface AppSettings {
   windowCloseAction: WindowCloseAction;
   themeMode: ThemeMode;
   accentMode: AccentMode;
+  appUIFont: string;
   previewAppearance: PreviewAppearanceSettings;
   editorFontSize: number;
   editorFont: string;
@@ -216,6 +217,7 @@ function createDefaultConfig(): AppSettings {
     windowCloseAction: 'minimize',
     themeMode: 'system',
     accentMode: 'azureBlue',
+    appUIFont: '',
     previewAppearance: {
       allowHtml: true,
       allowInlineSvg: true,

@@ -28,7 +28,7 @@
 
 .editor-host .cm-content {
   font-size: var(--editor-font-size, 16px);
-  font-family: var(--editor-font-family, inherit);
+  font-family: var(--editor-font-family, var(--default-ui-font-family));
 }
 
 .editor-host .cm-scroller {

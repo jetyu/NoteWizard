@@ -178,6 +178,7 @@ function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettin
     ...incomingConfig,
     windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? baseConfig.windowCloseAction),
     accentMode: normalizeAccentMode(incomingConfig.accentMode ?? baseConfig.accentMode),
+    appUIFont: String(incomingConfig.appUIFont ?? baseConfig.appUIFont),
     aiSources: normalizeAiSources(incomingConfig.aiSources ?? baseConfig.aiSources),
     aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, incomingConfig.aiAssistant),
     previewAppearance: {
