@@ -1,65 +1,56 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium 软件图标" width="88">
+  <img src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/logo/app-logo-128.png" alt="Snaptium app icon" width="88">
 </p>
 <h1 align="center">Snaptium</h1>
 
 <p align="center">
-  <strong>Language / 语言：</strong>
-  <a href="README.md">English</a> |
-  <a href="README_CN.md">简体中文</a>
+  <a href="README.md">English</a> · <a href="README_zh-CN.md">简体中文</a> · <a href="README_zh-TW.md">繁體中文</a> ·
+  <a href="README_ja-JP.md">日本語</a> · <a href="README_ko-KR.md">한국어</a> · <a href="README_id-ID.md">Bahasa Indonesia</a> ·
+  <a href="README_es-ES.md">Español</a> · <a href="README_de-DE.md">Deutsch</a> · <a href="README_fr-FR.md">Français</a> ·
+  <a href="README_it-IT.md">Italiano</a> · <a href="README_pt-BR.md">Português (Brasil)</a> · <a href="README_tr-TR.md">Türkçe</a>
 </p>
 
-<p align="center"><strong>Open-source Markdown note-taking app for Windows, macOS, and Linux</strong></p>
+<p align="center"><strong>Agentic AI-powered Markdown note-taking App</strong></p>
 
 <p align="center">
-  <a href="https://snaptium.com">Official Website</a> ·
-  <a href="https://snaptium.com/docs">Documentation</a> ·
-  <a href="https://snaptium.com/#download">Download Snaptium</a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Windows-x64.exe">
-    <img src="https://img.shields.io/badge/Download_for_Windows_x64-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt=" Windows x64">
-  </a>
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-macOS-arm64.dmg">
-    <img src="https://img.shields.io/badge/Download_for_macOS_Apple_Silicon-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Apple Silicon">
-  </a>
-  <a href="https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Linux-x86_64.AppImage">
-    <img src="https://img.shields.io/badge/Download_for_Linux_x86__64-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux x86_64">
-  </a>
   <a href="https://github.com/jetyu/Snaptium">
     <img src="https://img.shields.io/badge/Star_Snaptium_on_GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Star Snaptium on GitHub">
   </a>
 </p>
 
-[![Snaptium Release](https://github.com/jetyu/Snaptium/actions/workflows/build.yml/badge.svg?event=push)](https://github.com/jetyu/Snaptium/actions/workflows/build.yml)
-[![Latest Release](https://img.shields.io/github/v/release/jetyu/Snaptium?style=flat&logo=github)](https://github.com/jetyu/Snaptium/releases/latest)
-![GitHub Pre-release](https://img.shields.io/github/v/release/jetyu/Snaptium?include_prereleases&label=pre-release&logo=github)
-[![Downloads](https://img.shields.io/github/downloads/jetyu/Snaptium/total?style=flat&logo=github)](https://github.com/jetyu/Snaptium/releases)
-![GitHub Repo stars](https://img.shields.io/github/stars/jetyu/Snaptium?style=flat)
-![GitHub forks](https://img.shields.io/github/forks/jetyu/Snaptium?style=flat)
+<p align="center">
+  <a href="https://snaptium.com">Website</a> ·
+  <a href="https://snaptium.com/docs">Documentation</a> ·
+  <a href="https://snaptium.com/#download">Download</a>
+</p>
 
-![Platform](https://img.shields.io/badge/Platform-Windows%20|%20macOS%20|%20Linux-blue?style=flat)
-![Electron](https://img.shields.io/badge/Electron-43.2.0-47848F?style=flat&logo=electron&logoColor=white)
-![Vue](https://img.shields.io/badge/Vue-3.5.38-42b883?style=flat&logo=vuedotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?style=flat&logo=typescript&logoColor=white)
+<p align="center">
+  <a href="https://github.com/jetyu/Snaptium/actions/workflows/build.yml"><img src="https://github.com/jetyu/Snaptium/actions/workflows/build.yml/badge.svg?event=push" alt="Snaptium Release"></a>
+  <a href="https://github.com/jetyu/Snaptium/releases/latest"><img src="https://img.shields.io/github/v/release/jetyu/Snaptium?style=flat&amp;logo=github" alt="Latest Release"></a>
+  <img src="https://img.shields.io/github/v/release/jetyu/Snaptium?include_prereleases&amp;label=pre-release&amp;logo=github" alt="GitHub Pre-release">
+  <a href="https://github.com/jetyu/Snaptium/releases"><img src="https://img.shields.io/github/downloads/jetyu/Snaptium/total?style=flat&amp;logo=github" alt="Downloads"></a>
+  <img src="https://img.shields.io/github/stars/jetyu/Snaptium?style=flat" alt="GitHub stars">
+  <img src="https://img.shields.io/github/forks/jetyu/Snaptium?style=flat" alt="GitHub forks">
+</p>
 
-[![Open Issues](https://img.shields.io/github/issues/jetyu/Snaptium?style=flat&color=orange)](https://github.com/jetyu/Snaptium/issues)
-[![Closed Issues](https://img.shields.io/github/issues-closed/jetyu/Snaptium?style=flat&color=brightgreen)](https://github.com/jetyu/Snaptium/issues?q=is%3Aissue%20state%3Aclosed)
-[![License](https://img.shields.io/github/license/jetyu/Snaptium?style=flat)](https://github.com/jetyu/Snaptium/blob/main/LICENSE)
+<p align="center">
+  <a href="https://github.com/jetyu/Snaptium/issues"><img src="https://img.shields.io/github/issues/jetyu/Snaptium?style=flat&amp;color=orange" alt="Open Issues"></a>
+  <a href="https://github.com/jetyu/Snaptium/issues?q=is%3Aissue%20state%3Aclosed"><img src="https://img.shields.io/github/issues-closed/jetyu/Snaptium?style=flat&amp;color=brightgreen" alt="Closed Issues"></a>
+  <a href="https://github.com/jetyu/Snaptium/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jetyu/Snaptium?style=flat" alt="License"></a>
+</p>
 
-Snaptium is an open-source, local-first Markdown note-taking and knowledge management app. It combines a CodeMirror 6 Markdown editor, AI writing assistance, a local vector knowledge index, RAG-based knowledge Q&A, quick capture, and end-to-end encrypted WebDAV/S3 sync in one desktop workspace.
+Snaptium is a cross-platform AI Markdown note-taking and knowledge management app. It combines a CodeMirror 6 editor, AI-assisted writing, a local vector knowledge index, RAG knowledge-base Q&A, quick capture, and end-to-end encrypted WebDAV/S3 sync.
 
-Your notes stay as durable local data by default, with configurable storage paths and Markdown import/export. Snaptium runs on Windows, macOS, and Linux and supports both cloud AI providers and local Ollama models.
+Notes are stored locally by default, the storage path is configurable, and Markdown import and export are supported. Snaptium runs on Windows, macOS, and Linux and works with both cloud AI services and local Ollama models.
 
-> If Snaptium is useful to you, consider giving the project a Star. It helps more people discover the project.
+> If Snaptium helps you, please give the project a Star so more people can discover it.
 
-> **NoteWizard users:** NoteWizard has been upgraded to Snaptium. The previous version remains available from the [NoteWizard v1.2.1 release](https://github.com/jetyu/Snaptium/releases/tag/v1.2.1).
+> **For NoteWizard users:** NoteWizard has evolved into Snaptium. The legacy release remains available from the [NoteWizard v1.2.1 release page](https://github.com/jetyu/Snaptium/releases/tag/v1.2.1).
 
 ## Contents
 
 - [Why Snaptium](#why-snaptium)
-- [Features](#features)
+- [Core features](#core-features)
 - [Screenshots and demos](#screenshots-and-demos)
 - [Technology stack](#technology-stack)
 - [Supported platforms](#supported-platforms)
@@ -69,157 +60,42 @@ Your notes stay as durable local data by default, with configurable storage path
 
 ## Why Snaptium
 
-Snaptium is not just another Markdown note-taking tool.  
-It is an intelligent writing space built around "long-term writing, knowledge accumulation, and local AI workflows."
+Snaptium is more than a Markdown note-taking tool. It is an intelligent writing space built around long-term writing, knowledge accumulation, and local AI workflows.
 
 The project emphasizes:
 
-- **Local First**
-- **Data Sovereignty**
-- **Long-term Sustainable Storage**
-- **AI-Assisted, Not AI-Locked**
-- **Offline Usability**
-- **Consistent Multi-platform Experience**
+- Local-first design
+- Data sovereignty
+- Sustainable long-term storage
+- AI assistance without AI lock-in
+- Offline usability
+- A consistent cross-platform experience
 
 ---
 
-## Features
+## Core features
 
-### Markdown editor and live preview
+| Capability | What it provides |
+|------------|------------------|
+| ✍️ Immersive Markdown editing | A high-performance CodeMirror 6 editor with live preview, synchronized scrolling, task lists, tables, enhanced code blocks, custom shortcuts, and a standard Markdown workflow |
+| 📐 Powerful math support | Fast KaTeX rendering for inline and display math, including fractions, roots, superscripts, subscripts, sums, integrals, matrices, and other common LaTeX expressions |
+| 💻 Professional code presentation | Syntax highlighting for 24+ languages and automatic recognition of 40+ common aliases, covering JavaScript, TypeScript, Python, Java, Go, Rust, C/C++, SQL, Shell, and more |
+| 📊 Diagrams and visualization | Built-in Mermaid rendering for flowcharts, sequence diagrams, class diagrams, state diagrams, Gantt charts, and other technical-document visuals |
+| 🤖 AI writing assistant | Three assistance intensities, five writing styles, and seven scenarios for technical documents, product proposals, meeting summaries, content creation, and knowledge organization |
+| 🌐 Multi-model AI ecosystem | Free quota through the official AI service plus BYOK support for 12+ providers, including OpenAI, Gemini, DeepSeek, OpenRouter, SiliconFlow, Qwen, Doubao, Kimi, Zhipu AI, Grok, Ollama, and OpenAI-compatible APIs |
+| 🧠 Local knowledge base and AI agent | A LangChain-based knowledge system with local note indexing, vector retrieval, semantic search, optional reranking, and Ask / Agent modes for personal knowledge Q&A and tasks |
+| 🔍 Hybrid intelligent search | Combines full-text and AI semantic search to locate exact keywords, understand intent, and uncover related knowledge across a long-term note collection |
+| 🔐 Local-first data security | Notes stay on your device by default and no account is required; AES-256-GCM encryption, workspace passwords, and recovery keys keep your knowledge under your control |
+| ☁️ End-to-end encrypted sync | Cross-device E2EE sync through WebDAV, Amazon S3, Cloudflare R2, MinIO, NAS, or self-hosted private storage |
+| 🗂️ Flexible knowledge organization | Notebooks, tags, favorites, and six templates: blank note, daily note, meeting notes, reading notes, project plan, and task list |
+| ⚡ Fast capture and productivity | Keep Snaptium in the system tray and use a global shortcut to create a note immediately for ideas, meetings, or temporary thoughts |
+| 🕒 Version history and recovery | Review previous note revisions and restore deleted content through version history and the trash |
+| 🔄 Open data portability | Import and export Markdown and Snaptium packages, import Evernote ENEX, and export individual notes as PDF |
+| 🎨 Deep personalization | System, light, and dark appearances; five accent colors; 14 font choices; and independent font settings for the editor, preview, and application UI |
+| 🌍 Cross-platform and international | A consistent desktop experience across Windows, macOS, and Linux with 13 languages and regional settings |
+| 🛠️ Diagnostics and maintenance | Export diagnostic reports containing runtime logs, system information, app version, and license status for faster troubleshooting |
 
-- Modern editor based on CodeMirror
-- Real-time Markdown rendering preview
-- Synchronized scrolling between editor and preview
-- Math formula (KaTeX) support
-- Code highlighting support
-- Task lists / Tables / Footnotes / Markup syntax support
-- Dark mode and immersive writing experience
-
----
-
-### Quick capture, note organization, and data portability
-
-- Quick Capture from the system tray or a configurable global shortcut
-- Automatic creation of a timestamped note with the cursor focused in the editor
-- Notebooks, tags, favorites, full-text search, trash, and version history
-- Built-in daily note, meeting, reading, project plan, and task list templates
-- Markdown and Snaptium package import/export, Evernote ENEX import, and single-note PDF export
-
----
-
-### Personalization and diagnostics
-
-- System, light, and dark themes with selectable accent colors
-- Independent font preferences for the application UI, editor, and Markdown preview
-- Curated Chinese, Japanese, and Latin fonts, including Meiryo UI
-- Customizable application and global keyboard shortcuts
-- Diagnostic ZIP export containing current logs and basic app, runtime, operating system, locale, note path, and license status information
-
----
-
-### AI writing assistant and model providers
-
-Supports integration with multiple AI services for:
-
-- AI-assisted writing
-- Content polishing
-- Intelligent Q&A
-- Document summarization
-- Ask Knowledge Copilot (RAG)
-- Semantic search
-
-Supports custom models and APIs:
-
-- OpenAI
-- SiliconFlow
-- OpenRouter
-- DeepSeek
-- Gemini
-- Ollama (Local models)
-- Qwen
-- Doubao
-- Kimi
-- Zhipu AI
-- Grok
-- Third-party services compatible with OpenAI API
-
-> By default, AI features are disabled. All AI capabilities are manually configured by the user.
-
----
-
-### Local-first privacy and security
-
-Snaptium is designed with a Local First architecture:
-
-- Local storage by default
-- No mandatory login
-- No dependence on centralized servers
-- Full user control over data
-
-Supports:
-
-- AES-256-GCM local encryption
-- Workspace Password
-- Recovery Key
-- End-to-End Encrypted Sync (E2EE)
-Even when using object storage for sync, only encrypted data is stored in the cloud.
-
----
-
-### End-to-end encrypted WebDAV and S3 sync
-
-Supports multiple synchronization methods:
-
-- S3 Compatible Object Storage
-- Cloudflare R2
-- WebDAV
-- MinIO
-- NAS Private Storage
-
-Supports full self-hosting and private synchronization.
-
----
-
-### Local knowledge index, RAG, and Knowledge Copilot
-
-Built-in vector knowledge base capabilities:
-
-- Document Chunking
-- Vector Embedding
-- Semantic Search
-- Local Knowledge Indexing
-- Ask mode for evidence-based knowledge Q&A
-- Agent mode for tool-assisted knowledge tasks
-- Optional reranking for more relevant retrieval results
-
-Integrated with:
-
-- LanceDB
-- Apache Arrow
-
-Future support for local Embedding models and offline AI workflows.
-
----
-
-### Internationalization
-
-Supports 13 languages and regional settings.
-
-Currently supported:
-
-- Simplified Chinese
-- English
-- Japanese
-- Korean
-- German
-- French
-- Spanish
-- Indonesian
-- Italian
-- Portuguese (Brazil)
-- Turkish
-- Traditional Chinese
-- More languages are being added...
+> AI features are disabled by default. Models and API access are configured explicitly by the user.
 
 ---
 
@@ -227,18 +103,21 @@ Currently supported:
 
 ### Markdown edit mode
 
-![Snaptium Markdown editor in edit mode](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/EditorDemo.png)
+![Snaptium Markdown editor](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/EditorDemo.png)
 
 ### Markdown preview
 
-![Snaptium Markdown rendered preview](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/PreviewOnly.png)
+![Snaptium Markdown preview](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/PreviewOnly.png)
 
 ### AI smart writing demo
+
 [![Snaptium AI smart writing demo](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/SmartWriting.png)](https://github.com/jetyu/Snaptium/blob/main/docs/Screenshots/v2/en-US/SmartWriting.mp4)
 
 ### Knowledge base demo
+
 [![Snaptium local knowledge base demo](https://raw.githubusercontent.com/jetyu/Snaptium/main/docs/Screenshots/v2/en-US/KnowledgeBase.png)](https://github.com/jetyu/Snaptium/blob/main/docs/Screenshots/v2/en-US/KnowledgeBase.mp4)
 
+---
 
 ## Technology stack
 
@@ -263,24 +142,26 @@ Currently supported:
 - KaTeX
 - highlight.js
 
-### AI and data capabilities
+### AI and data
 
 - LanceDB
 - Apache Arrow
 - AWS SDK S3
 - WebDAV
+- LangChain
+- Ollama
 
 ---
 
 ## Supported platforms
 
-| OS | Supported Version | Architecture | Installation Format |
-|------|------|------|------|
-| Windows | Windows 10 and above | x64 | `.exe` |
+| Operating system | Supported version | Architecture | Package formats |
+|------------------|-------------------|--------------|-----------------|
+| Windows | Windows 10 and later | x64 | `.exe` |
 | macOS | macOS 11+ | arm64 | `.dmg` |
-| Linux | Ubuntu / Debian / Fedora, etc. | x64 | `.deb` `.rpm` `.AppImage` |
+| Linux | Mainstream distributions including Ubuntu, Debian, and Fedora | x64 | `.deb` `.rpm` `.AppImage` |
 
-> Please download the appropriate installer for your platform.
+> Download the package that matches your platform.
 
 ---
 
@@ -290,15 +171,11 @@ Currently supported:
 
 [![Snaptium-Windows-x64.exe](https://img.shields.io/badge/Snaptium--Windows--x64.exe-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Windows-x64.exe)
 
----
-
 ### macOS
 
 #### Apple Silicon
 
 [![Snaptium-macOS-arm64.dmg](https://img.shields.io/badge/Snaptium--macOS--arm64.dmg-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-macOS-arm64.dmg)
-
----
 
 ### Linux
 
@@ -312,11 +189,9 @@ Currently supported:
 
 #### AppImage
 
-[![Snaptium-Linux-x64.AppImage](https://img.shields.io/badge/Snaptium--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Linux-x64.AppImage)
+[![Snaptium-Linux-x64.AppImage](https://img.shields.io/badge/Snaptium--Linux--x64.AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/jetyu/Snaptium/releases/latest/download/Snaptium-Linux-x86_64.AppImage)
 
----
-
-> [View All Releases](https://github.com/jetyu/Snaptium/releases)
+> [View all releases](https://github.com/jetyu/Snaptium/releases)
 
 ---
 
@@ -328,13 +203,13 @@ Currently supported:
 npm install
 ```
 
-### Start development environment
+### Start the development environment
 
 ```bash
 npm run dev
 ```
 
-### Build application
+### Build the application
 
 ```bash
 npm run dist
@@ -358,10 +233,9 @@ npm run test:unit
 
 ---
 
-## Documentation and Wiki
+## Documentation
 
-- Wiki: https://github.com/jetyu/Snaptium/wiki
-- Docs: https://github.com/jetyu/Snaptium/tree/main/docs
+- Docs: https://snaptium.com/docs
 
 ---
 
@@ -369,19 +243,19 @@ npm run test:unit
 
 ### Is Snaptium a local-first Markdown note-taking app?
 
-Yes. Notes are stored locally by default, the storage path is configurable, and core editing remains available without a mandatory account.
+Yes. Notes are stored locally by default, the storage path is configurable, and core editing does not require an account.
 
 ### Can Snaptium use local AI models?
 
-Yes. Snaptium supports Ollama for local models, as well as OpenAI, Gemini, DeepSeek, OpenRouter, SiliconFlow, and other compatible AI APIs. AI features are disabled until the user configures them.
+Yes. Snaptium supports local models through Ollama as well as OpenAI, Gemini, DeepSeek, OpenRouter, SiliconFlow, and compatible APIs. AI features remain disabled until configured by the user.
 
 ### Which note formats can Snaptium import or export?
 
-Snaptium supports Markdown and native `.sppx` package import/export, Evernote `.enex` import, and single-note PDF export.
+Snaptium imports and exports Markdown and native `.sppx` packages, imports Evernote `.enex`, and exports individual notes as PDF.
 
 ### Does Snaptium support encrypted sync?
 
-Yes. Snaptium supports end-to-end encrypted synchronization through WebDAV and S3-compatible object storage, including Cloudflare R2, MinIO, and private NAS storage.
+Yes. Snaptium provides end-to-end encrypted sync through WebDAV and S3-compatible object storage, including Cloudflare R2, MinIO, and private NAS storage.
 
 ### Is Snaptium open source?
 
@@ -391,49 +265,23 @@ Yes. Snaptium is released under the Apache License 2.0.
 
 Future plans include:
 
-- Integration of local AI models
-- Extractable Windows portable package
-- Multi-workspace management
 - Collaborative editing
-- Plugin system
+- A plugin system
 - Mobile support
-- More complete offline knowledge base capabilities
+- More complete offline knowledge-base capabilities
 
 ---
 
 ## License
 
-This project is licensed under the Apache License 2.0.
-
-For details, please refer to:
-
-```text
-LICENSE
-```
+Snaptium is licensed under the Apache License 2.0. See `LICENSE` for details.
 
 ---
 
 ## Acknowledgments
 
-Thanks to the following excellent open-source projects:
-
-- Electron
-- Vue
-- CodeMirror
-- markdown-it
-- KaTeX
-- LanceDB
-- Apache Arrow
-
-And to all developers and users who have submitted Issues, PRs, and suggestions for Snaptium.
+Thanks to Electron, Vue, CodeMirror, markdown-it, KaTeX, LanceDB, Apache Arrow, and everyone who contributes issues, pull requests, and suggestions.
 
 <img width="120" src="https://raw.githubusercontent.com/jetyu/Snaptium/main/electron/assets/images/siliconflow.png" alt="SiliconFlow logo" />
 
-Special thanks to [SiliconFlow](https://siliconFlow.com) for providing AI model service support for Snaptium.
-
----
-
-## Star history
-
-[![Star History Chart](https://api.star-history.com/svg?repos=jetyu/Snaptium&type=Date)](https://star-history.com/#jetyu/Snaptium&Date)
-
+Special thanks to [SiliconFlow](https://siliconFlow.com) for supporting Snaptium with AI model services.
