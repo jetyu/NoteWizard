@@ -1,6 +1,6 @@
 <template>
   <div class="log-settings">
-    <h3 class="panel-title">{{ t('pref.pane.log') }}</h3>
+    <h3 class="panel-title">{{ t('pref.pane.privacyLog') }}</h3>
 
     <div class="settings-grid">
       <!-- Enable Logging Toggle -->
@@ -139,7 +139,7 @@ const handleExportDiagnosticLogs = async () => {
 
   if (result.status === DIAGNOSTIC_EXPORT_STATUS.EXPORTED) {
     await systemDialog.info({
-      title: t('pref.pane.log'),
+      title: t('pref.pane.privacyLog'),
       message: t('diagnosticLog.exportSuccess', { count: result.includedLogFiles }),
       detail: result.archivePath,
     });
@@ -147,7 +147,7 @@ const handleExportDiagnosticLogs = async () => {
   }
 
   await systemDialog.error({
-    title: t('pref.pane.log'),
+    title: t('pref.pane.privacyLog'),
     message: t('diagnosticLog.exportFailed'),
     detail: result.error,
   });
