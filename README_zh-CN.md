@@ -29,7 +29,6 @@
 <p align="center">
   <a href="https://github.com/jetyu/Snaptium/actions/workflows/build.yml"><img src="https://github.com/jetyu/Snaptium/actions/workflows/build.yml/badge.svg?event=push" alt="Snaptium Release"></a>
   <a href="https://github.com/jetyu/Snaptium/releases/latest"><img src="https://img.shields.io/github/v/release/jetyu/Snaptium?style=flat&amp;logo=github" alt="Latest Release"></a>
-  <img src="https://img.shields.io/github/v/release/jetyu/Snaptium?include_prereleases&amp;label=pre-release&amp;logo=github" alt="GitHub Pre-release">
   <a href="https://github.com/jetyu/Snaptium/releases"><img src="https://img.shields.io/github/downloads/jetyu/Snaptium/total?style=flat&amp;logo=github" alt="Downloads"></a>
   <img src="https://img.shields.io/github/stars/jetyu/Snaptium?style=flat" alt="GitHub Repo stars">
   <img src="https://img.shields.io/github/forks/jetyu/Snaptium?style=flat" alt="GitHub forks">
