@@ -4,12 +4,8 @@
 <h1 align="center">Snaptium</h1>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README_zh-CN.md">简体中文</a> · <a href="README_zh-TW.md">繁體中文</a> ·
-  <a href="README_ja-JP.md">日本語</a> · <a href="README_ko-KR.md">한국어</a> · <a href="README_id-ID.md">Bahasa Indonesia</a> ·
-  <a href="README_es-ES.md">Español</a> · <a href="README_de-DE.md">Deutsch</a> · <a href="README_fr-FR.md">Français</a> ·
-  <a href="README_it-IT.md">Italiano</a> · <a href="README_pt-BR.md">Português (Brasil)</a> · <a href="README_tr-TR.md">Türkçe</a>
+  <a href="README.md">English</a> · <a href="README_zh-CN.md">简体中文</a>
 </p>
-
 
 <p align="center"><strong>AI智能体驱动Markdown笔记软件</strong></p>
 
@@ -29,16 +25,16 @@
 <p align="center">
   <a href="https://github.com/jetyu/Snaptium/actions/workflows/build.yml"><img src="https://github.com/jetyu/Snaptium/actions/workflows/build.yml/badge.svg?event=push" alt="Snaptium Release"></a>
   <a href="https://github.com/jetyu/Snaptium/releases/latest"><img src="https://img.shields.io/github/v/release/jetyu/Snaptium?style=flat&amp;logo=github" alt="Latest Release"></a>
-  <img src="https://img.shields.io/github/v/release/jetyu/Snaptium?include_prereleases&amp;label=pre-release&amp;logo=github" alt="GitHub Pre-release">
-  <a href="https://github.com/jetyu/Snaptium/releases"><img src="https://img.shields.io/github/downloads/jetyu/Snaptium/total?style=flat&amp;logo=github" alt="Downloads"></a>
-  <img src="https://img.shields.io/github/stars/jetyu/Snaptium?style=flat" alt="GitHub Repo stars">
-  <img src="https://img.shields.io/github/forks/jetyu/Snaptium?style=flat" alt="GitHub forks">
+  <a href="https://github.com/jetyu/Snaptium/releases/latest"><img src="https://img.shields.io/badge/Platform-Windows%20|%20macOS%20|%20Linux-blue?style=flat" alt="Platform"></a>
+  <a href="https://github.com/jetyu/Snaptium/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jetyu/Snaptium?style=flat" alt="License"></a>
+
 </p>
 
 <p align="center">
+  <a href="https://github.com/jetyu/Snaptium/releases"><img src="https://img.shields.io/github/downloads/jetyu/Snaptium/total?style=flat&amp;logo=github" alt="Downloads"></a>
   <a href="https://github.com/jetyu/Snaptium/issues"><img src="https://img.shields.io/github/issues/jetyu/Snaptium?style=flat&amp;color=orange" alt="Open Issues"></a>
   <a href="https://github.com/jetyu/Snaptium/issues?q=is%3Aissue%20state%3Aclosed"><img src="https://img.shields.io/github/issues-closed/jetyu/Snaptium?style=flat&amp;color=brightgreen" alt="Closed Issues"></a>
-  <a href="https://github.com/jetyu/Snaptium/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jetyu/Snaptium?style=flat" alt="License"></a>
+
 </p>
 
 
