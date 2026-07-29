@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { serializeError } from '../../shared/utils/error.utils.js';
 
 const GLOBAL_ERROR_SOURCE = 'MainGlobalError';

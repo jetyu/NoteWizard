@@ -1,6 +1,6 @@
 import { session } from 'electron';
 import { getErrorCode, getErrorMessage } from '../../shared/utils/error.utils.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 
 const logger = loggerService.createLogger('Electron:Network Service');
 const ELECTRON_NETWORK_REQUEST_ERROR_CODE = 'ELECTRON_NETWORK_REQUEST_FAILED';

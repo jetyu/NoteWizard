@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { writeUtf8 } from './file.service.js';
 import { formatSnapshotFilename, filenameToTimestamp } from '../utils/formatTools.js';
 import { getErrorMessage } from '../services/error.service.js';

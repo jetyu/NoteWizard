@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../../main/constants/ipc.constants.js';
+import type { DiagnosticLogExportResult } from '../../shared/diagnostic-log.constants.js';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -41,6 +42,8 @@ const electronAPI = Object.freeze({
     log: (payload: { level: string; source: string; message: string; context?: JsonValue }) =>
       ipcRenderer.send(IPC_CHANNELS.LOGGER_LOG, payload),
     openDir: () => ipcRenderer.invoke(IPC_CHANNELS.LOGGER_OPEN_DIR),
+    exportDiagnostics: (): Promise<DiagnosticLogExportResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOGGER_EXPORT_DIAGNOSTICS),
   }),
   app: Object.freeze({
     getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),

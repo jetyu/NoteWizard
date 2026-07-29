@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { remoteAiService } from '../../services/remote-ai.service.js';
 import { aiConfigService } from '../../services/ai-config.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
 import { LICENSE_RUNTIME_FEATURES, licenseService } from '../../services/license.service.js';
 import { isValidAiPromptPreset } from '../../../shared/ai.constants.js';

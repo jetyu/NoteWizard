@@ -8,7 +8,7 @@ import {
 } from '../../services/ai-provider.service.js';
 import { AI_PROVIDERS } from '../../../shared/ai-provider.constants.js';
 import { Document } from '@langchain/core/documents';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
 import { LICENSE_RUNTIME_FEATURES, licenseService } from '../../services/license.service.js';
 

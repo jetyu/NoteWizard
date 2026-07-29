@@ -21,10 +21,26 @@ export function useGeneralSettings() {
     document.documentElement.style.colorScheme = activeTheme;
   };
 
+  const applyAppUIFont = (fontFamily: string) => {
+    if (fontFamily) {
+      document.documentElement.style.setProperty('--ui-font-family', fontFamily);
+    } else {
+      document.documentElement.style.removeProperty('--ui-font-family');
+    }
+  };
+
   watch(
     () => [settingsStore.config.themeMode, settingsStore.config.accentMode] as const,
     ([newThemeMode, newAccentMode]) => {
       applyThemeAppearance(newThemeMode, newAccentMode);
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => settingsStore.config.appUIFont,
+    (fontFamily) => {
+      applyAppUIFont(fontFamily);
     },
     { immediate: true },
   );

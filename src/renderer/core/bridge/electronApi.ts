@@ -1,4 +1,7 @@
 import type { KnowledgeCopilotConversationContext } from '@shared/knowledge-copilot.constants';
+import type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
+
+export type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
 
 export interface OpenFileResult {
   filePath: string;
@@ -621,6 +624,9 @@ export const electronApi = {
     },
     openDir: (): Promise<boolean> => {
       return electronApi.logger.getLoggerApi().openDir();
+    },
+    exportDiagnostics: (): Promise<DiagnosticLogExportResult> => {
+      return electronApi.logger.getLoggerApi().exportDiagnostics();
     },
   },
 

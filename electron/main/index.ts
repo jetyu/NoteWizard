@@ -5,7 +5,7 @@ import { createMainWindow } from './windows/mainWindow.js';
 import { registerIpcHandlers } from './ipc/index.js';
 import { setupAppMenu } from './services/menu.service.js';
 import { settingsService } from './services/settings.service.js';
-import { loggerService } from './services/logger.service.js';
+import { loggerService } from './services/log/logger.service.js';
 import { previewPolicyService } from './services/preview-policy.service.js';
 import { trayService } from './services/tray.service.js';
 import { updaterService } from './services/updater.service.js';

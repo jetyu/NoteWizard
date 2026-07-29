@@ -1,6 +1,6 @@
 <template>
   <div class="log-settings">
-    <h3 class="panel-title">{{ t('pref.pane.log') }}</h3>
+    <h3 class="panel-title">{{ t('pref.pane.privacyLog') }}</h3>
 
     <div class="settings-grid">
       <!-- Enable Logging Toggle -->
@@ -52,16 +52,27 @@
           </select>
         </label>
       </section>
-
       <!-- Open Log Directory -->
       <section class="setting-card">
         <div class="setting-copy">
-          <p class="setting-label">{{ t('button.openLogFolder') }}</p>
-          <p class="setting-description">{{ t('contextMenu.showInFolder') }}</p>
+          <p class="setting-label">{{ t('label.logFilePath') }}</p>
+          <p class="setting-description">{{ t('label.logFilePathDescription') }}</p>
         </div>
-
         <button class="action-button" @click="handleOpenLogDir">
           {{ t('button.openLogFolder') }}
+        </button>
+      </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.diagnosticLog') }}</p>
+          <p class="setting-description">{{ t('diagnosticLog.exportDescription') }}</p>
+        </div>
+
+        <button type="button" class="action-button" :disabled="settingsStore.isExportingDiagnosticLogs"
+          @click="handleExportDiagnosticLogs">
+          {{ settingsStore.isExportingDiagnosticLogs
+            ? t('diagnosticLog.exporting')
+            : t('diagnosticLog.exportAction') }}
         </button>
       </section>
     </div>
@@ -72,7 +83,9 @@
 import { computed } from 'vue';
 import { isDev } from '@renderer/config/env';
 import { useI18n } from 'vue-i18n';
+import { DIAGNOSTIC_EXPORT_STATUS } from '@shared/diagnostic-log.constants';
 import { useSettingsStore } from '../../store/settings.store';
+import { systemDialog } from '../../services/system-dialog.service';
 
 const LOG_AUTO_CLEAR_DAY_OPTIONS = [0, 10, 20];
 
@@ -116,5 +129,27 @@ const handleLogAutoClearChange = async (event: Event) => {
 
 const handleOpenLogDir = () => {
   settingsStore.openLogDir();
+};
+
+const handleExportDiagnosticLogs = async () => {
+  const result = await settingsStore.exportDiagnosticLogs();
+  if (!result || result.status === DIAGNOSTIC_EXPORT_STATUS.CANCELLED) {
+    return;
+  }
+
+  if (result.status === DIAGNOSTIC_EXPORT_STATUS.EXPORTED) {
+    await systemDialog.info({
+      title: t('pref.pane.privacyLog'),
+      message: t('diagnosticLog.exportSuccess', { count: result.includedLogFiles }),
+      detail: result.archivePath,
+    });
+    return;
+  }
+
+  await systemDialog.error({
+    title: t('pref.pane.privacyLog'),
+    message: t('diagnosticLog.exportFailed'),
+    detail: result.error,
+  });
 };
 </script>

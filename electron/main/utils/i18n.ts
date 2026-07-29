@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
-import { loggerService } from '../services/logger.service.js';
+import { loggerService } from '../services/log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 
 const logger = loggerService.createLogger('Electron:I18n Utils');

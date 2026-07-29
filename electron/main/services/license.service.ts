@@ -26,7 +26,7 @@ import {
   PAID_LICENSE_PLANS,
   isPaidPlan,
 } from '../../shared/license.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { appEnvInfoService } from './appEnvInfo.service.js';
 import { mainProcessFetch } from './network.service.js';
 

@@ -10,7 +10,9 @@
             <div class="command-meta">
               <span class="command-name">{{ t(`commands.${command.id}`) }}</span>
               <p v-if="getFailedAccelerators(command.id).length > 0" class="registration-warning">
-                {{ t('shortcuts.globalRegistrationFailed', { keys: getFailedAccelerators(command.id).join(', ') }) }}
+                {{ t('shortcuts.globalRegistrationFailed', {
+                  keys: formatKeybindings(getFailedAccelerators(command.id)),
+                }) }}
               </p>
             </div>
             <div class="shortcut-keys">
@@ -57,7 +59,7 @@
             <p>{{ t('shortcuts.conflictWarning') }}</p>
             <ul>
               <li v-for="conflict in conflicts" :key="conflict.commandId">
-                {{ t(`commands.${conflict.commandId}`) }} ({{ conflict.key }})
+                {{ t(`commands.${conflict.commandId}`) }} ({{ formatKeybinding(conflict.key) }})
               </li>
             </ul>
           </div>
@@ -115,6 +117,10 @@ function getKeybindingsForCommand(commandId: string) {
 
 function getFailedAccelerators(commandId: string): string[] {
   return shortcutsStore.getGlobalShortcutStatus(commandId)?.failedAccelerators ?? [];
+}
+
+function formatKeybindings(keys: string[]): string {
+  return keys.map(key => formatKeybinding(key)).join(', ');
 }
 
 function handleAddShortcut(commandId: string) {
