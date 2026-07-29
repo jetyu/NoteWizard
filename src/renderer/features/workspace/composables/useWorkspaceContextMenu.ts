@@ -20,8 +20,8 @@ interface UseWorkspaceContextMenuOptions {
   moveNode: (payload: { nodeId: string; parentId: string | null; index: number }) => Promise<void>;
   showNoteInFolder: (id: string) => Promise<void>;
   openProperties: (id: string) => void;
-  deleteNote: (id: string) => Promise<unknown>;
-  deleteNotebook: (id: string) => Promise<unknown>;
+  deleteNote: (id: string) => Promise<boolean>;
+  deleteNotebook: (id: string) => Promise<boolean>;
   getNoteMoveTargets: (note: Note) => WorkspaceMoveTarget[];
   getNotebookMoveTargets: (notebook: Notebook) => WorkspaceMoveTarget[];
   resolveMoveIndex: (parentId: string | null, excludeNodeId: string) => number;

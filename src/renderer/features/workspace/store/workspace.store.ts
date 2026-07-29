@@ -10,9 +10,12 @@ import { getErrorMessage } from '@shared/utils/error.utils';
 import {
   normalizeNoteTag,
   normalizeNoteTags,
+  resolveWorkspaceDeletionSelection,
   workspaceService,
   type Note,
   type Notebook,
+  type WorkspaceTreeSelectionEntry,
+  type WorkspaceTreeSelectionNode,
 } from '../services/workspace.service';
 import { WORKSPACE_CONSTANTS, type SaveStatus } from '../constants/workspace.constants';
 
@@ -36,6 +39,38 @@ function getDescendantIds(notes: Note[], notebooks: Notebook[], parentId: string
   }
 
   return descendantIds;
+}
+
+function getNodeIdsToRemove(notes: Note[], notebooks: Notebook[], nodeIds: readonly string[]): Set<string> {
+  const idsToRemove = new Set<string>();
+
+  for (const id of nodeIds) {
+    idsToRemove.add(id);
+    for (const descendantId of getDescendantIds(notes, notebooks, id)) {
+      idsToRemove.add(descendantId);
+    }
+  }
+
+  return idsToRemove;
+}
+
+function createTreeSelectionNodes(notes: Note[], notebooks: Notebook[]): WorkspaceTreeSelectionNode[] {
+  return [
+    ...notebooks.map((notebook) => ({
+      id: notebook.id,
+      kind: 'notebook' as const,
+      parentId: notebook.parentId,
+      order: notebook.order,
+      createdAt: notebook.createdAt,
+    })),
+    ...notes.map((note) => ({
+      id: note.id,
+      kind: 'note' as const,
+      parentId: note.parentId,
+      order: note.order,
+      createdAt: note.createdAt,
+    })),
+  ];
 }
 
 function compareNodeOrder(left: Pick<Note | Notebook, 'order' | 'createdAt' | 'id'>, right: Pick<Note | Notebook, 'order' | 'createdAt' | 'id'>): number {
@@ -70,6 +105,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       historyLoading: false,
       isNotePropertiesDialogOpen: false,
       notePropertiesTargetId: null as string | null,
+      visibleTreeEntries: [] as WorkspaceTreeSelectionEntry[],
     };
   },
 
@@ -121,6 +157,31 @@ export const useWorkspaceStore = defineStore('workspace', {
   },
 
   actions: {
+    setVisibleTreeEntries(entries: readonly WorkspaceTreeSelectionEntry[]): void {
+      this.visibleTreeEntries = entries.map((entry) => ({
+        id: entry.id,
+        kind: entry.kind,
+        parentId: entry.parentId,
+      }));
+    },
+
+    applyTreeSelection(selection: WorkspaceTreeSelectionEntry | null): void {
+      if (selection?.kind === 'note' && this.notes.some((note) => note.id === selection.id)) {
+        this.activeNoteId = selection.id;
+        this.activeNotebookId = null;
+        return;
+      }
+
+      if (selection?.kind === 'notebook' && this.notebooks.some((notebook) => notebook.id === selection.id)) {
+        this.activeNotebookId = selection.id;
+        this.activeNoteId = null;
+        return;
+      }
+
+      this.activeNoteId = null;
+      this.activeNotebookId = null;
+    },
+
     async initializeWorkspace(force = false) {
       if (this.initialized && !force) {
         return;
@@ -149,17 +210,26 @@ export const useWorkspaceStore = defineStore('workspace', {
         this.notes = notes;
         this.notebooks = notebooks;
 
-        if (this.activeNoteId && !this.notes.find((note) => note.id === this.activeNoteId)) {
+        const activeNoteStillExists = this.activeNoteId
+          ? this.notes.some((note) => note.id === this.activeNoteId)
+          : false;
+        const activeNotebookStillExists = this.activeNotebookId
+          ? this.notebooks.some((notebook) => notebook.id === this.activeNotebookId)
+          : false;
+
+        if (activeNoteStillExists) {
+          this.activeNotebookId = null;
+        } else if (activeNotebookStillExists) {
+          this.activeNoteId = null;
+        } else {
           this.activeNoteId = notes[0]?.id ?? null;
-        } else if (!this.activeNoteId) {
-          this.activeNoteId = notes[0]?.id ?? null;
+          this.activeNotebookId = null;
         }
 
         if (this.notePropertiesTargetId && !notes.find((note) => note.id === this.notePropertiesTargetId)) {
           this.closeNotePropertiesDialog();
         }
 
-        this.activeNotebookId = null;
         logger.info(`Workspace initialized with ${notes.length} note(s) and ${notebooks.length} notebook(s).`);
       } catch (err: unknown) {
         logger.error(`Failed to initialize workspace: ${getErrorMessage(err)}`);
@@ -469,26 +539,16 @@ export const useWorkspaceStore = defineStore('workspace', {
       }
     },
 
-    async deleteNote(id: string) {
-      const index = this.notes.findIndex((note) => note.id === id);
-      if (index === -1) return;
-
-      try {
-        await workspaceService.deleteNodes([id]);
-      } catch (err: unknown) {
-        const message = getErrorMessage(err);
-        logger.error(`Failed to delete note ${id}: ${message}`);
-        return;
+    async deleteNote(id: string): Promise<boolean> {
+      if (!this.notes.some((note) => note.id === id)) {
+        return false;
       }
 
-      this.notes = this.notes.filter((note) => note.id !== id);
-      if (this.activeNoteId === id) {
-        this.activeNoteId = this.notes[0]?.id ?? null;
+      const deleted = await this.deleteNodes([id]);
+      if (deleted) {
+        logger.info(`Deleted note: ${id}`);
       }
-      if (this.notePropertiesTargetId === id) {
-        this.closeNotePropertiesDialog();
-      }
-      logger.info(`Deleted note: ${id}`);
+      return deleted;
     },
 
     async confirmDeleteNote(id: string): Promise<boolean> {
@@ -502,77 +562,60 @@ export const useWorkspaceStore = defineStore('workspace', {
         return false;
       }
 
-      await this.deleteNote(id);
-      return true;
+      return await this.deleteNote(id);
     },
 
-    async deleteNotebook(id: string) {
-      const notebook = this.notebooks.find((candidate) => candidate.id === id);
-      if (!notebook) return;
-
-      try {
-        await workspaceService.deleteNodes([id]);
-      } catch (err: unknown) {
-        const message = getErrorMessage(err);
-        logger.error(`Failed to delete notebook ${id}: ${message}`);
-        return;
+    async deleteNotebook(id: string): Promise<boolean> {
+      if (!this.notebooks.some((notebook) => notebook.id === id)) {
+        return false;
       }
 
-      const idsToRemove = new Set([id, ...getDescendantIds(this.notes, this.notebooks, id)]);
-
-      this.notes = this.notes.filter((note) => !idsToRemove.has(note.id));
-      this.notebooks = this.notebooks.filter((candidate) => !idsToRemove.has(candidate.id));
-
-      if (idsToRemove.has(this.activeNoteId ?? '')) {
-        this.activeNoteId = this.notes[0]?.id ?? null;
+      const descendantCount = getDescendantIds(this.notes, this.notebooks, id).length;
+      const deleted = await this.deleteNodes([id]);
+      if (deleted) {
+        logger.info(`Deleted notebook and descendants: ${id} (Total items removed: ${descendantCount + 1})`);
       }
-      if (idsToRemove.has(this.activeNotebookId ?? '')) {
-        this.activeNotebookId = null;
-      }
-      if (idsToRemove.has(this.notePropertiesTargetId ?? '')) {
-        this.closeNotePropertiesDialog();
-      }
-
-      logger.info(`Deleted notebook and descendants: ${id} (Total items removed: ${idsToRemove.size})`);
-      window.dispatchEvent(new CustomEvent('vfs-changed'));
+      return deleted;
     },
 
-    async deleteNodes(ids: string[]) {
+    async deleteNodes(ids: string[]): Promise<boolean> {
       const nodeIds = Array.from(new Set(ids));
       if (nodeIds.length === 0) {
-        return;
+        return false;
       }
+
+      const idsToRemove = getNodeIdsToRemove(this.notes, this.notebooks, nodeIds);
+      const activeId = this.activeNoteId ?? this.activeNotebookId;
+      const activeSelectionWillBeRemoved = activeId !== null && idsToRemove.has(activeId);
+      const nextSelection = activeSelectionWillBeRemoved
+        ? resolveWorkspaceDeletionSelection({
+          visibleEntries: this.visibleTreeEntries,
+          allNodes: createTreeSelectionNodes(this.notes, this.notebooks),
+          removedIds: idsToRemove,
+          activeId,
+        })
+        : null;
 
       try {
         await workspaceService.deleteNodes(nodeIds);
       } catch (err: unknown) {
         const message = getErrorMessage(err);
         logger.error(`Failed to delete selected nodes: ${message}`);
-        return;
-      }
-
-      const idsToRemove = new Set<string>();
-      for (const id of nodeIds) {
-        idsToRemove.add(id);
-        for (const descendantId of getDescendantIds(this.notes, this.notebooks, id)) {
-          idsToRemove.add(descendantId);
-        }
+        return false;
       }
 
       this.notes = this.notes.filter((note) => !idsToRemove.has(note.id));
       this.notebooks = this.notebooks.filter((candidate) => !idsToRemove.has(candidate.id));
 
-      if (idsToRemove.has(this.activeNoteId ?? '')) {
-        this.activeNoteId = this.notes[0]?.id ?? null;
-      }
-      if (idsToRemove.has(this.activeNotebookId ?? '')) {
-        this.activeNotebookId = null;
+      if (activeSelectionWillBeRemoved) {
+        this.applyTreeSelection(nextSelection);
       }
       if (idsToRemove.has(this.notePropertiesTargetId ?? '')) {
         this.closeNotePropertiesDialog();
       }
 
       logger.info(`Deleted selected nodes and descendants: ${nodeIds.length} root candidate(s), ${idsToRemove.size} total item(s) removed.`);
+      return true;
     },
 
     async confirmDeleteNotebook(id: string): Promise<boolean> {
@@ -586,8 +629,7 @@ export const useWorkspaceStore = defineStore('workspace', {
         return false;
       }
 
-      await this.deleteNotebook(id);
-      return true;
+      return await this.deleteNotebook(id);
     },
 
     async setNoteReadMode(id: string, enabled: boolean) {
