@@ -90,6 +90,26 @@ export interface StarredNotebook {
 
 export type StarredNode = StarredNote | StarredNotebook;
 
+export type WorkspaceTreeSelectionKind = 'note' | 'notebook';
+
+export interface WorkspaceTreeSelectionEntry {
+    id: string;
+    kind: WorkspaceTreeSelectionKind;
+    parentId: string | null;
+}
+
+export interface WorkspaceTreeSelectionNode extends WorkspaceTreeSelectionEntry {
+    order: number;
+    createdAt: number;
+}
+
+interface ResolveWorkspaceDeletionSelectionOptions {
+    visibleEntries: readonly WorkspaceTreeSelectionEntry[];
+    allNodes: readonly WorkspaceTreeSelectionNode[];
+    removedIds: ReadonlySet<string>;
+    activeId: string;
+}
+
 let currentWorkspaceRoot: string | null = null;
 
 function isVfsAvailable(): boolean {
@@ -250,6 +270,140 @@ function normalizeStarredAt(timestamp: unknown, fallback: number): number {
     }
 
     return fallback;
+}
+
+function compareTreeSelectionNodes(
+    left: WorkspaceTreeSelectionNode,
+    right: WorkspaceTreeSelectionNode,
+): number {
+    const leftOrder = Number(left.order ?? left.createdAt ?? 0);
+    const rightOrder = Number(right.order ?? right.createdAt ?? 0);
+
+    if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+    }
+
+    if (left.createdAt !== right.createdAt) {
+        return left.createdAt - right.createdAt;
+    }
+
+    return left.id.localeCompare(right.id);
+}
+
+export function buildExpandedWorkspaceTree(
+    nodes: readonly WorkspaceTreeSelectionNode[],
+): WorkspaceTreeSelectionEntry[] {
+    const childrenByParent = new Map<string | null, WorkspaceTreeSelectionNode[]>();
+
+    for (const node of nodes) {
+        const parentId = node.parentId ?? null;
+        const children = childrenByParent.get(parentId) ?? [];
+        children.push(node);
+        childrenByParent.set(parentId, children);
+    }
+
+    for (const children of childrenByParent.values()) {
+        children.sort(compareTreeSelectionNodes);
+    }
+
+    const entries: WorkspaceTreeSelectionEntry[] = [];
+    const visitedIds = new Set<string>();
+
+    const visit = (parentId: string | null): void => {
+        for (const node of childrenByParent.get(parentId) ?? []) {
+            if (visitedIds.has(node.id)) {
+                continue;
+            }
+
+            visitedIds.add(node.id);
+            entries.push({
+                id: node.id,
+                kind: node.kind,
+                parentId: node.parentId,
+            });
+
+            if (node.kind === 'notebook') {
+                visit(node.id);
+            }
+        }
+    };
+
+    visit(null);
+    return entries;
+}
+
+function findAdjacentTreeSurvivor(
+    entries: readonly WorkspaceTreeSelectionEntry[],
+    removedIds: ReadonlySet<string>,
+): WorkspaceTreeSelectionEntry | null {
+    const firstRemovedIndex = entries.findIndex((entry) => removedIds.has(entry.id));
+    if (firstRemovedIndex === -1) {
+        return null;
+    }
+
+    for (let index = firstRemovedIndex + 1; index < entries.length; index += 1) {
+        const entry = entries[index];
+        if (entry && !removedIds.has(entry.id)) {
+            return entry;
+        }
+    }
+
+    for (let index = firstRemovedIndex - 1; index >= 0; index -= 1) {
+        const entry = entries[index];
+        if (entry && !removedIds.has(entry.id)) {
+            return entry;
+        }
+    }
+
+    return null;
+}
+
+function findVisibleTreeAncestor(
+    activeId: string,
+    visibleEntries: readonly WorkspaceTreeSelectionEntry[],
+    allNodes: readonly WorkspaceTreeSelectionNode[],
+    removedIds: ReadonlySet<string>,
+): WorkspaceTreeSelectionEntry | null {
+    const visibleEntriesById = new Map(visibleEntries.map((entry) => [entry.id, entry] as const));
+    const nodesById = new Map(allNodes.map((node) => [node.id, node] as const));
+    let parentId = nodesById.get(activeId)?.parentId ?? null;
+
+    while (parentId) {
+        const visibleAncestor = visibleEntriesById.get(parentId);
+        if (visibleAncestor && !removedIds.has(visibleAncestor.id)) {
+            return visibleAncestor;
+        }
+
+        parentId = nodesById.get(parentId)?.parentId ?? null;
+    }
+
+    return null;
+}
+
+export function resolveWorkspaceDeletionSelection(
+    options: ResolveWorkspaceDeletionSelectionOptions,
+): WorkspaceTreeSelectionEntry | null {
+    const visibleSelection = findAdjacentTreeSurvivor(options.visibleEntries, options.removedIds);
+    if (visibleSelection) {
+        return visibleSelection;
+    }
+
+    if (options.visibleEntries.length > 0) {
+        const visibleAncestor = findVisibleTreeAncestor(
+            options.activeId,
+            options.visibleEntries,
+            options.allNodes,
+            options.removedIds,
+        );
+        if (visibleAncestor) {
+            return visibleAncestor;
+        }
+    }
+
+    return findAdjacentTreeSurvivor(
+        buildExpandedWorkspaceTree(options.allNodes),
+        options.removedIds,
+    );
 }
 
 function mapNodeToStarredNode(node: WorkspaceNode): StarredNode | null {
