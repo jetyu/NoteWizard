@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
-import { loggerService } from '../../services/logger.service.js';
+import { diagnosticLogExportService } from '../../services/log/diagnostic-log-export.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 
 type JsonPrimitive = string | number | boolean | null;
@@ -20,5 +21,9 @@ export function registerLoggerIpcHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.LOGGER_OPEN_DIR, () => {
     loggerService.openLogDir();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.LOGGER_EXPORT_DIAGNOSTICS, () => {
+    return diagnosticLogExportService.exportDiagnostics();
   });
 }

@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
 import { $t } from '../utils/i18n.js';
 import { writeUtf8 } from './file.service.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { historyService } from './history.service.js';
 import { settingsService } from './settings.service.js';
 import { getErrorMessage } from '../services/error.service.js';

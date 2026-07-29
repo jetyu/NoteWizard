@@ -4,7 +4,7 @@ import { BrowserWindow, dialog, type OpenDialogOptions } from 'electron';
 import { OutputFormat } from 'yarle-evernote-to-md/dist/output-format.js';
 import type { YarleOptions } from 'yarle-evernote-to-md/dist/YarleOptions.js';
 import { $t } from '../../utils/i18n.js';
-import { loggerService } from '../logger.service.js';
+import { loggerService } from '../log/logger.service.js';
 import { markdownImportService } from './markdown-import.service.js';
 import { createSecureTempDirectory } from './temp-directory.utils.js';
 import { getErrorMessage } from '../../services/error.service.js';

@@ -1,6 +1,7 @@
 export { };
 
 type NotebookIconColor = import('@shared/notebook-icon.constants').NotebookIconColor;
+type DiagnosticLogExportResult = import('@shared/diagnostic-log.constants').DiagnosticLogExportResult;
 
 interface WorkspaceNodePayload {
   id: string;
@@ -263,6 +264,7 @@ declare global {
       logger: {
         log: (payload: { level: string; source: string; message: string; context?: JsonValue }) => void;
         openDir: () => Promise<boolean>;
+        exportDiagnostics: () => Promise<DiagnosticLogExportResult>;
       };
 
       app: {

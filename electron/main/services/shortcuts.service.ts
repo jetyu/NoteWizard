@@ -11,7 +11,7 @@ import fs from 'node:fs/promises';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
 import { COMMANDS, COMMAND_SCOPES, getAllCommands } from '../constants/commands.constants.js';
 import { $t } from '../utils/i18n.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { getErrorCode, getErrorMessage } from '../services/error.service.js';
 
 const logger = loggerService.createLogger('Electron:Shortcuts Service');

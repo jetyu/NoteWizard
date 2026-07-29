@@ -9,7 +9,7 @@ import {
   resolveUpdateTargetChannel,
   type UpdateChannel,
 } from '../../shared/updater.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { settingsService } from './settings.service.js';
 import { trayService } from './tray.service.js';
 import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
@@ -79,6 +79,9 @@ class UpdaterService {
     this.currentUpdateChannel = channel;
 
     autoUpdater.channel = targetChannel;
+    // electron-updater enables downgrades whenever channel is assigned.
+    // Snaptium channels must still follow strict SemVer ordering.
+    autoUpdater.allowDowngrade = false;
     autoUpdater.setFeedURL({
       provider: 'generic',
       url: feedUrl,

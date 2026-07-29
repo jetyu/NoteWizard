@@ -5,6 +5,7 @@ import {
   type MarkdownImportResult,
   type MessageDialogOptions,
   type KnowledgeCopilotRebuildMode,
+  type DiagnosticLogExportResult,
   type SppxExportResult,
   type SppxImportResult,
 } from '@renderer/core/bridge/electronApi';
@@ -177,6 +178,7 @@ function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettin
     ...incomingConfig,
     windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? baseConfig.windowCloseAction),
     accentMode: normalizeAccentMode(incomingConfig.accentMode ?? baseConfig.accentMode),
+    appUIFont: String(incomingConfig.appUIFont ?? baseConfig.appUIFont),
     aiSources: normalizeAiSources(incomingConfig.aiSources ?? baseConfig.aiSources),
     aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, incomingConfig.aiAssistant),
     previewAppearance: {
@@ -292,6 +294,10 @@ export const settingsService = {
 
   async openLogDir(): Promise<boolean | undefined> {
     return await electronApi.logger.openDir();
+  },
+
+  async exportDiagnosticLogs(): Promise<DiagnosticLogExportResult> {
+    return await electronApi.logger.exportDiagnostics();
   },
 
   async pickDirectory(): Promise<string | null> {

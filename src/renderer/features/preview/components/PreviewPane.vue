@@ -35,7 +35,7 @@ const previewStyle = computed(() => {
   const { fontSize, fontFamily } = settingsStore.config.previewAppearance;
   return {
     fontSize: `${fontSize}px`,
-    fontFamily: fontFamily || 'inherit',
+    fontFamily: fontFamily || 'var(--default-ui-font-family)',
   };
 });
 

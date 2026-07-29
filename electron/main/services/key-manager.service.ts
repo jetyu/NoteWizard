@@ -8,7 +8,7 @@ import {
   E2EE_KEY_SLOTS_VERSION,
 } from '../../shared/e2ee.constants.js';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
-import { loggerService } from './logger.service.js';
+import { loggerService } from './log/logger.service.js';
 import { cryptoService, type KeySlots, type WrappedKey } from './crypto.service.js';
 import { getErrorCode, getErrorMessage } from '../services/error.service.js';
 

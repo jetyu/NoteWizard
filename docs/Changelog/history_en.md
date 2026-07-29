@@ -1,3 +1,14 @@
+### v2.2.1 - 2026-08-02
+This update optimizes details and the user experience.
+#### New
+* Support for configuring the software interface font
+* Support for displaying additional fonts in the editor and preview interfaces
+#### Improvements
+* Improved the log export function
+#### Fixes
+* Fixed an issue where software updates caused a version downgrade
+* Fixed an issue with abnormal keyboard shortcut display across different operating systems
+
 ### v2.2.0 - 2026-07-27
 This update improves details and the user experience.
 #### New

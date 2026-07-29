@@ -1,5 +1,6 @@
 :root {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --default-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--ui-font-family, var(--default-ui-font-family));
   --sidebar-width: 260px;
   --col-header-h: 40px;
   --radius: 8px;

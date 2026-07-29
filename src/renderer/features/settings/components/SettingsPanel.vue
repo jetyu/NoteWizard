@@ -98,7 +98,7 @@ const baseTabs: TabItem[] = [
   { id: 'noteStorage', labelKey: 'pref.pane.noteStorage', icon: IconSettings2, component: AdvancedOptionsSettings },
   { id: 'sep-4', type: 'separator' },
   { id: 'shortcuts', labelKey: 'pref.pane.shortcuts', icon: IconKeyboard, component: ShortcutSettings },
-  { id: 'log', labelKey: 'pref.pane.log', icon: IconFileAnalytics, component: LogSettings },
+  { id: 'privacyLog', labelKey: 'pref.pane.privacyLog', icon: IconFileAnalytics, component: LogSettings },
   { id: 'software-update', labelKey: 'label.softwareAutoUpdate', icon: IconRefreshDot, component: SoftwareUpdateSettings }
 ];
 

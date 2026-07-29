@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import { z } from 'zod';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { searchService } from '../../services/search.service.js';
-import { loggerService } from '../../services/logger.service.js';
+import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
 
 const logger = loggerService.createLogger('Main:Search IPC');
