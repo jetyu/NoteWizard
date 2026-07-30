@@ -9,45 +9,14 @@ import {
   type SppxExportResult,
   type SppxImportResult,
 } from '@renderer/core/bridge/electronApi';
-import {
-  APP_SHELL_DEFAULT_MAIN_VIEW,
-  APP_SHELL_MAX_CUSTOM_MODULES,
-  normalizeAppShellMainViewId,
-} from '@renderer/app/constants/appShell.constants';
 import { switchLanguage } from '@renderer/features/i18n';
-import { sanitizeWorkbenchSettings } from '@renderer/features/workbench/constants/workbench.constants';
-import { normalizeTrustedRemoteImageHosts } from '@shared/preview-security.constants';
 import {
-  getAiProviderCapabilities,
   inferAiProvider,
-  isAiProvider,
   type AiProvider,
 } from '@shared/ai-provider.constants';
-import type { AppSettings, AISource } from '../store/settings.store';
+import type { AppSettings } from '../store/settings.store';
 
 type SettingsChangeReason = 'save' | 'language' | 'import' | 'reset';
-type WindowCloseAction = AppSettings['windowCloseAction'];
-type AccentMode = AppSettings['accentMode'];
-
-function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
-  const numericValue = Number(value);
-  const finiteValue = Number.isFinite(numericValue) ? numericValue : fallback;
-  return Math.min(max, Math.max(min, finiteValue));
-}
-
-function clampInteger(value: unknown, fallback: number, min: number, max: number): number {
-  return Math.trunc(clampNumber(value, fallback, min, max));
-}
-
-function normalizeWindowCloseAction(value: unknown): WindowCloseAction {
-  return value === 'exit' ? 'exit' : 'minimize';
-}
-
-function normalizeAccentMode(value: unknown): AccentMode {
-  return value === 'black' || value === 'azureBlue' || value === 'indigo' || value === 'cyan' || value === 'teal'
-    ? value
-    : 'azureBlue';
-}
 
 export interface AiConnectionPayload {
   provider: AiProvider;
@@ -55,193 +24,6 @@ export interface AiConnectionPayload {
   aiApiKey: string;
   aiModel: string;
   capabilities: string[];
-}
-
-function normalizeAiSources(value: unknown): AISource[] {
-  const customSources = Array.isArray(value) ? value.map((source): AISource | null => {
-    const normalized = (source ?? {}) as Partial<AISource>;
-    const id = String(normalized.id ?? '');
-    if (!id) {
-      return null;
-    }
-
-    const capabilities = Array.isArray(normalized.capabilities)
-      ? normalized.capabilities.filter((capability): capability is string => typeof capability === 'string')
-      : [];
-
-    const baseUrl = String(normalized.baseUrl ?? '');
-    const provider = isAiProvider(normalized.provider) ? normalized.provider : inferAiProvider(baseUrl);
-    return {
-      id,
-      name: String(normalized.name ?? ''),
-      baseUrl,
-      apiKey: String(normalized.apiKey ?? ''),
-      aiModel: String(normalized.aiModel ?? ''),
-      capabilities: capabilities.length > 0 ? capabilities : getAiProviderCapabilities(provider),
-      provider,
-    };
-  }).filter((source): source is AISource => source !== null) : [];
-
-  return customSources;
-}
-
-function normalizeAiSourceSelection(
-  sourceId: string,
-  model: string,
-  aiSources: AISource[],
-  capability: string,
-): { sourceId: string; model: string } {
-  const source = aiSources.find(item => item.id === sourceId);
-  const isUsable = source && (source.capabilities.length === 0 || source.capabilities.includes(capability));
-  return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
-}
-
-function normalizeAiAssistantSettings(
-  baseConfig: AppSettings['aiAssistant'],
-  incomingConfig?: Partial<AppSettings['aiAssistant']>,
-  aiSources: AISource[] = [],
-): AppSettings['aiAssistant'] {
-  const mergedConfig = {
-    ...baseConfig,
-    ...(incomingConfig ?? {}),
-  };
-  const sourceSelection = normalizeAiSourceSelection(
-    mergedConfig.sourceId,
-    mergedConfig.model,
-    aiSources,
-    'chat',
-  );
-
-  return {
-    ...mergedConfig,
-    ...sourceSelection,
-  };
-}
-
-function normalizeKnowledgeCopilotSettings(
-  baseConfig: AppSettings['knowledgeCopilot'],
-  incomingConfig?: Partial<AppSettings['knowledgeCopilot']>,
-  aiSources: AISource[] = [],
-): AppSettings['knowledgeCopilot'] {
-  const mergedConfig = {
-    ...baseConfig,
-    ...(incomingConfig ?? {}),
-  };
-  const embeddingSelection = normalizeAiSourceSelection(
-    mergedConfig.embeddingSourceId,
-    mergedConfig.embeddingModel,
-    aiSources,
-    'embedding',
-  );
-  const askChatSelection = normalizeAiSourceSelection(
-    mergedConfig.askChatSourceId,
-    mergedConfig.askChatModel,
-    aiSources,
-    'chat',
-  );
-  const agentChatSelection = normalizeAiSourceSelection(
-    mergedConfig.agentChatSourceId,
-    mergedConfig.agentChatModel,
-    aiSources,
-    'chat',
-  );
-  const rerankerSelection = normalizeAiSourceSelection(
-    mergedConfig.rerankerSourceId,
-    mergedConfig.rerankerModel,
-    aiSources,
-    'reranker',
-  );
-
-  return {
-    ...mergedConfig,
-    embeddingSourceId: embeddingSelection.sourceId,
-    embeddingModel: embeddingSelection.model,
-    askChatSourceId: askChatSelection.sourceId,
-    askChatModel: askChatSelection.model,
-    agentChatSourceId: agentChatSelection.sourceId,
-    agentChatModel: agentChatSelection.model,
-    rerankerSourceId: rerankerSelection.sourceId,
-    rerankerModel: rerankerSelection.model,
-    chunkSize: clampInteger(mergedConfig.chunkSize, 500, 500, 800),
-    chunkOverlap: clampInteger(mergedConfig.chunkOverlap, 50, 50, 100),
-    topK: clampInteger(mergedConfig.topK, 5, 1, 10),
-    similarityThreshold: clampNumber(mergedConfig.similarityThreshold, 0.45, 0, 1),
-  };
-}
-
-function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettings> | null): AppSettings {
-  const aiSources = normalizeAiSources(incomingConfig?.aiSources ?? baseConfig.aiSources);
-  if (!incomingConfig) {
-    return {
-      ...baseConfig,
-      aiSources,
-      aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, undefined, aiSources),
-      previewAppearance: { ...baseConfig.previewAppearance },
-      knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot, undefined, aiSources),
-      sync: {
-        ...baseConfig.sync,
-        webdav: { ...baseConfig.sync.webdav },
-        ossS3: { ...baseConfig.sync.ossS3 },
-      },
-      appShell: {
-        ...baseConfig.appShell,
-        customSidebarModules: [...baseConfig.appShell.customSidebarModules],
-        maxCustomSidebarModules: APP_SHELL_MAX_CUSTOM_MODULES,
-      },
-      workbench: sanitizeWorkbenchSettings(baseConfig.workbench),
-    };
-  }
-
-  const isLegacyShellConfig = !incomingConfig.workbench;
-  const fallbackMainView = isLegacyShellConfig
-    ? APP_SHELL_DEFAULT_MAIN_VIEW
-    : baseConfig.appShell.activeMainView;
-
-  return {
-    ...baseConfig,
-    ...incomingConfig,
-    windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? baseConfig.windowCloseAction),
-    accentMode: normalizeAccentMode(incomingConfig.accentMode ?? baseConfig.accentMode),
-    appUIFont: String(incomingConfig.appUIFont ?? baseConfig.appUIFont),
-    aiSources,
-    aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, incomingConfig.aiAssistant, aiSources),
-    previewAppearance: {
-      ...baseConfig.previewAppearance,
-      ...(incomingConfig.previewAppearance ?? {}),
-      trustedRemoteImageHosts: normalizeTrustedRemoteImageHosts(
-        incomingConfig.previewAppearance?.trustedRemoteImageHosts ?? baseConfig.previewAppearance.trustedRemoteImageHosts,
-      ),
-    },
-    knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot, aiSources),
-    sync: {
-      ...baseConfig.sync,
-      ...(incomingConfig.sync ?? {}),
-      webdav: {
-        ...baseConfig.sync.webdav,
-        ...(incomingConfig.sync?.webdav ?? {}),
-      },
-      ossS3: {
-        ...baseConfig.sync.ossS3,
-        ...(incomingConfig.sync?.ossS3 ?? {}),
-      },
-    },
-    appShell: {
-      ...baseConfig.appShell,
-      ...(incomingConfig.appShell ?? {}),
-      activeMainView: normalizeAppShellMainViewId(
-        incomingConfig.appShell?.activeMainView,
-        fallbackMainView,
-      ),
-      customSidebarModules: Array.isArray(incomingConfig.appShell?.customSidebarModules)
-        ? [...incomingConfig.appShell.customSidebarModules]
-        : [...baseConfig.appShell.customSidebarModules],
-      maxCustomSidebarModules: APP_SHELL_MAX_CUSTOM_MODULES,
-    },
-    workbench: sanitizeWorkbenchSettings({
-      ...baseConfig.workbench,
-      ...(incomingConfig.workbench ?? {}),
-    }),
-  };
 }
 
 function cloneConfig(config: AppSettings): JsonObject {
@@ -257,7 +39,7 @@ function buildAiConnectionPayload(config: AppSettings, override?: AiConnectionPa
     return override;
   }
 
-  const selectedSource = config.aiSources.find((source) => source.id === config.aiAssistant.sourceId);
+  const selectedSource = config.aiSources.sources.find((source) => source.id === config.aiAssistant.sourceId);
   return {
     provider: selectedSource?.provider ?? inferAiProvider(selectedSource?.baseUrl ?? ''),
     aiBaseUrl: selectedSource?.baseUrl ?? '',
@@ -272,11 +54,10 @@ function normalizeDirectory(path: string | null): string | null {
   return normalized ? normalized : null;
 }
 
-async function loadMergedConfig(defaultConfig: AppSettings): Promise<AppSettings> {
-  const savedConfig = await electronApi.settings.getConfig() as Partial<AppSettings> | null;
-  const mergedConfig = mergeConfig(defaultConfig, savedConfig);
-  mergedConfig.language = await switchLanguage(mergedConfig.language);
-  return mergedConfig;
+async function loadConfigFromMain(): Promise<AppSettings> {
+  const config = await electronApi.settings.getConfig() as unknown as AppSettings;
+  config.general.language = await switchLanguage(config.general.language);
+  return config;
 }
 
 export const settingsService = {
@@ -286,15 +67,14 @@ export const settingsService = {
     });
   },
 
-  async loadConfig(defaultConfig: AppSettings): Promise<AppSettings> {
-    return await loadMergedConfig(defaultConfig);
+  async loadConfig(): Promise<AppSettings> {
+    return await loadConfigFromMain();
   },
 
   async saveConfig(config: AppSettings): Promise<AppSettings> {
-    const savedConfig = await electronApi.settings.saveConfig(cloneConfig(config)) as Partial<AppSettings>;
-    const mergedConfig = mergeConfig(config, savedConfig);
+    const savedConfig = await electronApi.settings.saveConfig(cloneConfig(config)) as unknown as AppSettings;
     dispatchSettingsChanged('save');
-    return mergedConfig;
+    return savedConfig;
   },
 
   async changeLanguage(language: string): Promise<string> {
@@ -356,26 +136,26 @@ export const settingsService = {
     return await electronApi.settings.exportConfig();
   },
 
-  async importConfig(defaultConfig: AppSettings): Promise<AppSettings | null> {
+  async importConfig(): Promise<AppSettings | null> {
     const imported = await electronApi.settings.importConfig();
     if (!imported) {
       return null;
     }
 
-    const mergedConfig = await loadMergedConfig(defaultConfig);
+    const config = await loadConfigFromMain();
     dispatchSettingsChanged('import');
-    return mergedConfig;
+    return config;
   },
 
-  async resetConfig(defaultConfig: AppSettings): Promise<AppSettings | null> {
+  async resetConfig(): Promise<AppSettings | null> {
     const reset = await electronApi.settings.resetConfig();
     if (!reset) {
       return null;
     }
 
-    const mergedConfig = await loadMergedConfig(defaultConfig);
+    const config = await loadConfigFromMain();
     dispatchSettingsChanged('reset');
-    return mergedConfig;
+    return config;
   },
 
   async showMessageDialog(options: MessageDialogOptions): Promise<boolean> {

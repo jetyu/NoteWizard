@@ -30,6 +30,29 @@ The application MUST explicitly construct every supported top-level and nested s
 - **WHEN** settings input contains a field not present in the current settings model
 - **THEN** the field is omitted from the normalized and persisted result
 
+### Requirement: Settings are grouped by module
+The application SHALL represent each settings Tab or internal settings domain as one typed config object and SHALL keep unrelated leaf fields out of the `AppSettings` root.
+
+#### Scenario: Complete settings are normalized
+- **WHEN** the Main process produces current settings
+- **THEN** the root contains module configs such as `general`, `preview`, `editor`, `aiSources`, `noteStorage`, `privacyLog`, and `softwareUpdate`
+- **AND** each module is produced by its dedicated config normalizer
+
+#### Scenario: Flat settings fields are supplied
+- **WHEN** input contains a former root-level leaf such as `language`, `editorFontSize`, or `noteSavePath`
+- **THEN** that flat field is ignored instead of being migrated into the grouped shape
+
+### Requirement: Renderer settings actions follow config modules
+The Renderer settings store SHALL expose feature actions under the module they modify and SHALL expose load, save, import, export, and reset under a separate persistence module.
+
+#### Scenario: A settings Tab changes a value
+- **WHEN** the Editor, General, Preview, Sync, or another settings Tab updates its config
+- **THEN** it calls the matching module API rather than a flat store action
+
+#### Scenario: Settings lifecycle operation runs
+- **WHEN** settings are loaded, saved, imported, exported, or reset
+- **THEN** the operation is accessed through the persistence API
+
 ### Requirement: AI feature enablement is independent from source selection
 The application SHALL preserve current AI Assistant and Knowledge Copilot enablement while normalizing source selections against current user-managed AI sources.
 

@@ -18,11 +18,11 @@ export function useKnowledgeCopilotConfig() {
 
   const embeddingSource = computed(() => {
     const sourceId = knowledgeCopilotConfig.value.embeddingSourceId;
-    return settingsStore.config.aiSources.find(s => s.id === sourceId);
+    return settingsStore.config.aiSources.sources.find(s => s.id === sourceId);
   });
 
   const isConfigured = computed(() => {
-    const embeddingSource = settingsStore.config.aiSources.find(
+    const embeddingSource = settingsStore.config.aiSources.sources.find(
       source => source.id === knowledgeCopilotConfig.value.embeddingSourceId
     );
 
@@ -41,7 +41,7 @@ export function useKnowledgeCopilotConfig() {
     value: typeof knowledgeCopilotConfig.value[K]
   ) => {
     try {
-      await settingsStore.updateKnowledgeCopilotSetting(key, value);
+      await settingsStore.knowledgeCopilot.update(key, value);
       knowledgeCopilotConfigLogger.info(`Updated KnowledgeCopilot config: ${String(key)} = ${value}`);
     } catch (error) {
       knowledgeCopilotConfigLogger.error(`Failed to update KnowledgeCopilot config: ${error}`);

@@ -43,11 +43,11 @@ export function useSettingsPanel() {
   };
 
   const exportSettings = async () => {
-    return await settingsStore.exportSettings();
+    return await settingsStore.persistence.exportConfig();
   };
 
   const importSettings = async () => {
-    return await settingsStore.importSettings();
+    return await settingsStore.persistence.importConfig();
   };
 
   return {

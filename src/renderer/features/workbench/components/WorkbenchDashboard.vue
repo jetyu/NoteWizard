@@ -847,7 +847,7 @@ async function dismissOnboardingGuide(): Promise<void> {
     return;
   }
 
-  await settingsStore.updateSetting('workbench', {
+  await settingsStore.workbench.update({
     ...settingsStore.config.workbench,
     onboardingGuideActivated: true,
     onboardingGuideDismissed: true,
@@ -859,7 +859,7 @@ async function activateOnboardingGuide(): Promise<void> {
     return;
   }
 
-  await settingsStore.updateSetting('workbench', {
+  await settingsStore.workbench.update({
     ...settingsStore.config.workbench,
     onboardingGuideActivated: true,
   });

@@ -204,7 +204,7 @@ const isProviderMenuOpen = ref(false);
 const providerSelectRef = ref<HTMLElement | null>(null);
 const providerSelectButtonRef = ref<HTMLButtonElement | null>(null);
 const isEditMode = computed(() => !!editingSourceId.value);
-const aiSources = computed<AISource[]>(() => settingsStore.config.aiSources);
+const aiSources = computed<AISource[]>(() => settingsStore.config.aiSources.sources);
 
 const newSource = reactive<{
   provider: AiProvider;
@@ -268,10 +268,10 @@ const handleAddSource = async () => {
 
     if (isEditMode.value && editingSourceId.value) {
       aisLogger.info(`Updating AI source: ${newSource.name} (ID: ${editingSourceId.value})`);
-      await settingsStore.updateAiSource(editingSourceId.value, payload);
+      await settingsStore.aiSources.update(editingSourceId.value, payload);
     } else {
       aisLogger.info(`Adding AI source after successful test: ${newSource.name}`);
-      const result = await settingsStore.addAiSource(payload);
+      const result = await settingsStore.aiSources.add(payload);
       aisLogger.info(`AI Source added: ${result.name} (ID: ${result.id})`);
     }
 
@@ -364,7 +364,7 @@ const handleTestNewSource = async () => {
   isTesting.value = true;
 
   try {
-    const result = await settingsStore.testConnection({
+    const result = await settingsStore.aiSources.testConnection({
       provider: newSource.provider,
       aiBaseUrl: newSource.baseUrl,
       aiApiKey: newSource.apiKey,
@@ -401,7 +401,7 @@ const handleTestNewSource = async () => {
 const removeSource = async (source: AISource) => {
   const confirmed = await settingsService.confirmDeleteAiSource(source.name);
   if (confirmed) {
-    await settingsStore.removeAiSource(source.id);
+    await settingsStore.aiSources.remove(source.id);
     aisLogger.info(`AI Source removed: ${source.id}`);
   }
 };

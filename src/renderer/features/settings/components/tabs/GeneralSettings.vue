@@ -8,13 +8,13 @@
           <p class="setting-label">{{ t('label.autoStartUp') }}</p>
           <p class="setting-description">{{ t('text.autoStartup') }}</p>
         </div>
-        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.autoStartup }"
-          :aria-pressed="settingsStore.config.autoStartup" @click="handleStartupToggle">
+        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.general.autoStartup }"
+          :aria-pressed="settingsStore.config.general.autoStartup" @click="handleStartupToggle">
           <span class="startup-switch-track">
             <span class="startup-switch-thumb" />
           </span>
           <span class="startup-switch-text">
-            {{ settingsStore.config.autoStartup ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+            {{ settingsStore.config.general.autoStartup ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
           </span>
         </button>
       </section>
@@ -24,7 +24,7 @@
           <p class="setting-description">{{ t('text.UIDisplayLanguage') }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select" :value="settingsStore.config.language" @change="handleLanguageChange">
+          <select class="settings-select" :value="settingsStore.config.general.language" @change="handleLanguageChange">
             <option v-for="option in languageOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
@@ -50,7 +50,7 @@
           <p class="setting-description">{{ t('text.themeMode') }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select" :value="settingsStore.config.themeMode" @change="handleThemeChange">
+          <select class="settings-select" :value="settingsStore.config.general.themeMode" @change="handleThemeChange">
             <option value="system">{{ t('option.theme.system') }}</option>
             <option value="light">{{ t('option.theme.light') }}</option>
             <option value="dark">{{ t('option.theme.dark') }}</option>
@@ -79,7 +79,7 @@
           <p class="setting-description">{{ t('text.appUIFont') }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select" :value="settingsStore.config.appUIFont" @change="handleappUIFontChange">
+          <select class="settings-select" :value="settingsStore.config.general.appUIFont" @change="handleappUIFontChange">
             <option v-for="font in fontOptions" :key="font.id" :value="font.value">
               {{ font.label }}
             </option>
@@ -93,7 +93,7 @@
           <p class="setting-description">{{ windowCloseActionDescription }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select" :value="settingsStore.config.windowCloseAction"
+          <select class="settings-select" :value="settingsStore.config.general.windowCloseAction"
             @change="handleWindowCloseActionChange">
             <option value="minimize">{{ t('option.windowCloseAction.minimize') }}</option>
             <option value="exit">{{ t('option.windowCloseAction.exit') }}</option>
@@ -121,29 +121,29 @@ const startupViewValue = computed<AppShellMainViewId>(() => {
   return settingsStore.config.appShell.activeMainView === 'workspace' ? 'workspace' : 'workbench';
 });
 
-const themeAccentValue = computed<AppSettings['accentMode']>(() => {
-  return settingsStore.config.accentMode;
+const themeAccentValue = computed<AppSettings['general']['accentMode']>(() => {
+  return settingsStore.config.general.accentMode;
 });
 
 const windowCloseActionDescription = computed<string>(() => {
-  return settingsStore.config.windowCloseAction === 'exit'
+  return settingsStore.config.general.windowCloseAction === 'exit'
     ? t('text.windowCloseAction.exit')
     : t('text.windowCloseAction.minimize');
 });
 
 const handleLanguageChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.setLanguage(target.value);
+  await settingsStore.general.setLanguage(target.value);
 };
 
 const handleStartupToggle = async () => {
-  await settingsStore.setAutoStartup(!settingsStore.config.autoStartup);
+  await settingsStore.general.setAutoStartup(!settingsStore.config.general.autoStartup);
 };
 
 const handleStartupViewChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
   const value = target.value as AppShellMainViewId;
-  await settingsStore.updateSetting('appShell', {
+  await settingsStore.appShell.update({
     ...settingsStore.config.appShell,
     activeMainView: value,
   });
@@ -151,21 +151,21 @@ const handleStartupViewChange = async (event: Event) => {
 
 const handleThemeChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updateSetting('themeMode', target.value as 'system' | 'light' | 'dark');
+  await settingsStore.general.update('themeMode', target.value as 'system' | 'light' | 'dark');
 };
 
 const handleAccentChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updateSetting('accentMode', target.value as AppSettings['accentMode']);
+  await settingsStore.general.update('accentMode', target.value as AppSettings['general']['accentMode']);
 };
 
 const handleappUIFontChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updateSetting('appUIFont', target.value);
+  await settingsStore.general.update('appUIFont', target.value);
 };
 
 const handleWindowCloseActionChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updateSetting('windowCloseAction', target.value as WindowCloseAction);
+  await settingsStore.general.update('windowCloseAction', target.value as WindowCloseAction);
 };
 </script>

@@ -323,9 +323,9 @@ async function getConfiguredWorkspaceRoot() {
   try {
     const rawPreferences = await fs.readFile(preferencesFile(), 'utf-8');
     const preferences = JSON.parse(rawPreferences);
-    const noteSavePath = preferences?.[VFS_CONSTANTS.NOTE_SAVE_PATH_KEY];
-    if (typeof noteSavePath === 'string' && noteSavePath.trim().length > 0) {
-      const configuredRoot = normalizeWorkspaceRoot(noteSavePath);
+    const noteStoragePath = preferences?.noteStorage?.path;
+    if (typeof noteStoragePath === 'string' && noteStoragePath.trim().length > 0) {
+      const configuredRoot = normalizeWorkspaceRoot(noteStoragePath);
       logger.debug(`Using configured workspace root: ${configuredRoot}`);
       return configuredRoot;
     }
@@ -726,10 +726,10 @@ export const vfsService = {
 
     return enqueueWrite(safeContentId, async () => {
       const config = await settingsService.loadConfig();
-      const interval = (config.snapshotInterval) * 60 * 1000;
+      const interval = config.noteStorage.snapshotInterval * 60 * 1000;
       const lastTime = lastSnapshotTimes.get(safeContentId) || 0;
 
-      if (config.maxHistoryVersions > 0) {
+      if (config.noteStorage.maxHistoryVersions > 0) {
         try {
           const oldContent = await this.readContent(safeContentId);
 
@@ -739,7 +739,7 @@ export const vfsService = {
 
           if (isTimeElapsed && isMeaningful) {
             if (oldContent !== text) {
-              await historyService.saveVersion(root, safeContentId, oldContent, config.maxHistoryVersions);
+              await historyService.saveVersion(root, safeContentId, oldContent, config.noteStorage.maxHistoryVersions);
               lastSnapshotTimes.set(safeContentId, Date.now());
             }
           }
@@ -1058,7 +1058,7 @@ export const vfsService = {
   async autoClearTrash(root: string): Promise<void> {
     try {
       const config = await settingsService.loadConfig();
-      const days = config.trashAutoClearDays;
+      const days = config.noteStorage.trashAutoClearDays;
       if (!days || days <= 0) return;
 
       const threshold = Date.now() - (days * 24 * 60 * 60 * 1000);

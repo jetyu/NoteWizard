@@ -16,7 +16,7 @@
     <div class="config-body">
       <div class="hosts-scroll-area">
         <div class="host-list-rows">
-          <div v-for="(host, index) in settingsStore.config.previewAppearance.trustedRemoteImageHosts" :key="host"
+          <div v-for="(host, index) in settingsStore.config.preview.trustedRemoteImageHosts" :key="host"
             class="host-row">
             <div class="host-info">
               <div class="host-avatar">
@@ -61,18 +61,18 @@ const handleAddHost = async () => {
   const normalized = normalizeTrustedRemoteImageHost(host);
   if (!normalized) return;
 
-  const currentHosts = [...settingsStore.config.previewAppearance.trustedRemoteImageHosts];
+  const currentHosts = [...settingsStore.config.preview.trustedRemoteImageHosts];
   if (!currentHosts.includes(normalized)) {
     currentHosts.unshift(normalized);
-    await settingsStore.updatePreviewAppearanceSetting('trustedRemoteImageHosts', currentHosts);
+    await settingsStore.preview.update('trustedRemoteImageHosts', currentHosts);
   }
   newHost.value = '';
 };
 
 const handleDeleteHost = async (index: number) => {
-  const currentHosts = [...settingsStore.config.previewAppearance.trustedRemoteImageHosts];
+  const currentHosts = [...settingsStore.config.preview.trustedRemoteImageHosts];
   currentHosts.splice(index, 1);
-  await settingsStore.updatePreviewAppearanceSetting('trustedRemoteImageHosts', currentHosts);
+  await settingsStore.preview.update('trustedRemoteImageHosts', currentHosts);
 };
 </script>
 

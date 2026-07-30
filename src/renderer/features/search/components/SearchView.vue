@@ -827,7 +827,7 @@ function setAgentTaskMetadata(questionId: string, metadata: AgentTaskMetadata): 
 
 async function toggleAgentWriteMode(): Promise<void> {
   const nextMode: KnowledgeCopilotWriteMode = agentWriteMode.value === 'auto' ? 'confirm' : 'auto';
-  await settingsStore.saveSettings({
+  await settingsStore.persistence.save({
     workbench: {
       ...config.value.workbench,
       agentWriteMode: nextMode,

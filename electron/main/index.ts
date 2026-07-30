@@ -118,7 +118,7 @@ app.whenReady().then(async () => {
     await keyManagerService.restoreAutoUnlockSession();
   }
   registerPreviewSecurityPolicies(session.defaultSession);
-  loggerService.updateConfig(preferences);
+  loggerService.updateConfig(preferences.privacyLog);
   const appRootPath = app.getAppPath();
   const mainWindow = createMainWindow({ isDev, appPath: appRootPath });
   quickCaptureService.initialize(mainWindow);
@@ -129,7 +129,7 @@ app.whenReady().then(async () => {
   });
   await shortcutsService.refreshGlobalShortcuts();
   registerIpcHandlers(mainWindow);
-  setupAppMenu(mainWindow, preferences.language);
+  setupAppMenu(mainWindow, preferences.general.language);
   trayService.init(mainWindow, () => quickCaptureService.request());
 
   if (!isDev) {
@@ -140,7 +140,7 @@ app.whenReady().then(async () => {
     if (!isQuitting) {
       event.preventDefault();
       void settingsService.loadConfig().then((config) => {
-        if (config.windowCloseAction === 'exit') {
+        if (config.general.windowCloseAction === 'exit') {
           app.quit();
           return;
         }
@@ -158,7 +158,7 @@ app.whenReady().then(async () => {
         const window = createMainWindow({ isDev, appPath: appRootPath });
         quickCaptureService.attachWindow(window);
         registerIpcHandlers(window);
-        setupAppMenu(window, nextPreferences.language);
+        setupAppMenu(window, nextPreferences.general.language);
         trayService.init(window, () => quickCaptureService.request());
       });
     }

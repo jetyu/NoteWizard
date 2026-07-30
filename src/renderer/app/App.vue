@@ -49,7 +49,7 @@ const unsubscribers: Array<(() => void)> = [];
 
 onMounted(async () => {
   await updaterStore.initialize();
-  await settingsStore.loadSettings();
+  await settingsStore.persistence.load();
   appShellStore.initializeActiveMainView(settingsStore.config.appShell.activeMainView);
   await shortcutsStore.initialize();
   

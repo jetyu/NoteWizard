@@ -237,11 +237,11 @@ async function showSyncDialog(message: string, type: 'error' | 'warning' = 'warn
 const toggleSyncEnabled = async () => {
   const nextEnabled = !settingsStore.config.sync.enabled;
   if (!nextEnabled) {
-    await settingsStore.updateSyncSetting('enabled', false);
+    await settingsStore.sync.update('enabled', false);
     return;
   }
 
-  await settingsStore.updateSyncSetting('enabled', true);
+  await settingsStore.sync.update('enabled', true);
 };
 
 const toggleAutoSyncOnSave = () => {
@@ -249,7 +249,7 @@ const toggleAutoSyncOnSave = () => {
     return;
   }
 
-  settingsStore.updateSyncSetting('autoSyncOnSave', !settingsStore.config.sync.autoSyncOnSave);
+  settingsStore.sync.update('autoSyncOnSave', !settingsStore.config.sync.autoSyncOnSave);
 };
 
 const handleIntervalChange = (event: Event) => {
@@ -257,11 +257,11 @@ const handleIntervalChange = (event: Event) => {
     return;
   }
 
-  settingsStore.updateSyncSetting('intervalMinutes', Number((event.target as HTMLSelectElement).value));
+  settingsStore.sync.update('intervalMinutes', Number((event.target as HTMLSelectElement).value));
 };
 
 const handleProviderSelect = async (provider: SyncProvider) => {
-  await settingsStore.updateSyncSetting('provider', provider);
+  await settingsStore.sync.update('provider', provider);
 };
 
 function resolveSyncReadinessMessage(code: string, fallbackMessage: string): string {
@@ -381,7 +381,7 @@ const handleClearBtnClick = async (provider: SyncProvider) => {
   const providerName = provider === SYNC_PROVIDERS.WEBDAV ? t('option.sync.webdav') : t('option.sync.oss');
   const confirmed = await settingsService.confirmResetSyncProvider(providerName);
   if (confirmed) {
-    await settingsStore.resetSyncProviderSetting(provider === SYNC_PROVIDERS.OSS_S3 ? 'ossS3' : 'webdav');
+    await settingsStore.sync.resetProvider(provider === SYNC_PROVIDERS.OSS_S3 ? 'ossS3' : 'webdav');
   }
 };
 

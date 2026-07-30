@@ -9,7 +9,7 @@ Settings data enters Main from JSON files, imported packages, and Renderer IPC. 
 **Goals:**
 
 - Provide one authoritative `normalizeSettings(raw)` entry for every settings input path.
-- Construct the final object explicitly so supported fields and defaults are visible in one place.
+- Construct the final object from one normalizer per settings Tab so the root only describes module composition.
 - Give AI Assistant and Knowledge Copilot concrete types.
 - Keep nested domain normalization readable without chained default/incoming/merged objects.
 - Remove obsolete schema migrations and compatibility field fallbacks.
@@ -21,13 +21,13 @@ Settings data enters Main from JSON files, imported packages, and Renderer IPC. 
 - Splitting native dialogs, startup configuration, or package I/O into new services.
 - Changing current setting defaults or feature behavior.
 - Preserving settings produced by historical Knowledge Agent or pre-v1 Knowledge Copilot schemas.
-- Reworking the Renderer settings store beyond removing obsolete schema-version state.
+- Reworking features unrelated to the settings shape or settings-store API.
 
 ## Decisions
 
-1. **Use one public normalization entry with small pure domain helpers.** `normalizeSettings(raw: unknown): AppSettings` is the only function used by default creation, load, save, and import. Helpers such as AI source, sync, preview, and workbench normalizers accept raw values and return final typed values. This keeps one pipeline without creating one untestable giant function.
+1. **Use one public normalization entry with one config method per settings module.** `normalizeSettings(raw: unknown): AppSettings` is the only function used by default creation, load, save, and import. `normalizeGeneralConfig`, `normalizeEditorConfig`, `normalizePreviewConfig`, and the remaining feature config methods each accept only their own raw module and return one final typed config.
 
-2. **Construct all top-level fields explicitly.** The normalizer does not spread the raw settings object into its result. Unknown and removed fields are dropped automatically, while each supported field visibly declares its fallback and normalization rule.
+2. **Keep the root grouped and explicit.** The normalizer returns module keys such as `general`, `editor`, `preview`, `aiSources`, `noteStorage`, `privacyLog`, and `softwareUpdate`; it does not spread raw settings or list unrelated leaf fields at the root. Unknown, flat historical, and removed fields are dropped automatically.
 
 3. **Model current AI configuration explicitly.** `AiAssistantConfig` and `KnowledgeCopilotConfig` replace `Record<string, unknown>`. Their normalizers preserve current enablement semantics, validate compatible source selections, clamp numeric fields, and do not consult historical field names.
 
@@ -36,6 +36,8 @@ Settings data enters Main from JSON files, imported packages, and Renderer IPC. 
 5. **Remove history-specific mutation.** The Knowledge Copilot schema version, `knowledgeAgent`, `chatSourceId`, `chatModel`, and obsolete index deletion migration are removed. No startup migration writes or filesystem deletions remain.
 
 6. **Separate normalization from persistence side effects.** Normalization returns data only. Load/save/import decide whether to write, and the existing preview policy update remains after a final config has been produced.
+
+7. **Expose Renderer actions by config module.** The settings store keeps `config` as the state root, exposes load/save/import/reset under `persistence`, and groups feature actions under matching modules such as `general`, `editor`, `aiSources`, `sync`, and `privacyLog`.
 
 ## Risks / Trade-offs
 
@@ -46,13 +48,14 @@ Settings data enters Main from JSON files, imported packages, and Renderer IPC. 
 
 ## Migration Plan
 
-1. Add explicit current configuration interfaces and the single normalizer.
+1. Add explicit per-module configuration interfaces and normalizers.
 2. Route default, load, save, and import through it.
 3. Remove the obsolete migration and schema-version fields.
 4. Validate the save payload at IPC.
-5. Run focused tests plus Main, Renderer, lint, and production builds.
+5. Migrate Renderer consumers to the grouped shape and module-grouped store API.
+6. Run focused tests plus Main, Renderer, lint, and production builds.
 
-Rollback is a code rollback only; the new normalizer writes the same current settings shape minus explicitly obsolete historical fields.
+Rollback is a code rollback only. The grouped settings shape is intentionally breaking; flat historical settings are not migrated.
 
 ## Open Questions
 

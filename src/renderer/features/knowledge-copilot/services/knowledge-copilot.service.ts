@@ -21,7 +21,9 @@ interface KnowledgeCopilotConfig {
 
 interface AppConfig {
   knowledgeCopilot?: KnowledgeCopilotConfig;
-  noteSavePath?: string;
+  noteStorage?: {
+    path?: string;
+  };
 }
 
 export interface IndexNoteRequest {
@@ -58,7 +60,7 @@ export const knowledgeCopilotService = {
         return { success: false, error: KNOWLEDGE_COPILOT_ERROR_MESSAGES.DISABLED };
       }
 
-      const workspaceRoot = config.noteSavePath;
+      const workspaceRoot = config.noteStorage?.path;
       if (!workspaceRoot) {
         return { success: false, error: KNOWLEDGE_COPILOT_ERROR_MESSAGES.NO_WORKSPACE };
       }

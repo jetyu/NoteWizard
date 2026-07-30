@@ -21,12 +21,12 @@ import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
 import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
 import { getErrorCode, getErrorMessage } from '../../shared/utils/error.utils.js';
-import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
-import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
 import {
   ACCESS_CONTROL_TIMEOUT_OPTIONS,
   type AccessControlTimeout,
 } from '../../shared/e2ee.constants.js';
+import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
+import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
 import { loggerService } from './log/logger.service.js';
 import { previewPolicyService } from './preview-policy.service.js';
 import { keyManagerService } from './key-manager.service.js';
@@ -37,33 +37,16 @@ type RemoteImageMode = 'blocked' | 'trusted' | 'all';
 type WindowCloseAction = 'minimize' | 'exit';
 type AccentMode = 'black' | 'azureBlue' | 'indigo' | 'cyan' | 'teal';
 
-interface SyncWebDavConfig {
-  url: string;
-  username: string;
-  password: string;
+export interface GeneralConfig {
+  language: string;
+  autoStartup: boolean;
+  windowCloseAction: WindowCloseAction;
+  themeMode: 'system' | 'light' | 'dark';
+  accentMode: AccentMode;
+  appUIFont: string;
 }
 
-interface SyncOssS3Config {
-  endpoint: string;
-  region: string;
-  bucket: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  forcePathStyle: boolean;
-}
-
-interface SyncConfig {
-  enabled: boolean;
-  provider: (typeof SYNC_PROVIDERS)[keyof typeof SYNC_PROVIDERS];
-  intervalMinutes: number;
-  autoSyncOnSave: boolean;
-  remotePath: string;
-  webdav: SyncWebDavConfig;
-  ossS3: SyncOssS3Config;
-  lastSyncedAt: number | null;
-}
-
-interface PreviewAppearanceConfig {
+export interface PreviewConfig {
   allowHtml: boolean;
   allowInlineSvg: boolean;
   remoteImageMode: RemoteImageMode;
@@ -72,7 +55,34 @@ interface PreviewAppearanceConfig {
   fontFamily: string;
 }
 
-interface AiAssistantConfig {
+export interface EditorConfig {
+  fontSize: number;
+  fontFamily: string;
+  showLineNumbers: boolean;
+  wordWrap: boolean;
+  codeFolding: boolean;
+  highlightActiveLine: boolean;
+  bracketMatching: boolean;
+  autoCloseBrackets: boolean;
+  autoIndent: boolean;
+  showStatusBar: boolean;
+}
+
+export interface AiSourceConfig {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  aiModel: string;
+  capabilities: string[];
+  provider: AiProvider;
+}
+
+export interface AiSourcesConfig {
+  sources: AiSourceConfig[];
+}
+
+export interface AiAssistantConfig {
   enabled: boolean;
   sourceId: string;
   model: string;
@@ -83,7 +93,7 @@ interface AiAssistantConfig {
   systemPrompt: string;
 }
 
-interface KnowledgeCopilotConfig {
+export interface KnowledgeCopilotConfig {
   enabled: boolean;
   embeddingSourceId: string;
   embeddingModel: string;
@@ -107,13 +117,58 @@ interface KnowledgeCopilotConfig {
   cachedTotalChunks: number;
 }
 
-interface AppShellConfig {
+interface SyncWebDavConfig {
+  url: string;
+  username: string;
+  password: string;
+}
+
+interface SyncOssS3Config {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+}
+
+export interface SyncConfig {
+  enabled: boolean;
+  provider: (typeof SYNC_PROVIDERS)[keyof typeof SYNC_PROVIDERS];
+  intervalMinutes: number;
+  autoSyncOnSave: boolean;
+  remotePath: string;
+  webdav: SyncWebDavConfig;
+  ossS3: SyncOssS3Config;
+  lastSyncedAt: number | null;
+}
+
+export interface NoteStorageConfig {
+  path: string;
+  maxHistoryVersions: number;
+  trashAutoClearDays: number;
+  snapshotInterval: number;
+}
+
+export interface PrivacyLogConfig {
+  enabled: boolean;
+  level: LogLevel;
+  autoClearDays: number;
+}
+
+export interface SoftwareUpdateConfig {
+  autoCheck: boolean;
+  checkInterval: number;
+  channel: UpdateChannel;
+}
+
+export interface AppShellConfig {
   activeMainView: string;
   customSidebarModules: string[];
   maxCustomSidebarModules: number;
 }
 
-interface WorkbenchConfig {
+export interface WorkbenchConfig {
   recentQuestions: unknown[];
   conversationThreads: unknown[];
   recommendationFeedback: unknown[];
@@ -122,14 +177,46 @@ interface WorkbenchConfig {
   agentWriteMode: 'confirm' | 'auto';
 }
 
-interface SettingsMessageOptions {
-  type?: 'none' | 'info' | 'error' | 'question' | 'warning';
-  title?: string;
-  message: string;
-  detail?: string;
+export interface AccessControlConfig {
+  enabled: boolean;
+  lockOnStartup: boolean;
+  autoLockTimeoutMinutes: AccessControlTimeout;
 }
 
-type KnowledgeCopilotRebuildMode = 'incremental' | 'full' | 'cancel';
+export interface AppSettings {
+  general: GeneralConfig;
+  preview: PreviewConfig;
+  editor: EditorConfig;
+  aiSources: AiSourcesConfig;
+  aiAssistant: AiAssistantConfig;
+  knowledgeCopilot: KnowledgeCopilotConfig;
+  sync: SyncConfig;
+  noteStorage: NoteStorageConfig;
+  privacyLog: PrivacyLogConfig;
+  softwareUpdate: SoftwareUpdateConfig;
+  appShell: AppShellConfig;
+  workbench: WorkbenchConfig;
+  accessControl: AccessControlConfig;
+}
+
+const LOG_AUTO_CLEAR_DAY_OPTIONS: ReadonlySet<number> = new Set<number>([0, 10, 20]);
+const DEFAULT_WINDOW_CLOSE_ACTION: WindowCloseAction = 'minimize';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function toSettingsRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
+function normalizeBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function normalizeString(value: unknown, fallback: string = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
   const numericValue = Number(value);
@@ -141,192 +228,11 @@ function clampInteger(value: unknown, fallback: number, min: number, max: number
   return Math.trunc(clampNumber(value, fallback, min, max));
 }
 
-export interface AccessControlConfig {
-  enabled: boolean;
-  lockOnStartup: boolean;
-  autoLockTimeoutMinutes: AccessControlTimeout;
-}
-
-interface AppSettings {
-  language: string;
-  autoStartup: boolean;
-  windowCloseAction: WindowCloseAction;
-  themeMode: 'system' | 'light' | 'dark';
-  accentMode: AccentMode;
-  appUIFont: string;
-  previewAppearance: PreviewAppearanceConfig;
-  editorFontSize: number;
-  editorFont: string;
-  showLineNumbers: boolean;
-  wordWrap: boolean;
-  codeFolding: boolean;
-  highlightActiveLine: boolean;
-  bracketMatching: boolean;
-  autoCloseBrackets: boolean;
-  autoIndent: boolean;
-  showStatusBar: boolean;
-  aiSources: AiSourceSettings[];
-  aiAssistant: AiAssistantConfig;
-  knowledgeCopilot: KnowledgeCopilotConfig;
-  sync: SyncConfig;
-  loggingEnabled: boolean;
-  logLevel: LogLevel;
-  logAutoClearDays: number;
-  noteSavePath: string;
-  autoCheckUpdates: boolean;
-  updateCheckInterval: number;
-  updateChannel: UpdateChannel;
-  maxHistoryVersions: number;
-  trashAutoClearDays: number;
-  snapshotInterval: number;
-  appShell: AppShellConfig;
-  workbench: WorkbenchConfig;
-  accessControl: AccessControlConfig;
-}
-
-interface SnaptiumConfigPackage {
-  type: 'sppcfg';
-  version: number;
-  exportedAt: number;
-  app: string;
-  settings: unknown;
-  e2ee?: {
-    keySlots?: KeySlots;
-  };
-}
-
-const logger = loggerService.createLogger('Electron:Settings Service');
-const LOG_AUTO_CLEAR_DAY_OPTIONS: ReadonlySet<number> = new Set<number>([0, 10, 20]);
-const SNAPTIUM_CONFIG_PACKAGE_TYPE = 'sppcfg' as const;
-const SNAPTIUM_CONFIG_PACKAGE_VERSION = 1;
-const SNAPTIUM_CONFIG_EXTENSION = 'sppcfg' as const;
-const DEFAULT_WINDOW_CLOSE_ACTION: WindowCloseAction = 'minimize';
-
-interface AiSourceSettings {
-  id: string;
-  name: string;
-  baseUrl: string;
-  apiKey: string;
-  aiModel: string;
-  capabilities: string[];
-  provider: AiProvider;
-}
-
-function interpolateMessage(template: string, replacements: Record<string, string> = {}): string {
-  return Object.entries(replacements).reduce((message, [key, value]) => {
-    return message.replaceAll(`{${key}}`, String(value));
-  }, template);
-}
-
-function normalizeWindowCloseAction(value: unknown): WindowCloseAction {
-  return value === 'exit' ? 'exit' : DEFAULT_WINDOW_CLOSE_ACTION;
-}
-
-function normalizeBoolean(value: unknown, fallback: boolean): boolean {
-  return typeof value === 'boolean' ? value : fallback;
-}
-
-function normalizeString(value: unknown, fallback: string = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function normalizeAccentMode(value: unknown): AccentMode {
-  return value === 'black' || value === 'azureBlue' || value === 'indigo' || value === 'cyan' || value === 'teal'
-    ? value
-    : 'azureBlue';
-}
-
-function normalizeThemeMode(value: unknown): AppSettings['themeMode'] {
-  return value === 'light' || value === 'dark' ? value : 'system';
-}
-
-function normalizeLogLevel(value: unknown): LogLevel {
-  if (typeof value !== 'string') {
-    return 'error';
-  }
-
-  const normalizedLevel = value.toLowerCase();
-  const supportedLevels: ReadonlySet<string> = new Set<string>(['debug', 'info', 'warn', 'error']);
-
-  if (!supportedLevels.has(normalizedLevel)) {
-    return 'error';
-  }
-
-  return normalizedLevel as LogLevel;
-}
-
-function normalizeLogAutoClearDays(days: unknown): number {
-  const normalizedDays = Number(days);
-
-  if (!Number.isFinite(normalizedDays)) {
-    return 10;
-  }
-
-  return LOG_AUTO_CLEAR_DAY_OPTIONS.has(normalizedDays) ? normalizedDays : 10;
-}
-
 function normalizeAllowedInteger(value: unknown, values: readonly number[], fallback: number): number {
   const normalizedValue = Math.trunc(Number(value));
   return Number.isFinite(normalizedValue) && values.includes(normalizedValue)
     ? normalizedValue
     : fallback;
-}
-
-function normalizeSyncProvider(provider: unknown): SyncConfig['provider'] {
-  return provider === SYNC_PROVIDERS.OSS_S3 ? SYNC_PROVIDERS.OSS_S3 : SYNC_PROVIDERS.WEBDAV;
-}
-
-function normalizeSyncIntervalMinutes(value: unknown): number {
-  const supportedIntervals: ReadonlySet<number> = new Set<number>(Object.values(SYNC_INTERVALS));
-  const normalizedValue = Number(value);
-  return supportedIntervals.has(normalizedValue) ? normalizedValue : SYNC_INTERVALS.MANUAL;
-}
-
-function normalizeSyncConfig(value: unknown): SyncConfig {
-  const config = toRecord(value);
-  const webdav = toRecord(config.webdav);
-  const ossS3 = toRecord(config.ossS3);
-  const lastSyncedAt = typeof config.lastSyncedAt === 'number' && Number.isFinite(config.lastSyncedAt)
-    ? config.lastSyncedAt
-    : null;
-
-  return {
-    enabled: normalizeBoolean(config.enabled, DEFAULT_SYNC_SETTINGS.enabled),
-    provider: normalizeSyncProvider(config.provider),
-    intervalMinutes: normalizeSyncIntervalMinutes(config.intervalMinutes),
-    autoSyncOnSave: normalizeBoolean(config.autoSyncOnSave, DEFAULT_SYNC_SETTINGS.autoSyncOnSave),
-    remotePath: normalizeString(config.remotePath, DEFAULT_SYNC_SETTINGS.remotePath).trim()
-      || DEFAULT_SYNC_SETTINGS.remotePath,
-    webdav: {
-      url: normalizeString(webdav.url).trim(),
-      username: normalizeString(webdav.username).trim(),
-      password: normalizeString(webdav.password),
-    },
-    ossS3: {
-      endpoint: normalizeString(ossS3.endpoint).trim(),
-      region: normalizeString(ossS3.region).trim(),
-      bucket: normalizeString(ossS3.bucket).trim(),
-      accessKeyId: normalizeString(ossS3.accessKeyId).trim(),
-      secretAccessKey: normalizeString(ossS3.secretAccessKey),
-      forcePathStyle: normalizeBoolean(ossS3.forcePathStyle, DEFAULT_SYNC_SETTINGS.ossS3.forcePathStyle),
-    },
-    lastSyncedAt,
-  };
-}
-
-function normalizePreviewAppearanceConfig(value: unknown): PreviewAppearanceConfig {
-  const config = toRecord(value);
-  const remoteImageMode = config.remoteImageMode === 'blocked' ? 'blocked' :
-    config.remoteImageMode === 'all' ? 'all' : 'trusted';
-
-  return {
-    allowHtml: normalizeBoolean(config.allowHtml, true),
-    allowInlineSvg: normalizeBoolean(config.allowInlineSvg, true),
-    remoteImageMode,
-    trustedRemoteImageHosts: normalizeTrustedRemoteImageHosts(config.trustedRemoteImageHosts),
-    fontSize: clampInteger(config.fontSize, 16, 10, 32),
-    fontFamily: normalizeString(config.fontFamily),
-  };
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -341,59 +247,111 @@ function normalizeStringArray(value: unknown): string[] {
 
 function normalizeStringRecord(value: unknown): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(toRecord(value))
+    Object.entries(toSettingsRecord(value))
       .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
 }
 
 function normalizeNumberRecord(value: unknown): Record<string, number> {
   return Object.fromEntries(
-    Object.entries(toRecord(value))
+    Object.entries(toSettingsRecord(value))
       .filter((entry): entry is [string, number] => {
         return typeof entry[1] === 'number' && Number.isFinite(entry[1]);
       }),
   );
 }
 
-function normalizeCustomAiSource(value: unknown): AiSourceSettings | null {
+export function normalizeGeneralConfig(value: unknown, defaultLanguage: string): GeneralConfig {
+  const config = toSettingsRecord(value);
+
+  return {
+    language: normalizeString(config.language, defaultLanguage).trim() || defaultLanguage,
+    autoStartup: normalizeBoolean(config.autoStartup, false),
+    windowCloseAction: config.windowCloseAction === 'exit' ? 'exit' : DEFAULT_WINDOW_CLOSE_ACTION,
+    themeMode: config.themeMode === 'light' || config.themeMode === 'dark' ? config.themeMode : 'system',
+    accentMode: config.accentMode === 'black'
+      || config.accentMode === 'azureBlue'
+      || config.accentMode === 'indigo'
+      || config.accentMode === 'cyan'
+      || config.accentMode === 'teal'
+      ? config.accentMode
+      : 'azureBlue',
+    appUIFont: normalizeString(config.appUIFont),
+  };
+}
+
+export function normalizePreviewConfig(value: unknown): PreviewConfig {
+  const config = toSettingsRecord(value);
+  const remoteImageMode = config.remoteImageMode === 'blocked' ? 'blocked'
+    : config.remoteImageMode === 'all' ? 'all' : 'trusted';
+
+  return {
+    allowHtml: normalizeBoolean(config.allowHtml, true),
+    allowInlineSvg: normalizeBoolean(config.allowInlineSvg, true),
+    remoteImageMode,
+    trustedRemoteImageHosts: normalizeTrustedRemoteImageHosts(config.trustedRemoteImageHosts),
+    fontSize: clampInteger(config.fontSize, 16, 10, 32),
+    fontFamily: normalizeString(config.fontFamily),
+  };
+}
+
+export function normalizeEditorConfig(value: unknown): EditorConfig {
+  const config = toSettingsRecord(value);
+
+  return {
+    fontSize: clampInteger(config.fontSize, 14, 10, 32),
+    fontFamily: normalizeString(config.fontFamily),
+    showLineNumbers: normalizeBoolean(config.showLineNumbers, true),
+    wordWrap: normalizeBoolean(config.wordWrap, true),
+    codeFolding: normalizeBoolean(config.codeFolding, false),
+    highlightActiveLine: normalizeBoolean(config.highlightActiveLine, true),
+    bracketMatching: normalizeBoolean(config.bracketMatching, true),
+    autoCloseBrackets: normalizeBoolean(config.autoCloseBrackets, true),
+    autoIndent: normalizeBoolean(config.autoIndent, true),
+    showStatusBar: normalizeBoolean(config.showStatusBar, true),
+  };
+}
+
+function normalizeAiSource(value: unknown): AiSourceConfig | null {
   if (!isRecord(value)) {
     return null;
   }
 
-  const id = String(value.id ?? '').trim();
+  const id = normalizeString(value.id).trim();
   if (!id) {
     return null;
   }
 
-  const baseUrl = String(value.baseUrl ?? '').trim();
+  const baseUrl = normalizeString(value.baseUrl).trim();
   const provider = isAiProvider(value.provider) ? value.provider : inferAiProvider(baseUrl);
   const capabilities = normalizeStringArray(value.capabilities);
 
   return {
     id,
-    name: String(value.name ?? '').trim(),
+    name: normalizeString(value.name).trim(),
     baseUrl,
-    apiKey: String(value.apiKey ?? ''),
-    aiModel: String(value.aiModel ?? '').trim(),
+    apiKey: normalizeString(value.apiKey),
+    aiModel: normalizeString(value.aiModel).trim(),
     capabilities: capabilities.length > 0 ? capabilities : getAiProviderCapabilities(provider),
     provider,
   };
 }
 
-function normalizeAiSources(value: unknown): AiSourceSettings[] {
-  const customSources = Array.isArray(value)
-    ? value
-      .map((source) => normalizeCustomAiSource(source))
-      .filter((source): source is AiSourceSettings => source !== null)
+export function normalizeAiSourcesConfig(value: unknown): AiSourcesConfig {
+  const config = toSettingsRecord(value);
+  const sources = Array.isArray(config.sources)
+    ? config.sources
+      .map((source) => normalizeAiSource(source))
+      .filter((source): source is AiSourceConfig => source !== null)
     : [];
 
-  return customSources;
+  return { sources };
 }
 
 function normalizeAiSourceSelection(
   sourceId: string,
   model: string,
-  aiSources: AiSourceSettings[],
+  aiSources: AiSourceConfig[],
   capability: string,
 ): { sourceId: string; model: string } {
   const source = aiSources.find(item => item.id === sourceId);
@@ -401,8 +359,11 @@ function normalizeAiSourceSelection(
   return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
 }
 
-function normalizeAiAssistantConfig(value: unknown, aiSources: AiSourceSettings[]): AiAssistantConfig {
-  const config = toRecord(value);
+export function normalizeAiAssistantConfig(
+  value: unknown,
+  aiSources: AiSourceConfig[],
+): AiAssistantConfig {
+  const config = toSettingsRecord(value);
   const sourceSelection = normalizeAiSourceSelection(
     normalizeString(config.sourceId).trim(),
     normalizeString(config.model).trim(),
@@ -427,8 +388,11 @@ function normalizeAiAssistantConfig(value: unknown, aiSources: AiSourceSettings[
   };
 }
 
-function normalizeKnowledgeCopilotConfig(value: unknown, aiSources: AiSourceSettings[]): KnowledgeCopilotConfig {
-  const config = toRecord(value);
+export function normalizeKnowledgeCopilotConfig(
+  value: unknown,
+  aiSources: AiSourceConfig[],
+): KnowledgeCopilotConfig {
+  const config = toSettingsRecord(value);
   const embeddingSelection = normalizeAiSourceSelection(
     normalizeString(config.embeddingSourceId).trim(),
     normalizeString(config.embeddingModel).trim(),
@@ -481,15 +445,88 @@ function normalizeKnowledgeCopilotConfig(value: unknown, aiSources: AiSourceSett
   };
 }
 
-function normalizeUpdateCheckInterval(value: unknown): number {
-  const normalizedValue = Math.trunc(Number(value));
-  return Number.isFinite(normalizedValue) && normalizedValue >= 60 * 60 * 1000
-    ? normalizedValue
-    : UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL;
+export function normalizeSyncConfig(value: unknown): SyncConfig {
+  const config = toSettingsRecord(value);
+  const webdav = toSettingsRecord(config.webdav);
+  const ossS3 = toSettingsRecord(config.ossS3);
+  const supportedIntervals: ReadonlySet<number> = new Set<number>(Object.values(SYNC_INTERVALS));
+  const intervalMinutes = Number(config.intervalMinutes);
+
+  return {
+    enabled: normalizeBoolean(config.enabled, DEFAULT_SYNC_SETTINGS.enabled),
+    provider: config.provider === SYNC_PROVIDERS.OSS_S3 ? SYNC_PROVIDERS.OSS_S3 : SYNC_PROVIDERS.WEBDAV,
+    intervalMinutes: supportedIntervals.has(intervalMinutes) ? intervalMinutes : SYNC_INTERVALS.MANUAL,
+    autoSyncOnSave: normalizeBoolean(config.autoSyncOnSave, DEFAULT_SYNC_SETTINGS.autoSyncOnSave),
+    remotePath: normalizeString(config.remotePath, DEFAULT_SYNC_SETTINGS.remotePath).trim()
+      || DEFAULT_SYNC_SETTINGS.remotePath,
+    webdav: {
+      url: normalizeString(webdav.url).trim(),
+      username: normalizeString(webdav.username).trim(),
+      password: normalizeString(webdav.password),
+    },
+    ossS3: {
+      endpoint: normalizeString(ossS3.endpoint).trim(),
+      region: normalizeString(ossS3.region).trim(),
+      bucket: normalizeString(ossS3.bucket).trim(),
+      accessKeyId: normalizeString(ossS3.accessKeyId).trim(),
+      secretAccessKey: normalizeString(ossS3.secretAccessKey),
+      forcePathStyle: normalizeBoolean(ossS3.forcePathStyle, DEFAULT_SYNC_SETTINGS.ossS3.forcePathStyle),
+    },
+    lastSyncedAt: typeof config.lastSyncedAt === 'number' && Number.isFinite(config.lastSyncedAt)
+      ? config.lastSyncedAt
+      : null,
+  };
 }
 
-function normalizeAppShellConfig(value: unknown): AppShellConfig {
-  const config = toRecord(value);
+export function normalizeNoteStorageConfig(
+  value: unknown,
+  defaultPath: string,
+): NoteStorageConfig {
+  const config = toSettingsRecord(value);
+
+  return {
+    path: normalizeString(config.path, defaultPath).trim() || defaultPath,
+    maxHistoryVersions: normalizeAllowedInteger(config.maxHistoryVersions, [0, 10, 20, 50, 100], 50),
+    trashAutoClearDays: normalizeAllowedInteger(config.trashAutoClearDays, [0, 7, 30], 30),
+    snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [15, 30, 60], 15),
+  };
+}
+
+export function normalizePrivacyLogConfig(value: unknown): PrivacyLogConfig {
+  const config = toSettingsRecord(value);
+  const normalizedLevel = normalizeString(config.level).toLowerCase();
+  const level: LogLevel = normalizedLevel === 'debug'
+    || normalizedLevel === 'info'
+    || normalizedLevel === 'warn'
+    || normalizedLevel === 'error'
+    ? normalizedLevel
+    : 'error';
+  const autoClearDays = Number(config.autoClearDays);
+
+  return {
+    enabled: normalizeBoolean(config.enabled, false),
+    level,
+    autoClearDays: Number.isFinite(autoClearDays) && LOG_AUTO_CLEAR_DAY_OPTIONS.has(autoClearDays)
+      ? autoClearDays
+      : 10,
+  };
+}
+
+export function normalizeSoftwareUpdateConfig(value: unknown): SoftwareUpdateConfig {
+  const config = toSettingsRecord(value);
+  const checkInterval = Math.trunc(Number(config.checkInterval));
+
+  return {
+    autoCheck: normalizeBoolean(config.autoCheck, true),
+    checkInterval: Number.isFinite(checkInterval) && checkInterval >= 60 * 60 * 1000
+      ? checkInterval
+      : UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL,
+    channel: normalizeUpdateChannel(config.channel),
+  };
+}
+
+export function normalizeAppShellConfig(value: unknown): AppShellConfig {
+  const config = toSettingsRecord(value);
   const customSidebarModules = Array.isArray(config.customSidebarModules)
     ? normalizeStringArray(config.customSidebarModules)
     : ['search', 'settings', 'trash'];
@@ -501,8 +538,8 @@ function normalizeAppShellConfig(value: unknown): AppShellConfig {
   };
 }
 
-function normalizeWorkbenchConfig(value: unknown): WorkbenchConfig {
-  const config = toRecord(value);
+export function normalizeWorkbenchConfig(value: unknown): WorkbenchConfig {
+  const config = toSettingsRecord(value);
 
   return {
     recentQuestions: Array.isArray(config.recentQuestions) ? config.recentQuestions : [],
@@ -514,8 +551,8 @@ function normalizeWorkbenchConfig(value: unknown): WorkbenchConfig {
   };
 }
 
-function normalizeAccessControlConfig(value: unknown): AccessControlConfig {
-  const config = toRecord(value);
+export function normalizeAccessControlConfig(value: unknown): AccessControlConfig {
+  const config = toSettingsRecord(value);
   const supportedTimeouts: readonly number[] = Object.values(ACCESS_CONTROL_TIMEOUT_OPTIONS);
   const timeout = normalizeAllowedInteger(
     config.autoLockTimeoutMinutes,
@@ -530,59 +567,61 @@ function normalizeAccessControlConfig(value: unknown): AccessControlConfig {
   };
 }
 
+interface SettingsMessageOptions {
+  type?: 'none' | 'info' | 'error' | 'question' | 'warning';
+  title?: string;
+  message: string;
+  detail?: string;
+}
+
+type KnowledgeCopilotRebuildMode = 'incremental' | 'full' | 'cancel';
+
+interface SnaptiumConfigPackage {
+  type: 'sppcfg';
+  version: number;
+  exportedAt: number;
+  app: string;
+  settings: unknown;
+  e2ee?: {
+    keySlots?: KeySlots;
+  };
+}
+
+const logger = loggerService.createLogger('Electron:Settings Service');
+const SNAPTIUM_CONFIG_PACKAGE_TYPE = 'sppcfg' as const;
+const SNAPTIUM_CONFIG_PACKAGE_VERSION = 1;
+const SNAPTIUM_CONFIG_EXTENSION = 'sppcfg' as const;
+
+function interpolateMessage(template: string, replacements: Record<string, string> = {}): string {
+  return Object.entries(replacements).reduce((message, [key, value]) => {
+    return message.replaceAll(`{${key}}`, String(value));
+  }, template);
+}
+
 export function normalizeSettings(raw: unknown = {}): AppSettings {
-  const config = toRecord(raw);
-  const aiSources = normalizeAiSources(config.aiSources);
+  const config = toSettingsRecord(raw);
+  const aiSources = normalizeAiSourcesConfig(config.aiSources);
   const defaultLanguage = app.getLocale().toLowerCase().startsWith('en') ? 'en-US' : 'zh-CN';
-  const defaultNoteSavePath = path.join(
+  const defaultStoragePath = path.join(
     app.getPath(VFS_CONSTANTS.DOCUMENTS_FOLDER),
     VFS_CONSTANTS.CURRENT_WORKSPACE_NAME,
   );
 
   return {
-    language: normalizeString(config.language, defaultLanguage).trim() || defaultLanguage,
-    autoStartup: normalizeBoolean(config.autoStartup, false),
-    windowCloseAction: normalizeWindowCloseAction(config.windowCloseAction),
-    themeMode: normalizeThemeMode(config.themeMode),
-    accentMode: normalizeAccentMode(config.accentMode),
-    appUIFont: normalizeString(config.appUIFont),
-    previewAppearance: normalizePreviewAppearanceConfig(config.previewAppearance),
-    editorFontSize: clampInteger(config.editorFontSize, 14, 10, 32),
-    editorFont: normalizeString(config.editorFont),
-    showLineNumbers: normalizeBoolean(config.showLineNumbers, true),
-    wordWrap: normalizeBoolean(config.wordWrap, true),
-    codeFolding: normalizeBoolean(config.codeFolding, false),
-    highlightActiveLine: normalizeBoolean(config.highlightActiveLine, true),
-    bracketMatching: normalizeBoolean(config.bracketMatching, true),
-    autoCloseBrackets: normalizeBoolean(config.autoCloseBrackets, true),
-    autoIndent: normalizeBoolean(config.autoIndent, true),
-    showStatusBar: normalizeBoolean(config.showStatusBar, true),
+    general: normalizeGeneralConfig(config.general, defaultLanguage),
+    preview: normalizePreviewConfig(config.preview),
+    editor: normalizeEditorConfig(config.editor),
     aiSources,
-    aiAssistant: normalizeAiAssistantConfig(config.aiAssistant, aiSources),
-    knowledgeCopilot: normalizeKnowledgeCopilotConfig(config.knowledgeCopilot, aiSources),
+    aiAssistant: normalizeAiAssistantConfig(config.aiAssistant, aiSources.sources),
+    knowledgeCopilot: normalizeKnowledgeCopilotConfig(config.knowledgeCopilot, aiSources.sources),
     sync: normalizeSyncConfig(config.sync),
-    loggingEnabled: normalizeBoolean(config.loggingEnabled, false),
-    logLevel: normalizeLogLevel(config.logLevel),
-    logAutoClearDays: normalizeLogAutoClearDays(config.logAutoClearDays),
-    noteSavePath: normalizeString(config.noteSavePath, defaultNoteSavePath).trim() || defaultNoteSavePath,
-    autoCheckUpdates: normalizeBoolean(config.autoCheckUpdates, true),
-    updateCheckInterval: normalizeUpdateCheckInterval(config.updateCheckInterval),
-    updateChannel: normalizeUpdateChannel(config.updateChannel),
-    maxHistoryVersions: normalizeAllowedInteger(config.maxHistoryVersions, [0, 10, 20, 50, 100], 50),
-    trashAutoClearDays: normalizeAllowedInteger(config.trashAutoClearDays, [0, 7, 30], 30),
-    snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [15, 30, 60], 15),
+    noteStorage: normalizeNoteStorageConfig(config.noteStorage, defaultStoragePath),
+    privacyLog: normalizePrivacyLogConfig(config.privacyLog),
+    softwareUpdate: normalizeSoftwareUpdateConfig(config.softwareUpdate),
     appShell: normalizeAppShellConfig(config.appShell),
     workbench: normalizeWorkbenchConfig(config.workbench),
     accessControl: normalizeAccessControlConfig(config.accessControl),
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function toRecord(value: unknown): Record<string, unknown> {
-  return isRecord(value) ? value : {};
 }
 
 function isSnaptiumConfigPackage(value: unknown): value is SnaptiumConfigPackage {
@@ -607,14 +646,14 @@ export const settingsService = {
       const content = await fs.readFile(filePath, 'utf-8');
       const parsed: unknown = JSON.parse(content);
       const settings = normalizeSettings(parsed);
-      previewPolicyService.updateConfig(settings);
+      previewPolicyService.updateConfig(settings.preview);
       return settings;
     } catch (error) {
       if (getErrorCode(error) !== 'ENOENT') {
         logger.error('Failed to load settings', { error: getErrorMessage(error) });
       }
       const settings = normalizeSettings();
-      previewPolicyService.updateConfig(settings);
+      previewPolicyService.updateConfig(settings.preview);
       return settings;
     }
   },
@@ -628,7 +667,7 @@ export const settingsService = {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
       const settings = normalizeSettings(config);
       await fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
-      previewPolicyService.updateConfig(settings);
+      previewPolicyService.updateConfig(settings.preview);
       return settings;
     } catch (error) {
       logger.error('Failed to save settings', { error: getErrorMessage(error) });
@@ -905,7 +944,7 @@ export const settingsService = {
         await keyManagerService.restoreKeySlots(parsed.e2ee.keySlots);
       }
 
-      previewPolicyService.updateConfig(settings);
+      previewPolicyService.updateConfig(settings.preview);
 
       return true;
     } catch (error) {

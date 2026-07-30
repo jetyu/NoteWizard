@@ -40,7 +40,7 @@ export function useSettingsAppearance() {
   };
 
   watch(
-    () => [settingsStore.config.themeMode, settingsStore.config.accentMode] as const,
+    () => [settingsStore.config.general.themeMode, settingsStore.config.general.accentMode] as const,
     ([themeMode, accentMode]) => {
       applyThemeAppearance(themeMode, accentMode);
     },
@@ -48,7 +48,7 @@ export function useSettingsAppearance() {
   );
 
   watch(
-    () => settingsStore.config.appUIFont,
+    () => settingsStore.config.general.appUIFont,
     (fontFamily) => {
       applyAppUIFont(fontFamily);
     },
@@ -56,7 +56,7 @@ export function useSettingsAppearance() {
   );
 
   watch(
-    () => [settingsStore.config.editorFontSize, settingsStore.config.editorFont] as const,
+    () => [settingsStore.config.editor.fontSize, settingsStore.config.editor.fontFamily] as const,
     ([fontSize, fontFamily]) => {
       applyEditorTypography(fontSize, fontFamily);
     },
@@ -66,8 +66,8 @@ export function useSettingsAppearance() {
   onMounted(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
-      if (settingsStore.config.themeMode === 'system') {
-        applyThemeAppearance('system', settingsStore.config.accentMode);
+      if (settingsStore.config.general.themeMode === 'system') {
+        applyThemeAppearance('system', settingsStore.config.general.accentMode);
       }
     };
 

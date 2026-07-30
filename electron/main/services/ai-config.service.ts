@@ -7,7 +7,7 @@ import {
   isValidAiWritingScenario,
   isValidAiWritingStyle,
 } from '../../shared/ai.constants.js';
-import { inferAiProvider, isAiProvider, type AiProvider } from '../../shared/ai-provider.constants.js';
+import type { AiProvider } from '../../shared/ai-provider.constants.js';
 
 interface AiSourceConfig {
   id: string;
@@ -44,7 +44,7 @@ interface KnowledgeCopilotSettings {
 
 interface NormalizedAppConfig {
   language: string;
-  noteSavePath: string;
+  noteStoragePath: string;
   aiSources: AiSourceConfig[];
   aiAssistant: AiAssistantSettings;
   knowledgeCopilot: KnowledgeCopilotSettings;
@@ -95,104 +95,15 @@ interface ResolvedKnowledgeCopilotConfig {
   rerankerConfig: ResolvedRerankerConfig | null;
 }
 
-type UnknownRecord = Record<string, unknown>;
 type LoadedAppConfig = Awaited<ReturnType<typeof settingsService.loadConfig>>;
 
-function toRecord(value: unknown): UnknownRecord {
-  return typeof value === 'object' && value !== null
-    ? (value as UnknownRecord)
-    : {};
-}
-
-function toText(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function toBoolean(value: unknown): boolean {
-  return value === true;
-}
-
-function toFiniteNumber(value: unknown, fallback: number): number {
-  const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue : fallback;
-}
-
-function normalizeSimilarityThreshold(value: unknown): number {
-  const threshold = toFiniteNumber(value, 0.45);
-  return Math.min(1, Math.max(0, threshold));
-}
-
-function normalizeTopK(value: unknown): number {
-  const topK = Math.floor(toFiniteNumber(value, 5));
-  return Math.min(10, Math.max(1, topK));
-}
-
-function normalizeAiSource(item: unknown): AiSourceConfig {
-  const record = toRecord(item);
-  const id = toText(record.id);
-  const capabilities = Array.isArray(record.capabilities)
-    ? record.capabilities
-      .filter((capability): capability is string => typeof capability === 'string' && capability.trim().length > 0)
-      .map((capability) => capability.trim())
-    : [];
-
+function selectAiConfig(config: LoadedAppConfig): NormalizedAppConfig {
   return {
-    id,
-    name: toText(record.name),
-    baseUrl: toText(record.baseUrl),
-    apiKey: toText(record.apiKey),
-    aiModel: toText(record.aiModel),
-    capabilities,
-    provider: isAiProvider(record.provider) ? record.provider : inferAiProvider(toText(record.baseUrl)),
-  };
-}
-
-function normalizeAiSources(aiSources: unknown): AiSourceConfig[] {
-  if (!Array.isArray(aiSources)) {
-    return [];
-  }
-
-  return aiSources
-    .map((source) => normalizeAiSource(source))
-    .filter((source) => source.id.length > 0);
-}
-
-function normalizeAiAssistant(aiAssistant: unknown): AiAssistantSettings {
-  const record = toRecord(aiAssistant);
-  return {
-    enabled: toBoolean(record.enabled),
-    sourceId: toText(record.sourceId),
-    model: toText(record.model),
-    systemPrompt: typeof record.systemPrompt === 'string' ? record.systemPrompt : '',
-    writingStyle: record.writingStyle,
-    writingScenario: record.writingScenario,
-  };
-}
-
-function normalizeKnowledgeCopilotSettings(knowledgeCopilot: unknown): KnowledgeCopilotSettings {
-  const record = toRecord(knowledgeCopilot);
-  return {
-    enabled: toBoolean(record.enabled),
-    embeddingSourceId: toText(record.embeddingSourceId),
-    embeddingModel: toText(record.embeddingModel),
-    askChatSourceId: toText(record.askChatSourceId),
-    askChatModel: toText(record.askChatModel),
-    agentChatSourceId: toText(record.agentChatSourceId),
-    agentChatModel: toText(record.agentChatModel),
-    rerankerSourceId: toText(record.rerankerSourceId),
-    rerankerModel: toText(record.rerankerModel),
-    topK: normalizeTopK(record.topK),
-    similarityThreshold: normalizeSimilarityThreshold(record.similarityThreshold),
-  };
-}
-
-function normalizeAppConfig(config: LoadedAppConfig): NormalizedAppConfig {
-  return {
-    language: toText(config.language),
-    noteSavePath: toText(config.noteSavePath),
-    aiSources: normalizeAiSources(config.aiSources),
-    aiAssistant: normalizeAiAssistant(config.aiAssistant),
-    knowledgeCopilot: normalizeKnowledgeCopilotSettings(config.knowledgeCopilot),
+    language: config.general.language,
+    noteStoragePath: config.noteStorage.path,
+    aiSources: config.aiSources.sources,
+    aiAssistant: config.aiAssistant,
+    knowledgeCopilot: config.knowledgeCopilot,
   };
 }
 
@@ -289,7 +200,7 @@ function requireConfiguredSourceWithCapability(
 export const aiConfigService = {
   async loadAppConfig(): Promise<NormalizedAppConfig> {
     const config = await settingsService.loadConfig();
-    return normalizeAppConfig(config);
+    return selectAiConfig(config);
   },
 
   async resolveAssistantConfig(): Promise<ResolvedAssistantConfig> {
@@ -332,7 +243,7 @@ export const aiConfigService = {
       throw new Error('Knowledge Copilot is disabled in settings');
     }
 
-    if (!config.noteSavePath) {
+    if (!config.noteStoragePath) {
       throw new Error('No workspace root configured');
     }
 
@@ -355,7 +266,7 @@ export const aiConfigService = {
       : null;
     return {
       uiLanguage: config.language,
-      workspaceRoot: config.noteSavePath,
+      workspaceRoot: config.noteStoragePath,
       knowledgeCopilot: {
         topK: knowledgeCopilot.topK,
         similarityThreshold: knowledgeCopilot.similarityThreshold,

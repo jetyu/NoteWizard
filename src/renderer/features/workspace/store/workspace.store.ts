@@ -902,10 +902,10 @@ export const useWorkspaceStore = defineStore('workspace', {
       try {
         await this.forceFlushAutoSave();
         const html = renderMarkdown(note.content, {
-          allowHtml: settingsStore.config.previewAppearance.allowHtml,
-          allowInlineSvg: settingsStore.config.previewAppearance.allowInlineSvg,
-          remoteImageMode: settingsStore.config.previewAppearance.remoteImageMode,
-          trustedRemoteImageHosts: settingsStore.config.previewAppearance.trustedRemoteImageHosts,
+          allowHtml: settingsStore.config.preview.allowHtml,
+          allowInlineSvg: settingsStore.config.preview.allowInlineSvg,
+          remoteImageMode: settingsStore.config.preview.remoteImageMode,
+          trustedRemoteImageHosts: settingsStore.config.preview.trustedRemoteImageHosts,
           blockedImageLabel: t('preview.remoteImageBlocked'),
           copyCodeButtonLabel: t('preview.copyCode'),
           contentId: note.contentId,

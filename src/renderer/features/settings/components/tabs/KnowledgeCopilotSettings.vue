@@ -263,15 +263,15 @@ const sourceSupportsCapability = (capabilities: string[], capability: string): b
 };
 
 const embeddingSources = computed(() => {
-  return settingsStore.config.aiSources.filter((source) => sourceSupportsCapability(source.capabilities, 'embedding'));
+  return settingsStore.config.aiSources.sources.filter((source) => sourceSupportsCapability(source.capabilities, 'embedding'));
 });
 
 const chatSources = computed(() => {
-  return settingsStore.config.aiSources.filter((source) => sourceSupportsCapability(source.capabilities, 'chat'));
+  return settingsStore.config.aiSources.sources.filter((source) => sourceSupportsCapability(source.capabilities, 'chat'));
 });
 
 const rerankerSources = computed(() => {
-  return settingsStore.config.aiSources.filter((source) => sourceSupportsCapability(source.capabilities, 'reranker'));
+  return settingsStore.config.aiSources.sources.filter((source) => sourceSupportsCapability(source.capabilities, 'reranker'));
 });
 
 onMounted(() => {
@@ -281,7 +281,7 @@ onMounted(() => {
 });
 
 const handleToggle = async (key: keyof KnowledgeCopilotSettings) => {
-  await settingsStore.updateKnowledgeCopilotSetting(key, !settingsStore.config.knowledgeCopilot[key]);
+  await settingsStore.knowledgeCopilot.update(key, !settingsStore.config.knowledgeCopilot[key]);
 };
 
 const revertSelectValue = (key: keyof KnowledgeCopilotSettings, event?: Event) => {
@@ -310,7 +310,7 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
       return;
     }
 
-    await settingsStore.updateKnowledgeCopilotSetting(key, value);
+    await settingsStore.knowledgeCopilot.update(key, value);
 
     if (!isEnabled) {
       return;
@@ -334,14 +334,14 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
     return;
   }
 
-  await settingsStore.updateKnowledgeCopilotSetting(key, value);
+  await settingsStore.knowledgeCopilot.update(key, value);
 };
 
 const handleKnowledgeCopilotNumberUpdate = async (key: keyof KnowledgeCopilotSettings, event: Event) => {
   const previousValue = settingsStore.config.knowledgeCopilot[key];
   const target = event.target as HTMLInputElement;
   const value = key === 'similarityThreshold' ? parseFloat(target.value) : parseInt(target.value);
-  await settingsStore.updateKnowledgeCopilotSetting(key, value || 0);
+  await settingsStore.knowledgeCopilot.update(key, value || 0);
 
   if ((key !== 'chunkSize' && key !== 'chunkOverlap') || previousValue === settingsStore.config.knowledgeCopilot[key]) {
     return;

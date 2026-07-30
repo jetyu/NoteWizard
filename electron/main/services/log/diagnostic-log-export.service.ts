@@ -182,7 +182,7 @@ export async function collectDiagnosticInfo(generatedAt: Date): Promise<Diagnost
       system: app.getSystemLocale(),
     },
     storage: {
-      notePath: settings.noteSavePath,
+      notePath: settings.noteStorage.path,
     },
   };
 }

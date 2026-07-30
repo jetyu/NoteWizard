@@ -113,7 +113,7 @@ watchEffect(() => {
 });
 
 watch(
-  [activeTab, () => settingsStore.config.autoCheckUpdates],
+  [activeTab, () => settingsStore.config.softwareUpdate.autoCheck],
   ([tab, autoCheckUpdates]) => {
     if (
       tab !== 'software-update' ||

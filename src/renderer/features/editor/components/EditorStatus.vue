@@ -30,7 +30,7 @@ const settingsStore = useSettingsStore();
 const { config } = storeToRefs(settingsStore);
 
 const showStatusBar = computed(() => {
-  return config.value.showStatusBar !== false;
+  return config.value.editor.showStatusBar !== false;
 });
 </script>
 

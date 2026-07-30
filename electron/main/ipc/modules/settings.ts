@@ -17,7 +17,7 @@ export function registerSettingsIpcHandlers() {
    */
   ipcMain.handle(IPC_CHANNELS.SETTINGS_LOAD, async () => {
     const config = await settingsService.loadConfig();
-    loggerService.updateConfig(config);
+    loggerService.updateConfig(config.privacyLog);
     logger.debug('Settings loaded');
     return config;
   });
@@ -27,7 +27,7 @@ export function registerSettingsIpcHandlers() {
    */
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SAVE, async (_event, config) => {
     const settings = await settingsService.saveConfig(parseSettingsSavePayload(config));
-    loggerService.updateConfig(settings);
+    loggerService.updateConfig(settings.privacyLog);
     logger.debug('Settings saved and updated');
     return settings;
   });

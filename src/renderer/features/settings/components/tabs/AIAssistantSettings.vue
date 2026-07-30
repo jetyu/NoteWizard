@@ -123,17 +123,17 @@ const writingStyleOptions = AI_WRITING_STYLE_OPTIONS;
 const writingScenarioOptions = AI_WRITING_SCENARIO_OPTIONS;
 const writingModeOptions = AI_WRITING_MODE_OPTIONS;
 const chatSources = computed(() => {
-  return settingsStore.config.aiSources.filter((source) => (
+  return settingsStore.config.aiSources.sources.filter((source) => (
     source.capabilities.length === 0 || source.capabilities.includes('chat')
   ));
 });
 
 const handleToggle = async (key: keyof AIAssistantSettings) => {
-  await settingsStore.updateAssistantSetting(key, !settingsStore.config.aiAssistant[key]);
+  await settingsStore.aiAssistant.update(key, !settingsStore.config.aiAssistant[key]);
 };
 
 const handleAssistantUpdate = async <K extends keyof AIAssistantSettings>(key: K, value: AIAssistantSettings[K]) => {
-  await settingsStore.updateAssistantSetting(key, value);
+  await settingsStore.aiAssistant.update(key, value);
 };
 
 const getSelectValue = (event: Event): string => {
