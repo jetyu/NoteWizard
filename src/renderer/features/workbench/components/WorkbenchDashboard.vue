@@ -331,7 +331,7 @@ import {
   type NoteTemplate,
   type NoteTemplateId,
 } from '@renderer/features/workspace';
-import { useSettings, useSettingsStore } from '@renderer/features/settings';
+import { useSettingsPanel, useSettingsStore } from '@renderer/features/settings';
 import { useAppShellStore } from '@renderer/app/store/appShell.store';
 import { useWorkbenchStore } from '@renderer/features/workbench';
 import { electronApi, type WallpaperResult } from '@renderer/core/bridge/electronApi';
@@ -398,7 +398,7 @@ const CODE_FENCE_REGEX = /^\s*(?:```|~~~)/;
 const { t } = useI18n();
 const { openSearchView } = useSearch();
 const { notes, notebooks, allTags, createNote, selectNote } = useWorkspace();
-const { openSettings } = useSettings();
+const { openSettings } = useSettingsPanel();
 const appShellStore = useAppShellStore();
 const workspaceStore = useWorkspaceStore();
 const settingsStore = useSettingsStore();
@@ -847,7 +847,7 @@ async function dismissOnboardingGuide(): Promise<void> {
     return;
   }
 
-  await settingsStore.updateSetting('workbench', {
+  await settingsStore.workbench.update({
     ...settingsStore.config.workbench,
     onboardingGuideActivated: true,
     onboardingGuideDismissed: true,
@@ -859,7 +859,7 @@ async function activateOnboardingGuide(): Promise<void> {
     return;
   }
 
-  await settingsStore.updateSetting('workbench', {
+  await settingsStore.workbench.update({
     ...settingsStore.config.workbench,
     onboardingGuideActivated: true,
   });

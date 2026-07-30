@@ -1,13 +1,12 @@
 import { ipcMain } from 'electron';
 import { z } from 'zod';
-import { knowledgeCopilotIndexService } from '../../services/knowledge-copilot-index.service.js';
-import { runKnowledgeCopilotTask } from '../../services/knowledge-copilot-task.service.js';
+import { knowledgeCopilotIndexService } from '../../services/knowledge-copilot/knowledge-copilot-index.service.js';
+import { runKnowledgeCopilotTask } from '../../services/knowledge-copilot/knowledge-copilot-task.service.js';
 import { aiConfigService } from '../../services/ai-config.service.js';
-import { answerKnowledgeQuestionStream } from '../../services/knowledge-copilot-qa.service.js';
+import { answerKnowledgeQuestionStream } from '../../services/knowledge-copilot/knowledge-copilot-qa.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
-import { LICENSE_RUNTIME_FEATURES, licenseService } from '../../services/license.service.js';
 import { KNOWLEDGE_COPILOT_CONVERSATION_LIMITS } from '../../../shared/knowledge-copilot.constants.js';
 
 const logger = loggerService.createLogger('Main:KnowledgeCopilotIPC');
@@ -66,7 +65,6 @@ const RunTaskSchema = z.object({
 export function registerKnowledgeCopilotHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_INITIALIZE, async (_event, request) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       InitializeSchema.parse(request);
       const config = await aiConfigService.resolveKnowledgeCopilotConfig();
       await knowledgeCopilotIndexService.initialize(config.workspaceRoot, config.embeddingConfig);
@@ -80,7 +78,6 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_INDEX_NOTE, async (_event, request) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       const validated = IndexNoteSchema.parse(request);
       return await knowledgeCopilotIndexService.indexNote(validated);
     } catch (error) {
@@ -93,7 +90,6 @@ export function registerKnowledgeCopilotHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM, async (event, request) => {
     let requestId = '';
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       const validated = StreamQuestionSchema.parse(request);
       requestId = validated.requestId;
       event.sender.send(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM_EVENT, {
@@ -152,7 +148,6 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_RUN_TASK, async (_event, request) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       const validated = RunTaskSchema.parse(request);
       return await runKnowledgeCopilotTask(validated.task, {
         writeMode: validated.writeMode,
@@ -182,7 +177,6 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_DELETE_NOTE_INDEX, async (_event, noteId) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       const validatedNoteId = z.string().min(1).parse(noteId);
       return await knowledgeCopilotIndexService.deleteNoteIndex(validatedNoteId);
     } catch (error) {
@@ -194,7 +188,6 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_GET_STATUS, async () => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       const status = await knowledgeCopilotIndexService.getStatus();
       return { success: true, ...status };
     } catch (error) {
@@ -206,7 +199,6 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_REBUILD_INDEX, async () => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.KNOWLEDGE_COPILOT);
       await knowledgeCopilotIndexService.clear();
       return { success: true };
     } catch (error) {

@@ -10,7 +10,6 @@ import { AI_PROVIDERS } from '../../../shared/ai-provider.constants.js';
 import { Document } from '@langchain/core/documents';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
-import { LICENSE_RUNTIME_FEATURES, licenseService } from '../../services/license.service.js';
 
 const logger = loggerService.createLogger('Electron:AI Source IPC');
 
@@ -61,7 +60,6 @@ export function registerAiSourceIpcHandlers() {
    */
   ipcMain.handle(IPC_CHANNELS.AI_SOURCE_TEST_CONNECTION, async (_event, config) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.AI_SOURCES);
       const validated = TestConnectionSchema.parse(config);
       logger.debug('Testing connection to AI source');
       let lastError: unknown = null;
@@ -86,7 +84,6 @@ export function registerAiSourceIpcHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.AI_SOURCE_VALIDATE_TOOL_CALLING, async (_event, payload) => {
     try {
-      licenseService.ensureFeatureEnabled(LICENSE_RUNTIME_FEATURES.AI_SOURCES);
       const validated = ValidateToolCallingSchema.parse(payload);
       const model = createProviderChatModel({
         provider: validated.provider,

@@ -42,7 +42,7 @@ export function useSyncPresentation() {
       return '';
     }
 
-    return new Intl.DateTimeFormat(settingsStore.config.language, {
+    return new Intl.DateTimeFormat(settingsStore.config.general.language, {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(lastSyncedAt);

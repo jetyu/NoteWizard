@@ -237,13 +237,13 @@ onMounted(() => {
     target: editorHost.value,
     initialValue: props.modelValue,
     readOnly: isActiveNoteReadMode.value,
-    showLineNumbers: config.value.showLineNumbers,
-    wordWrap: config.value.wordWrap,
-    codeFolding: config.value.codeFolding,
-    highlightActiveLine: config.value.highlightActiveLine,
-    bracketMatching: config.value.bracketMatching,
-    autoCloseBrackets: config.value.autoCloseBrackets,
-    autoIndent: config.value.autoIndent,
+    showLineNumbers: config.value.editor.showLineNumbers,
+    wordWrap: config.value.editor.wordWrap,
+    codeFolding: config.value.editor.codeFolding,
+    highlightActiveLine: config.value.editor.highlightActiveLine,
+    bracketMatching: config.value.editor.bracketMatching,
+    autoCloseBrackets: config.value.editor.autoCloseBrackets,
+    autoIndent: config.value.editor.autoIndent,
     onChange: (value, isAiCompletion) => {
       syncingFromEditor = true;
       emit('update:modelValue', value);
@@ -292,7 +292,7 @@ watch(
 );
 
 watch(
-  () => config.value.showLineNumbers,
+  () => config.value.editor.showLineNumbers,
   (showLineNumbers) => {
     if (!editorApi) return;
     editorApi.setLineNumbers(showLineNumbers);
@@ -300,7 +300,7 @@ watch(
 );
 
 watch(
-  () => config.value.wordWrap,
+  () => config.value.editor.wordWrap,
   (wordWrap) => {
     if (!editorApi) return;
     editorApi.setWordWrap(wordWrap);
@@ -308,7 +308,7 @@ watch(
 );
 
 watch(
-  () => config.value.codeFolding,
+  () => config.value.editor.codeFolding,
   (enabled) => {
     if (!editorApi) return;
     editorApi.setCodeFolding(enabled);
@@ -316,7 +316,7 @@ watch(
 );
 
 watch(
-  () => config.value.highlightActiveLine,
+  () => config.value.editor.highlightActiveLine,
   (enabled) => {
     if (!editorApi) return;
     editorApi.setHighlightActiveLine(enabled);
@@ -324,7 +324,7 @@ watch(
 );
 
 watch(
-  () => config.value.bracketMatching,
+  () => config.value.editor.bracketMatching,
   (enabled) => {
     if (!editorApi) return;
     editorApi.setBracketMatching(enabled);
@@ -332,7 +332,7 @@ watch(
 );
 
 watch(
-  () => config.value.autoCloseBrackets,
+  () => config.value.editor.autoCloseBrackets,
   (enabled) => {
     if (!editorApi) return;
     editorApi.setAutoCloseBrackets(enabled);
@@ -340,7 +340,7 @@ watch(
 );
 
 watch(
-  () => config.value.autoIndent,
+  () => config.value.editor.autoIndent,
   (enabled) => {
     if (!editorApi) return;
     editorApi.setAutoIndent(enabled);

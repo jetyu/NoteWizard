@@ -2,7 +2,7 @@
 export { default as SettingsPanel } from './components/SettingsPanel.vue';
 
 // Composables
-export { useSettings } from './composables/useSettings';
+export { useSettingsPanel } from './composables/useSettingsPanel';
 
 // Stores
 export { useSettingsStore } from './store/settings.store';

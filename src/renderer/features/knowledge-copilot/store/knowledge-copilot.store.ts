@@ -147,7 +147,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         String(knowledgeCopilotConfig.embeddingModel || ''),
       );
 
-      await settingsStore.saveSettings({
+      await settingsStore.persistence.save({
         knowledgeCopilot: {
           ...knowledgeCopilotConfig,
           lastIndexedAt: lastIndexedDate,
@@ -309,7 +309,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       indexStatus.value.totalChunks = cachedTotalChunks;
       indexStatus.value.progress = 100;
 
-      await settingsStore.saveSettings({
+      await settingsStore.persistence.save({
         knowledgeCopilot: {
           ...settingsStore.config.knowledgeCopilot,
           lastIndexedAt: lastIndexedDate,
@@ -366,7 +366,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         indexStatus.value.totalChunks = actualTotalChunks;
         const currentCached = Number(settingsStore.config.knowledgeCopilot.cachedTotalChunks || 0);
         if (actualTotalChunks !== currentCached) {
-          await settingsStore.updateKnowledgeCopilotSetting('cachedTotalChunks', actualTotalChunks);
+          await settingsStore.knowledgeCopilot.update('cachedTotalChunks', actualTotalChunks);
         }
         statusCache.value = {
           timestamp: now,
@@ -402,7 +402,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       delete nextChunkCounts[noteId];
       const nextTotalChunks = Math.max(0, Number(knowledgeCopilotConfig.cachedTotalChunks || 0) - removedChunks);
 
-      await settingsStore.saveSettings({
+      await settingsStore.persistence.save({
         knowledgeCopilot: {
           ...knowledgeCopilotConfig,
           indexSignatures: nextSignatures,
@@ -440,7 +440,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       indexStatus.value.skippedNotes = 0;
 
       const settingsStore = useSettingsStore();
-      await settingsStore.saveSettings({
+      await settingsStore.persistence.save({
         knowledgeCopilot: {
           ...settingsStore.config.knowledgeCopilot,
           lastIndexedAt: indexStatus.value.lastIndexedAt,

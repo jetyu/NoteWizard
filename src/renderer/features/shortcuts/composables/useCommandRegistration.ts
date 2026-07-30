@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted } from 'vue';
 import { commandService } from '../services/command.service';
 import { useWorkspace, useWorkspaceUiActions } from '@renderer/features/workspace';
-import { useSettings } from '@renderer/features/settings';
+import { useSettingsPanel } from '@renderer/features/settings';
 import { useEditor } from '@renderer/features/editor';
 import { openSearchPanel } from '@codemirror/search';
 import { createLogger } from '@renderer/features/logger';
@@ -22,7 +22,7 @@ export function useCommandRegistration() {
     openActiveNoteProperties,
     openActiveNoteHistory,
   } = useWorkspaceUiActions();
-  const { openSettings } = useSettings();
+  const { openSettings } = useSettingsPanel();
   const { getEditorView } = useEditor();
   const { requestFocusQuickSearch } = useSearch();
 

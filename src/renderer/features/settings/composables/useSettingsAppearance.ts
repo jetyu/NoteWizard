@@ -1,9 +1,8 @@
-import { watch, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, watch } from 'vue';
 import { useSettingsStore, type AccentMode, type ThemeMode } from '../store/settings.store';
 
-export function useGeneralSettings() {
+export function useSettingsAppearance() {
   const settingsStore = useSettingsStore();
-  let mediaQuery: MediaQueryList | null = null;
   let removeSystemThemeListener: (() => void) | null = null;
 
   const resolveThemeMode = (mode: ThemeMode): 'light' | 'dark' => {
@@ -29,33 +28,52 @@ export function useGeneralSettings() {
     }
   };
 
+  const applyEditorTypography = (fontSize: number, fontFamily: string) => {
+    const root = document.documentElement;
+    root.style.setProperty('--editor-font-size', `${fontSize}px`);
+
+    if (fontFamily) {
+      root.style.setProperty('--editor-font-family', fontFamily);
+    } else {
+      root.style.removeProperty('--editor-font-family');
+    }
+  };
+
   watch(
-    () => [settingsStore.config.themeMode, settingsStore.config.accentMode] as const,
-    ([newThemeMode, newAccentMode]) => {
-      applyThemeAppearance(newThemeMode, newAccentMode);
+    () => [settingsStore.config.general.themeMode, settingsStore.config.general.accentMode] as const,
+    ([themeMode, accentMode]) => {
+      applyThemeAppearance(themeMode, accentMode);
     },
     { immediate: true },
   );
 
   watch(
-    () => settingsStore.config.appUIFont,
+    () => settingsStore.config.general.appUIFont,
     (fontFamily) => {
       applyAppUIFont(fontFamily);
     },
     { immediate: true },
   );
 
+  watch(
+    () => [settingsStore.config.editor.fontSize, settingsStore.config.editor.fontFamily] as const,
+    ([fontSize, fontFamily]) => {
+      applyEditorTypography(fontSize, fontFamily);
+    },
+    { immediate: true },
+  );
+
   onMounted(() => {
-    mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
-      if (settingsStore.config.themeMode === 'system') {
-        applyThemeAppearance('system', settingsStore.config.accentMode);
+      if (settingsStore.config.general.themeMode === 'system') {
+        applyThemeAppearance('system', settingsStore.config.general.accentMode);
       }
     };
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);
     removeSystemThemeListener = () => {
-      mediaQuery?.removeEventListener('change', handleSystemThemeChange);
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
     };
   });
 

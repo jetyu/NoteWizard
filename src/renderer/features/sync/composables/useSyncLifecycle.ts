@@ -48,7 +48,7 @@ export function useSyncLifecycle() {
         settingsStore.config.sync.intervalMinutes,
         settingsStore.config.sync.provider,
         settingsStore.config.sync.remotePath,
-        settingsStore.config.noteSavePath,
+        settingsStore.config.noteStorage.path,
       ] as const,
       async () => {
         await syncStore.initialize(settingsStore.config.sync);

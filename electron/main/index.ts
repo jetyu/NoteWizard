@@ -13,7 +13,6 @@ import { IPC_CHANNELS } from './constants/ipc.constants.js';
 import { vfsService } from './services/vfs.service.js';
 import { accessControlService } from './services/access-control.service.js';
 import { errorService } from './services/error.service.js';
-import { licenseService } from './services/license.service.js';
 import { keyManagerService } from './services/key-manager.service.js';
 import { quickCaptureService } from './services/quick-capture.service.js';
 import { shortcutsService } from './services/shortcuts.service.js';
@@ -109,16 +108,6 @@ function registerPreviewSecurityPolicies(electronSession: Electron.Session): voi
   });
 }
 
-function broadcastLicenseState(): void {
-  const state = licenseService.getState();
-  const windows = BrowserWindow.getAllWindows();
-  for (const window of windows) {
-    if (!window.isDestroyed()) {
-      window.webContents.send(IPC_CHANNELS.LICENSE_STATE_CHANGED, state);
-    }
-  }
-}
-
 errorService.registerGlobalErrorHandlers();
 
 app.whenReady().then(async () => {
@@ -128,16 +117,8 @@ app.whenReady().then(async () => {
   if (!accessControlService.isLocked()) {
     await keyManagerService.restoreAutoUnlockSession();
   }
-  licenseService.addStateChangeListener(() => {
-    broadcastLicenseState();
-  });
-  void licenseService.initialize().catch((error) => {
-    loggerService.error('MainBootstrap', 'License initialization failed', {
-      message: error instanceof Error ? error.message : String(error),
-    });
-  });
   registerPreviewSecurityPolicies(session.defaultSession);
-  loggerService.updateConfig(preferences);
+  loggerService.updateConfig(preferences.privacyLog);
   const appRootPath = app.getAppPath();
   const mainWindow = createMainWindow({ isDev, appPath: appRootPath });
   quickCaptureService.initialize(mainWindow);
@@ -148,11 +129,7 @@ app.whenReady().then(async () => {
   });
   await shortcutsService.refreshGlobalShortcuts();
   registerIpcHandlers(mainWindow);
-  setupAppMenu(mainWindow, preferences.language);
-  mainWindow.webContents.once('did-finish-load', () => {
-    broadcastLicenseState();
-  });
-
+  setupAppMenu(mainWindow, preferences.general.language);
   trayService.init(mainWindow, () => quickCaptureService.request());
 
   if (!isDev) {
@@ -163,7 +140,7 @@ app.whenReady().then(async () => {
     if (!isQuitting) {
       event.preventDefault();
       void settingsService.loadConfig().then((config) => {
-        if (config.windowCloseAction === 'exit') {
+        if (config.general.windowCloseAction === 'exit') {
           app.quit();
           return;
         }
@@ -181,11 +158,8 @@ app.whenReady().then(async () => {
         const window = createMainWindow({ isDev, appPath: appRootPath });
         quickCaptureService.attachWindow(window);
         registerIpcHandlers(window);
-        setupAppMenu(window, nextPreferences.language);
+        setupAppMenu(window, nextPreferences.general.language);
         trayService.init(window, () => quickCaptureService.request());
-        window.webContents.once('did-finish-load', () => {
-          broadcastLicenseState();
-        });
       });
     }
   });
@@ -212,5 +186,4 @@ app.on(IPC_CHANNELS.ELECTRON_BEFORE_QUIT, () => {
   quickCaptureService.destroy();
   shortcutsService.destroyGlobalShortcuts();
   updaterService.destroy();
-  licenseService.destroy();
 });

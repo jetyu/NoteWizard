@@ -8,12 +8,6 @@ import {
   type AiWritingStyle,
   type AiWritingMode,
 } from '@shared/ai.constants';
-import {
-  OFFICIAL_AI_MODELS,
-  OFFICIAL_AI_SOURCE_IDS,
-  getOfficialAiSources,
-  isOfficialAiSourceId,
-} from '@shared/official-ai.constants';
 import { AI_PROVIDERS, type AiProvider } from '@shared/ai-provider.constants';
 
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
@@ -23,6 +17,7 @@ import {
   DIAGNOSTIC_EXPORT_STATUS,
   type DiagnosticLogExportResult,
 } from '@shared/diagnostic-log.constants';
+import type { AccessControlConfig } from '@renderer/core/bridge/electronApi';
 import { UPDATER_CONSTANTS } from '@renderer/features/updater/constants/updater.constants';
 import {
   APP_SHELL_MAX_CUSTOM_MODULES,
@@ -32,7 +27,6 @@ import {
 } from '@renderer/app/constants/appShell.constants';
 import {
   createDefaultWorkbenchSettings,
-  sanitizeWorkbenchSettings,
   type WorkbenchSettings,
 } from '@renderer/features/workbench/constants/workbench.constants';
 import { DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS, normalizeTrustedRemoteImageHosts } from '@shared/preview-security.constants';
@@ -79,8 +73,6 @@ export interface AISource {
   aiModel: string;
   capabilities: string[];
   provider: AiProvider;
-  official?: boolean;
-  locked?: boolean;
 }
 
 export interface AIAssistantSettings {
@@ -150,7 +142,7 @@ export interface AppShellSettings {
   maxCustomSidebarModules: number;
 }
 
-export interface PreviewAppearanceSettings {
+export interface PreviewConfig {
   allowHtml: boolean;
   allowInlineSvg: boolean;
   remoteImageMode: 'blocked' | 'trusted' | 'all';
@@ -163,17 +155,18 @@ export type WindowCloseAction = 'minimize' | 'exit';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type AccentMode = 'black' | 'azureBlue' | 'indigo' | 'cyan' | 'teal';
 
-export interface AppSettings {
-  knowledgeCopilotSchemaVersion: number;
+export interface GeneralConfig {
   language: string;
   autoStartup: boolean;
   windowCloseAction: WindowCloseAction;
   themeMode: ThemeMode;
   accentMode: AccentMode;
   appUIFont: string;
-  previewAppearance: PreviewAppearanceSettings;
-  editorFontSize: number;
-  editorFont: string;
+}
+
+export interface EditorConfig {
+  fontSize: number;
+  fontFamily: string;
   showLineNumbers: boolean;
   wordWrap: boolean;
   codeFolding: boolean;
@@ -182,23 +175,115 @@ export interface AppSettings {
   autoCloseBrackets: boolean;
   autoIndent: boolean;
   showStatusBar: boolean;
-  aiSources: AISource[];
-  aiAssistant: AIAssistantSettings;
-  knowledgeCopilot: KnowledgeCopilotSettings;
-  sync: SyncSettings;
-  loggingEnabled: boolean;
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
-  logAutoClearDays: number;
-  noteSavePath: string;
-  autoCheckUpdates: boolean;
-  updateCheckInterval: number;
-  updateChannel: UpdateChannel;
+}
+
+export interface AiSourcesConfig {
+  sources: AISource[];
+}
+
+export interface NoteStorageConfig {
+  path: string;
   maxHistoryVersions: number;
   trashAutoClearDays: number;
   snapshotInterval: number;
+}
+
+export interface PrivacyLogConfig {
+  enabled: boolean;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  autoClearDays: number;
+}
+
+export interface SoftwareUpdateConfig {
+  autoCheck: boolean;
+  checkInterval: number;
+  channel: UpdateChannel;
+}
+
+export interface AppSettings {
+  general: GeneralConfig;
+  preview: PreviewConfig;
+  editor: EditorConfig;
+  aiSources: AiSourcesConfig;
+  aiAssistant: AIAssistantSettings;
+  knowledgeCopilot: KnowledgeCopilotSettings;
+  sync: SyncSettings;
+  noteStorage: NoteStorageConfig;
+  privacyLog: PrivacyLogConfig;
+  softwareUpdate: SoftwareUpdateConfig;
   appShell: AppShellSettings;
   workbench: WorkbenchSettings;
-  // ... future properties
+  accessControl: AccessControlConfig;
+}
+
+function createDefaultGeneralConfig(): GeneralConfig {
+  return {
+    language: 'en-US',
+    autoStartup: false,
+    windowCloseAction: 'minimize',
+    themeMode: 'system',
+    accentMode: 'azureBlue',
+    appUIFont: '',
+  };
+}
+
+function createDefaultPreviewConfig(): PreviewConfig {
+  return {
+    allowHtml: true,
+    allowInlineSvg: true,
+    remoteImageMode: 'trusted',
+    trustedRemoteImageHosts: [...DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS],
+    fontSize: 16,
+    fontFamily: '',
+  };
+}
+
+function createDefaultEditorConfig(): EditorConfig {
+  return {
+    fontSize: 14,
+    fontFamily: '',
+    showLineNumbers: true,
+    wordWrap: true,
+    codeFolding: false,
+    highlightActiveLine: true,
+    bracketMatching: true,
+    autoCloseBrackets: true,
+    autoIndent: true,
+    showStatusBar: true,
+  };
+}
+
+function createDefaultAiSourcesConfig(): AiSourcesConfig {
+  return {
+    sources: [],
+  };
+}
+
+function createDefaultAiAssistantConfig(): AIAssistantSettings {
+  return {
+    enabled: false,
+    sourceId: '',
+    model: '',
+    triggerMode: AI_WRITING_DEFAULTS.MODE,
+    autoContinue: AI_WRITING_DEFAULTS.AUTO_CONTINUE,
+    writingStyle: AI_WRITING_DEFAULTS.STYLE,
+    writingScenario: AI_WRITING_DEFAULTS.SCENARIO,
+    systemPrompt: '',
+  };
+}
+
+function createDefaultKnowledgeCopilotConfig(): KnowledgeCopilotSettings {
+  return {
+    ...DEFAULT_KNOWLEDGE_COPILOT_CONFIG,
+    embeddingSourceId: '',
+    embeddingModel: '',
+    askChatSourceId: '',
+    askChatModel: '',
+    agentChatSourceId: '',
+    agentChatModel: '',
+    rerankerSourceId: '',
+    rerankerModel: '',
+  };
 }
 
 function createDefaultSyncConfig(): SyncSettings {
@@ -209,72 +294,62 @@ function createDefaultSyncConfig(): SyncSettings {
   };
 }
 
-function createDefaultConfig(): AppSettings {
+function createDefaultNoteStorageConfig(): NoteStorageConfig {
   return {
-    knowledgeCopilotSchemaVersion: 1,
-    language: 'en-US',
-    autoStartup: false,
-    windowCloseAction: 'minimize',
-    themeMode: 'system',
-    accentMode: 'azureBlue',
-    appUIFont: '',
-    previewAppearance: {
-      allowHtml: true,
-      allowInlineSvg: true,
-      remoteImageMode: 'trusted',
-      trustedRemoteImageHosts: [...DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS],
-      fontSize: 16,
-      fontFamily: '',
-    },
-    editorFontSize: 14,
-    editorFont: '',
-    showLineNumbers: true,
-    wordWrap: true,
-    codeFolding: false,
-    highlightActiveLine: true,
-    bracketMatching: true,
-    autoCloseBrackets: true,
-    autoIndent: true,
-    showStatusBar: true,
-    aiSources: getOfficialAiSources(),
-    aiAssistant: {
-      enabled: false,
-      sourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-      model: OFFICIAL_AI_MODELS.CHAT,
-      triggerMode: AI_WRITING_DEFAULTS.MODE,
-      autoContinue: AI_WRITING_DEFAULTS.AUTO_CONTINUE,
-      writingStyle: AI_WRITING_DEFAULTS.STYLE,
-      writingScenario: AI_WRITING_DEFAULTS.SCENARIO,
-      systemPrompt: '',
-    },
-    knowledgeCopilot: {
-      ...DEFAULT_KNOWLEDGE_COPILOT_CONFIG,
-      embeddingSourceId: OFFICIAL_AI_SOURCE_IDS.EMBEDDING,
-      embeddingModel: OFFICIAL_AI_MODELS.EMBEDDING,
-      askChatSourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-      askChatModel: OFFICIAL_AI_MODELS.CHAT,
-      agentChatSourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-      agentChatModel: OFFICIAL_AI_MODELS.CHAT,
-      rerankerSourceId: OFFICIAL_AI_SOURCE_IDS.RERANKER,
-      rerankerModel: OFFICIAL_AI_MODELS.RERANKER,
-    },
-    sync: createDefaultSyncConfig(),
-    loggingEnabled: false,
-    logLevel: 'error',
-    logAutoClearDays: 0,
-    noteSavePath: '',
-    autoCheckUpdates: true,
-    updateCheckInterval: UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL,
-    updateChannel: DEFAULT_UPDATE_CHANNEL,
+    path: '',
     maxHistoryVersions: 50,
     trashAutoClearDays: 30,
     snapshotInterval: 15,
-    appShell: {
-      activeMainView: APP_SHELL_DEFAULT_MAIN_VIEW,
-      customSidebarModules: ['favorites', 'search', 'settings', 'trash'],
-      maxCustomSidebarModules: APP_SHELL_MAX_CUSTOM_MODULES,
-    },
+  };
+}
+
+function createDefaultPrivacyLogConfig(): PrivacyLogConfig {
+  return {
+    enabled: false,
+    level: 'error',
+    autoClearDays: 10,
+  };
+}
+
+function createDefaultSoftwareUpdateConfig(): SoftwareUpdateConfig {
+  return {
+    autoCheck: true,
+    checkInterval: UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL,
+    channel: DEFAULT_UPDATE_CHANNEL,
+  };
+}
+
+function createDefaultAppShellConfig(): AppShellSettings {
+  return {
+    activeMainView: APP_SHELL_DEFAULT_MAIN_VIEW,
+    customSidebarModules: ['favorites', 'search', 'settings', 'trash'],
+    maxCustomSidebarModules: APP_SHELL_MAX_CUSTOM_MODULES,
+  };
+}
+
+function createDefaultAccessControlConfig(): AccessControlConfig {
+  return {
+    enabled: false,
+    lockOnStartup: false,
+    autoLockTimeoutMinutes: 0,
+  };
+}
+
+function createDefaultConfig(): AppSettings {
+  return {
+    general: createDefaultGeneralConfig(),
+    preview: createDefaultPreviewConfig(),
+    editor: createDefaultEditorConfig(),
+    aiSources: createDefaultAiSourcesConfig(),
+    aiAssistant: createDefaultAiAssistantConfig(),
+    knowledgeCopilot: createDefaultKnowledgeCopilotConfig(),
+    sync: createDefaultSyncConfig(),
+    noteStorage: createDefaultNoteStorageConfig(),
+    privacyLog: createDefaultPrivacyLogConfig(),
+    softwareUpdate: createDefaultSoftwareUpdateConfig(),
+    appShell: createDefaultAppShellConfig(),
     workbench: createDefaultWorkbenchSettings(),
+    accessControl: createDefaultAccessControlConfig(),
   };
 }
 
@@ -289,17 +364,13 @@ export const useSettingsStore = defineStore('settings', () => {
     return source.capabilities.length === 0 || source.capabilities.includes(capability);
   };
 
-  const isLockedAiSource = (source: AISource): boolean => {
-    return source.locked === true || source.official === true || isOfficialAiSourceId(source.id);
-  };
-
   /**
    * Load settings from persistent storage (via IPC or LocalStorage)
    */
   const loadSettings = async () => {
     isLoading.value = true;
     try {
-      config.value = await settingsService.loadConfig(createDefaultConfig());
+      config.value = await settingsService.loadConfig();
     } catch (e) {
       settingsLogger.error(`Failed to load settings: ${e}`);
     } finally {
@@ -314,45 +385,6 @@ export const useSettingsStore = defineStore('settings', () => {
     config.value = {
       ...config.value,
       ...newConfig,
-      aiAssistant: {
-        ...config.value.aiAssistant,
-        ...(newConfig.aiAssistant ?? {}),
-      },
-      previewAppearance: {
-        ...config.value.previewAppearance,
-        ...(newConfig.previewAppearance ?? {}),
-        trustedRemoteImageHosts: Array.isArray(newConfig.previewAppearance?.trustedRemoteImageHosts)
-          ? normalizeTrustedRemoteImageHosts(newConfig.previewAppearance.trustedRemoteImageHosts)
-          : [...config.value.previewAppearance.trustedRemoteImageHosts],
-      },
-      knowledgeCopilot: {
-        ...config.value.knowledgeCopilot,
-        ...(newConfig.knowledgeCopilot ?? {}),
-      },
-      sync: {
-        ...config.value.sync,
-        ...(newConfig.sync ?? {}),
-        webdav: {
-          ...config.value.sync.webdav,
-          ...(newConfig.sync?.webdav ?? {}),
-        },
-        ossS3: {
-          ...config.value.sync.ossS3,
-          ...(newConfig.sync?.ossS3 ?? {}),
-        },
-      },
-      appShell: {
-        ...config.value.appShell,
-        ...(newConfig.appShell ?? {}),
-        customSidebarModules: Array.isArray(newConfig.appShell?.customSidebarModules)
-          ? [...newConfig.appShell.customSidebarModules]
-          : [...config.value.appShell.customSidebarModules],
-        maxCustomSidebarModules: APP_SHELL_MAX_CUSTOM_MODULES,
-      },
-      workbench: sanitizeWorkbenchSettings({
-        ...config.value.workbench,
-        ...(newConfig.workbench ?? {}),
-      }),
     };
     try {
       config.value = await settingsService.saveConfig(config.value);
@@ -363,37 +395,64 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setLanguage = async (language: string) => {
     const nextLanguage = await settingsService.changeLanguage(language);
-    await saveSettings({ language: nextLanguage });
+    config.value.general.language = nextLanguage;
+    await saveSettings({});
   };
 
   const setAutoStartup = async (enabled: boolean) => {
     try {
       const result = await settingsService.setStartup(enabled);
-      await saveSettings({ autoStartup: result.enabled });
+      config.value.general.autoStartup = result.enabled;
+      await saveSettings({});
     } catch (e) {
       settingsLogger.error(`Failed to set auto startup: ${e}`);
     }
   };
 
-  const setNoteSavePath = async (path: string) => {
-    await saveSettings({ noteSavePath: path });
+  const setnoteStoragePath = async (path: string) => {
+    config.value.noteStorage.path = path;
+    await saveSettings({});
   };
 
   /**
    * Update a specific configuration property
    */
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    if (key === 'language') {
-      await setLanguage(String(value));
-      return;
-    }
-
-    if (key === 'autoStartup') {
-      await setAutoStartup(Boolean(value));
-      return;
-    }
-
     config.value[key] = value;
+    await saveSettings({});
+  };
+
+  const updateGeneralSetting = async <K extends keyof GeneralConfig>(key: K, value: GeneralConfig[K]) => {
+    config.value.general[key] = value;
+    await saveSettings({});
+  };
+
+  const updateEditorSetting = async <K extends keyof EditorConfig>(key: K, value: EditorConfig[K]) => {
+    config.value.editor[key] = value;
+    await saveSettings({});
+  };
+
+  const updateNoteStorageSetting = async <K extends keyof NoteStorageConfig>(
+    key: K,
+    value: NoteStorageConfig[K],
+  ) => {
+    config.value.noteStorage[key] = value;
+    await saveSettings({});
+  };
+
+  const updatePrivacyLogSetting = async <K extends keyof PrivacyLogConfig>(
+    key: K,
+    value: PrivacyLogConfig[K],
+  ) => {
+    config.value.privacyLog[key] = value;
+    await saveSettings({});
+  };
+
+  const updateSoftwareUpdateSetting = async <K extends keyof SoftwareUpdateConfig>(
+    key: K,
+    value: SoftwareUpdateConfig[K],
+  ) => {
+    config.value.softwareUpdate[key] = value;
     await saveSettings({});
   };
 
@@ -408,7 +467,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // Auto-update model if sourceId changes
     if (key === 'sourceId') {
-      const source = config.value.aiSources.find(s => s.id === String(value));
+      const source = config.value.aiSources.sources.find(s => s.id === String(value));
       if (source && source.aiModel) {
         config.value.aiAssistant.model = source.aiModel;
       }
@@ -417,11 +476,13 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings({});
   };
 
-  const updatePreviewAppearanceSetting = async <K extends keyof PreviewAppearanceSettings>(
+  const updatePreviewSetting = async <K extends keyof PreviewConfig>(
     key: K,
-    value: PreviewAppearanceSettings[K]
+    value: PreviewConfig[K]
   ) => {
-    config.value.previewAppearance[key] = value;
+    config.value.preview[key] = key === 'trustedRemoteImageHosts'
+      ? normalizeTrustedRemoteImageHosts(value) as PreviewConfig[K]
+      : value;
     await saveSettings({});
   };
 
@@ -436,13 +497,13 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // Auto-update model if sourceId changes
     if (key === 'embeddingSourceId') {
-      const source = config.value.aiSources.find(s => s.id === String(value));
+      const source = config.value.aiSources.sources.find(s => s.id === String(value));
       if (source && source.aiModel) {
         config.value.knowledgeCopilot.embeddingModel = source.aiModel;
       }
     }
     if (key === 'askChatSourceId' || key === 'agentChatSourceId') {
-      const source = config.value.aiSources.find(s => s.id === String(value));
+      const source = config.value.aiSources.sources.find(s => s.id === String(value));
       const modelKey = key === 'askChatSourceId' ? 'askChatModel' : 'agentChatModel';
       if (source && source.aiModel) {
         config.value.knowledgeCopilot[modelKey] = source.aiModel;
@@ -513,8 +574,8 @@ export const useSettingsStore = defineStore('settings', () => {
    * Add a new AI source
    */
   const addAiSource = async (source: Omit<AISource, 'id'>) => {
-    const newSource = { ...source, id: Date.now().toString(), official: false, locked: false };
-    config.value.aiSources.push(newSource);
+    const newSource = { ...source, id: Date.now().toString() };
+    config.value.aiSources.sources.push(newSource);
     await saveSettings({});
     return newSource;
   };
@@ -523,12 +584,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * Remove an AI source by ID
    */
   const removeAiSource = async (id: string) => {
-    const source = config.value.aiSources.find((item) => item.id === id);
-    if (source && isLockedAiSource(source)) {
-      return;
-    }
-
-    config.value.aiSources = config.value.aiSources.filter((s) => s.id !== id);
+    config.value.aiSources.sources = config.value.aiSources.sources.filter((s) => s.id !== id);
     if (config.value.aiAssistant.sourceId === id) {
       config.value.aiAssistant.sourceId = '';
     }
@@ -554,12 +610,8 @@ export const useSettingsStore = defineStore('settings', () => {
    * Update an existing AI source
    */
   const updateAiSource = async (id: string, updates: Partial<AISource>) => {
-    const source = config.value.aiSources.find((s) => s.id === id);
+    const source = config.value.aiSources.sources.find((s) => s.id === id);
     if (source) {
-      if (isLockedAiSource(source)) {
-        return;
-      }
-
       Object.assign(source, updates);
       if (config.value.aiAssistant.sourceId === id && !sourceSupportsCapability(source, 'chat')) {
         config.value.aiAssistant.sourceId = '';
@@ -604,7 +656,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       // If no config provided, try to find the linked source
       if (!testConfig && config.value.aiAssistant.sourceId) {
-        const source = config.value.aiSources.find((s) => s.id === config.value.aiAssistant.sourceId);
+        const source = config.value.aiSources.sources.find((s) => s.id === config.value.aiAssistant.sourceId);
         if (source) {
           payload.aiBaseUrl = source.baseUrl;
           payload.provider = source.provider;
@@ -646,7 +698,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const importSettings = async (): Promise<boolean> => {
     try {
-      const importedConfig = await settingsService.importConfig(createDefaultConfig());
+      const importedConfig = await settingsService.importConfig();
       if (!importedConfig) {
         return false;
       }
@@ -661,7 +713,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const resetSettings = async (): Promise<boolean> => {
     try {
-      const resetConfig = await settingsService.resetConfig(createDefaultConfig());
+      const resetConfig = await settingsService.resetConfig();
       if (!resetConfig) {
         return false;
       }
@@ -674,30 +726,92 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
-  return {
-    config,
-    isLoading,
-    isExportingDiagnosticLogs,
-    loadSettings,
-    saveSettings,
+  const persistence = {
+    get isLoading(): boolean {
+      return isLoading.value;
+    },
+    load: loadSettings,
+    save: saveSettings,
+    exportConfig: exportSettings,
+    importConfig: importSettings,
+    reset: resetSettings,
+  };
+
+  const general = {
     setLanguage,
     setAutoStartup,
-    updateSetting,
-    updateAssistantSetting,
-    updatePreviewAppearanceSetting,
-    updateKnowledgeCopilotSetting,
-    updateSyncSetting,
-    updateSyncProviderSetting,
-    addAiSource,
-    removeAiSource,
-    updateAiSource,
+    update: updateGeneralSetting,
+  };
+
+  const editor = {
+    update: updateEditorSetting,
+  };
+
+  const preview = {
+    update: updatePreviewSetting,
+  };
+
+  const aiSources = {
+    add: addAiSource,
+    remove: removeAiSource,
+    update: updateAiSource,
     testConnection,
-    openLogDir,
-    exportDiagnosticLogs,
-    exportSettings,
-    importSettings,
-    resetSettings,
-    setNoteSavePath,
-    resetSyncProviderSetting,
+  };
+
+  const aiAssistant = {
+    update: updateAssistantSetting,
+  };
+
+  const knowledgeCopilot = {
+    update: updateKnowledgeCopilotSetting,
+  };
+
+  const sync = {
+    update: updateSyncSetting,
+    updateProvider: updateSyncProviderSetting,
+    resetProvider: resetSyncProviderSetting,
+  };
+
+  const noteStorage = {
+    setPath: setnoteStoragePath,
+    update: updateNoteStorageSetting,
+  };
+
+  const privacyLog = {
+    get isExportingDiagnostics(): boolean {
+      return isExportingDiagnosticLogs.value;
+    },
+    update: updatePrivacyLogSetting,
+    openDirectory: openLogDir,
+    exportDiagnostics: exportDiagnosticLogs,
+  };
+
+  const softwareUpdate = {
+    update: updateSoftwareUpdateSetting,
+  };
+
+  const appShell = {
+    update: (value: AppShellSettings) => updateSetting('appShell', value),
+  };
+
+  const workbench = {
+    update: (value: WorkbenchSettings) => updateSetting('workbench', value),
+  };
+
+  return {
+    config,
+    persistence,
+    general,
+    editor,
+    preview,
+    aiSources,
+    aiAssistant,
+    knowledgeCopilot,
+    sync,
+    noteStorage,
+    privacyLog,
+    softwareUpdate,
+    appShell,
+    workbench,
   };
 });

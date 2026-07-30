@@ -32,7 +32,7 @@ const copyResetTimers = new Map<HTMLButtonElement, ReturnType<typeof setTimeout>
 let enhancementRunId = 0;
 
 const previewStyle = computed(() => {
-  const { fontSize, fontFamily } = settingsStore.config.previewAppearance;
+  const { fontSize, fontFamily } = settingsStore.config.preview;
   return {
     fontSize: `${fontSize}px`,
     fontFamily: fontFamily || 'var(--default-ui-font-family)',

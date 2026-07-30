@@ -1,13 +1,6 @@
 <template>
   <div class="settings-subview">
     <h3 class="panel-title">{{ pageTitle }}</h3>
-    <LicenseGateNotice
-      v-if="isLicenseLocked"
-      class="license-gate"
-      title-key="license.gate.sync.title"
-      description-key="license.gate.sync.description"
-    />
-
     <div class="settings-subview-content scrollable">
       <component :is="currentViewComponent" :key="activeView" @edit-provider="handleEditProvider" @back="handleBack" />
     </div>
@@ -16,7 +9,7 @@
       <div class="settings-subview-footer-buttons between">
         <div class="settings-subview-footer-left">
           <button class="action-button secondary" @click="handleTestConnection"
-            :disabled="isLicenseLocked || syncStore.isTestingConnection">
+            :disabled="syncStore.isTestingConnection">
             <span v-if="syncStore.isTestingConnection" class="spinner small"></span>
             {{ t('button.testConnection') }}
           </button>
@@ -40,7 +33,6 @@ import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '../../store/settings.store';
 import { useSyncStore } from '@renderer/features/sync';
 import { systemDialog } from '../../services/system-dialog.service';
-import { LicenseGateNotice, useLicenseGate } from '@renderer/features/license';
 import SyncDashboard from './sync/SyncDashboard.vue';
 import WebDavConfig from './sync/WebDavConfig.vue';
 import OssConfig from './sync/OssConfig.vue';
@@ -48,8 +40,6 @@ import OssConfig from './sync/OssConfig.vue';
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const syncStore = useSyncStore();
-const syncLicenseGate = useLicenseGate('sync');
-const isLicenseLocked = computed(() => !syncLicenseGate.allowed.value);
 
 const activeView = ref<'dashboard' | 'webdav' | 'oss-s3'>('dashboard');
 
@@ -70,11 +60,6 @@ const currentViewComponent = computed(() => {
 });
 
 const handleEditProvider = (provider: 'webdav' | 'oss-s3') => {
-  if (isLicenseLocked.value) {
-    syncLicenseGate.requestAccess();
-    return;
-  }
-
   activeView.value = provider;
 };
 
@@ -83,11 +68,6 @@ const handleBack = () => {
 };
 
 const handleTestConnection = async () => {
-  if (isLicenseLocked.value) {
-    syncLicenseGate.requestAccess();
-    return;
-  }
-
   try {
     const result = await syncStore.testConnection(settingsStore.config.sync);
     if (result.success) {
@@ -110,8 +90,3 @@ const handleTestConnection = async () => {
 };
 </script>
 
-<style scoped>
-.license-gate {
-  margin-bottom: 1rem;
-}
-</style>

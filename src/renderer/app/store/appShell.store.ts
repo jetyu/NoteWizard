@@ -50,7 +50,7 @@ export const useAppShellStore = defineStore('app-shell', () => {
   });
 
   async function saveAppShell(partialConfig: Partial<(typeof config.value)['appShell']>) {
-    await settingsStore.saveSettings({
+    await settingsStore.persistence.save({
       appShell: {
         ...config.value.appShell,
         ...partialConfig,

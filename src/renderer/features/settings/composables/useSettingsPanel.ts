@@ -5,7 +5,7 @@ import { useSettingsStore } from '../store/settings.store';
 const activeTab = ref('general');
 const OPEN_SETTINGS_EVENT = 'settings-open-requested';
 
-export function useSettings() {
+export function useSettingsPanel() {
   const settingsStore = useSettingsStore();
 
   const openSettings = (tab?: string) => {
@@ -43,11 +43,11 @@ export function useSettings() {
   };
 
   const exportSettings = async () => {
-    return await settingsStore.exportSettings();
+    return await settingsStore.persistence.exportConfig();
   };
 
   const importSettings = async () => {
-    return await settingsStore.importSettings();
+    return await settingsStore.persistence.importConfig();
   };
 
   return {
