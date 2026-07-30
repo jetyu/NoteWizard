@@ -1,7 +1,12 @@
-import type { AiCapability } from './official-ai.constants.js';
+export const AI_CAPABILITIES = {
+  CHAT: 'chat',
+  EMBEDDING: 'embedding',
+  RERANKER: 'reranker',
+} as const satisfies Record<string, string>;
+
+export type AiCapability = (typeof AI_CAPABILITIES)[keyof typeof AI_CAPABILITIES];
 
 export const AI_PROVIDERS = {
-  SNAPTIUM: 'snaptium',
   OPENAI: 'openai',
   OPENAI_COMPATIBLE: 'openai-compatible',
   SILICONFLOW: 'siliconflow',
@@ -19,7 +24,6 @@ export const AI_PROVIDERS = {
 export type AiProvider = (typeof AI_PROVIDERS)[keyof typeof AI_PROVIDERS];
 
 export const AI_PROVIDER_DEFAULT_BASE_URLS = {
-  [AI_PROVIDERS.SNAPTIUM]: 'https://api.snaptium.com/v1/ai',
   [AI_PROVIDERS.OPENAI]: 'https://api.openai.com/v1',
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: '',
   [AI_PROVIDERS.SILICONFLOW]: 'https://api.siliconflow.cn/v1',
@@ -35,7 +39,6 @@ export const AI_PROVIDER_DEFAULT_BASE_URLS = {
 } as const satisfies Record<AiProvider, string>;
 
 export const AI_PROVIDER_CAPABILITIES = {
-  [AI_PROVIDERS.SNAPTIUM]: ['chat', 'embedding', 'reranker'],
   [AI_PROVIDERS.OPENAI]: ['chat', 'embedding'],
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: ['chat', 'embedding', 'reranker'],
   [AI_PROVIDERS.SILICONFLOW]: ['chat', 'embedding', 'reranker'],
@@ -53,7 +56,6 @@ export const AI_PROVIDER_CAPABILITIES = {
 const AI_PROVIDER_SET = new Set<string>(Object.values(AI_PROVIDERS));
 
 const AI_PROVIDER_BY_HOSTNAME = new Map<string, AiProvider>([
-  ['api.snaptium.com', AI_PROVIDERS.SNAPTIUM],
   ['api.siliconflow.cn', AI_PROVIDERS.SILICONFLOW],
   ['api.openai.com', AI_PROVIDERS.OPENAI],
   ['generativelanguage.googleapis.com', AI_PROVIDERS.GOOGLE_GEMINI],

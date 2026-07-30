@@ -2,20 +2,11 @@
   <div class="ai-source-settings">
     <div class="header-actions">
       <h3 class="panel-title">{{ t('pref.pane.aiSources') }}</h3>
-      <div v-if="!showAddForm" class="header-partner">
-        <img :src="siliconFlowLogoUrl" alt="SiliconFlow" class="header-partner-logo" />
-        <span class="header-partner-text">{{ t('text.officialInnerAiSource') }}</span>
-      </div>
     </div>
-    <LicenseGateNotice v-if="isLicenseLocked" class="license-gate" title-key="license.gate.aiSources.title"
-      description-key="license.gate.aiSources.description" />
-
 
     <div class="source-list">
       <template v-if="!showAddForm">
-        <div v-for="source in visibleAiSources" :key="source.id"
-          class="source-card setting-card vertical-layout"
-          :class="{ 'official-source-card': isOfficialSource(source) }">
+        <div v-for="source in aiSources" :key="source.id" class="source-card setting-card vertical-layout">
           <div class="source-info">
             <div class="source-header">
               <div class="source-identity">
@@ -28,24 +19,16 @@
                 </div>
               </div>
               <div class="settings-card-actions">
-                <span v-if="isLockedSource(source)" class="source-lock-badge" :title="t('text.officialInnerAiSource')">
-                  <IconSparkles :size="13" />
-                  {{ t('label.officialAiSource') }}
-                </span>
-                <template v-else>
-                  <button class="action-btn" :disabled="isLicenseLocked" @click="handleEditSource(source)"
-                    :title="t('common.editor')">
-                    <IconPencil :size="14" />
-                  </button>
-                  <button class="action-btn delete" :disabled="isLicenseLocked" @click="removeSource(source)"
-                    :title="t('title.clearConfiguration')">
-                    <IconTrash :size="14" />
-                  </button>
-                </template>
+                <button class="action-btn" @click="handleEditSource(source)" :title="t('common.editor')">
+                  <IconPencil :size="14" />
+                </button>
+                <button class="action-btn delete" @click="removeSource(source)" :title="t('title.clearConfiguration')">
+                  <IconTrash :size="14" />
+                </button>
               </div>
             </div>
-            <div class="source-details" :class="{ 'official-source-details': isOfficialSource(source) }">
-              <div v-if="!isOfficialSource(source)" class="detail-item">
+            <div class="source-details">
+              <div class="detail-item">
                 <span class="label">{{ t('label.aiBaseUrl') }}</span>
                 <span class="value" :title="source.baseUrl">{{ source.baseUrl }}</span>
               </div>
@@ -57,12 +40,6 @@
                 <span class="label">{{ t('label.aiCapabilities') }}</span>
                 <span class="value" :title="formatCapabilities(source.capabilities)">{{
                   formatCapabilities(source.capabilities) }}</span>
-              </div>
-              <div v-if="isOfficialSource(source)" class="detail-item model-description-item">
-                <span class="label">{{ t('label.aiModelDescription') }}</span>
-                <span class="value" :title="t(getOfficialModelDescriptionKey(source))">
-                  {{ t(getOfficialModelDescriptionKey(source)) }}
-                </span>
               </div>
             </div>
           </div>
@@ -78,13 +55,13 @@
               <span class="char-counter">{{ newSource.name.length }}/20</span>
             </label>
             <input v-model="newSource.name" type="text" class="settings-input" maxlength="20"
-              :placeholder="t('placeholder.sourceName')" :disabled="isLicenseLocked" />
+              :placeholder="t('placeholder.sourceName')" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiProvider') }}</label>
             <div ref="providerSelectRef" class="provider-select-row">
               <button ref="providerSelectButtonRef" type="button" class="provider-select-trigger"
-                :disabled="isLicenseLocked" :aria-expanded="isProviderMenuOpen"
+                :aria-expanded="isProviderMenuOpen"
                 :aria-label="`${t('label.aiProvider')}: ${getAiProviderLabel(newSource.provider)}`"
                 @click="toggleProviderMenu" @keydown.esc.prevent="closeProviderMenu(true)">
                 <img v-if="getAiProviderPresentation(newSource.provider).logoUrl"
@@ -110,26 +87,25 @@
             <label class="setting-label">{{ t('label.aiBaseUrl') }} <span class="required-mark">{{ t('label.starSign')
                 }}</span></label>
             <input v-model="newSource.baseUrl" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiAPIEndpoint')" :disabled="isLicenseLocked" />
+              :placeholder="t('placeholder.aiAPIEndpoint')" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiModel') }} <span class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <input v-model="newSource.aiModel" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiModel')" :disabled="isLicenseLocked" />
+              :placeholder="t('placeholder.aiModel')" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiApiKey') }} <span v-if="requiresApiKey" class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <PasswordInput v-model="newSource.apiKey" :placeholder="t('placeholder.aiAPIKey')" autocomplete="off"
-              :disabled="isLicenseLocked" />
+            />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiCapabilities') }}</label>
             <div class="capability-list">
               <label v-for="option in capabilityOptions" :key="option.value" class="capability-option">
                 <input :checked="newSource.capabilities.includes(option.value)" type="checkbox"
-                  :disabled="isLicenseLocked"
                   @change="toggleCapability(option.value, ($event.target as HTMLInputElement).checked)" />
                 <span>{{ t(option.labelKey) }}</span>
               </label>
@@ -141,7 +117,7 @@
             </a>
             <div class="buttons">
               <button class="action-button secondary" @click="handleTestNewSource"
-                :disabled="isLicenseLocked || !canTest || isTesting">
+                :disabled="!canTest || isTesting">
                 <span v-if="isTesting" class="spinner small"></span>
                 {{ isTesting ? t('button.testing') : t('button.testConnection') }}
               </button>
@@ -149,7 +125,7 @@
                 {{ t('button.cancel') }}
               </button>
               <button class="action-button primary" @click="handleAddSource"
-                :disabled="isLicenseLocked || !isFormValid || isAdding">
+                :disabled="!isFormValid || isAdding">
                 <template v-if="isAdding">
                   <span class="spinner small"></span>
                 </template>
@@ -178,19 +154,14 @@
       </template>
 
       <!-- Add Source Card (Placeholder) -->
-      <div v-else-if="visibleAiSources.length > 0" class="add-source-card"
-        :class="{ 'is-disabled': isLicenseLocked }"
-        :aria-disabled="isLicenseLocked"
-        @click="handleAddSourceCardClick">
+      <div v-else-if="aiSources.length > 0" class="add-source-card" @click="handleAddSourceCardClick">
         <div class="add-icon">
           <IconPlus :size="24" />
         </div>
         <span>{{ t('button.addAISource') }}</span>
       </div>
 
-      <div v-if="visibleAiSources.length === 0 && !showAddForm" class="add-source-card empty-trigger-card"
-        :class="{ 'is-disabled': isLicenseLocked }"
-        :aria-disabled="isLicenseLocked"
+      <div v-if="aiSources.length === 0 && !showAddForm" class="add-source-card empty-trigger-card"
         @click="handleAddSourceCardClick">
         <div class="empty-icon">
           <IconBulb :size="48" />
@@ -214,9 +185,7 @@ import { settingsService } from '../../services/settings.service';
 import { systemDialog } from '../../services/system-dialog.service';
 import { createLogger } from '../../../logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
-import { isOfficialAiSourceId } from '@shared/official-ai.constants';
-import { IconPlus, IconBulb, IconTrash, IconPencil, IconSparkles, IconChevronDown, IconCheck } from '@tabler/icons-vue';
-import { LicenseGateNotice, useLicenseGate } from '@renderer/features/license';
+import { IconPlus, IconBulb, IconTrash, IconPencil, IconChevronDown, IconCheck } from '@tabler/icons-vue';
 import siliconFlowLogoUrl from '@assets/images/siliconflow.png';
 import PasswordInput from '../PasswordInput.vue';
 
@@ -224,7 +193,6 @@ const { t } = useI18n();
 const getAiProviderLabel = (provider: AiProvider): string => t(getAiProviderPresentation(provider).labelKey);
 const settingsStore = useSettingsStore();
 const aisLogger = createLogger('AISettings');
-const aiSourceLicenseGate = useLicenseGate('aiSources');
 const SILICONFLOW_URL = 'https://cloud.siliconflow.cn/i/9OJVYJiY';
 const AI_CONFIG_DOCS_URL = 'https://snaptium.com/docs/ai-config';
 
@@ -235,33 +203,8 @@ const editingSourceId = ref<string | null>(null);
 const isProviderMenuOpen = ref(false);
 const providerSelectRef = ref<HTMLElement | null>(null);
 const providerSelectButtonRef = ref<HTMLButtonElement | null>(null);
-const isLicenseLocked = computed(() => !aiSourceLicenseGate.allowed.value);
-
 const isEditMode = computed(() => !!editingSourceId.value);
-
-const isOfficialSource = (source: AISource): boolean => {
-  return source.official === true || isOfficialAiSourceId(source.id);
-};
-
-const visibleAiSources = computed<AISource[]>(() => {
-  return settingsStore.config.aiSources.filter((source) => !isOfficialSource(source) || !isLicenseLocked.value);
-});
-
-const isLockedSource = (source: AISource): boolean => {
-  return source.locked === true || isOfficialSource(source);
-};
-
-const getOfficialModelDescriptionKey = (source: AISource): string => {
-  if (source.capabilities.includes('embedding')) {
-    return 'text.officialAiEmbeddingDescription';
-  }
-
-  if (source.capabilities.includes('reranker')) {
-    return 'text.officialAiRerankerDescription';
-  }
-
-  return 'text.officialAiChatDescription';
-};
+const aiSources = computed<AISource[]>(() => settingsStore.config.aiSources);
 
 const newSource = reactive<{
   provider: AiProvider;
@@ -300,36 +243,15 @@ const canTest = computed(() => {
 // Validation for adding (Name, Endpoint, Key are mandatory. Model is optional but recommended)
 const isFormValid = computed(() => canTest.value);
 
-const requestLicenseAccessIfNeeded = (): boolean => {
-  if (!isLicenseLocked.value) {
-    return false;
-  }
-
-  aiSourceLicenseGate.requestAccess();
-  return true;
-};
-
 const handleAddSourceTrigger = (): void => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   showAddForm.value = true;
 };
 
 const handleAddSourceCardClick = (): void => {
-  if (isLicenseLocked.value) {
-    return;
-  }
-
   handleAddSourceTrigger();
 };
 
 const handleAddSource = async () => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   if (!isFormValid.value || isAdding.value) return;
 
   isAdding.value = true;
@@ -368,14 +290,6 @@ const handleAddSource = async () => {
 };
 
 const handleEditSource = (source: AISource) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
-  if (isLockedSource(source)) {
-    return;
-  }
-
   editingSourceId.value = source.id;
   newSource.provider = source.provider;
   newSource.name = source.name;
@@ -414,10 +328,6 @@ const closeProviderMenu = (restoreFocus = false): void => {
 };
 
 const toggleProviderMenu = (): void => {
-  if (isLicenseLocked.value) {
-    return;
-  }
-
   isProviderMenuOpen.value = !isProviderMenuOpen.value;
 };
 
@@ -448,10 +358,6 @@ const handleCancelAdd = () => {
 };
 
 const handleTestNewSource = async () => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   if (!canTest.value || isTesting.value) return;
 
   aisLogger.info(`Testing connectivity for new source: ${newSource.baseUrl}`);
@@ -493,14 +399,6 @@ const handleTestNewSource = async () => {
 };
 
 const removeSource = async (source: AISource) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
-  if (isLockedSource(source)) {
-    return;
-  }
-
   const confirmed = await settingsService.confirmDeleteAiSource(source.name);
   if (confirmed) {
     await settingsStore.removeAiSource(source.id);
@@ -657,29 +555,6 @@ const formatCapabilities = (capabilities: string[]): string => {
 
 .header-actions .panel-title {
   margin-bottom: 0;
-}
-
-.header-partner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header-partner-logo {
-  display: block;
-  width: auto;
-  height: 28px;
-  object-fit: contain;
-}
-
-.header-partner-text {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.license-gate {
-  margin-bottom: 1rem;
 }
 
 .add-form-card {
@@ -860,11 +735,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.official-source-card {
-  position: relative;
-}
-
-
 .source-info {
   display: flex;
   flex-direction: column;
@@ -927,35 +797,6 @@ const formatCapabilities = (capabilities: string[]): string => {
 .provider-option.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-.official-source-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--status-info-border);
-  border-radius: 8px;
-  color: var(--status-info-text);
-  background: var(--status-info-bg);
-}
-
-.source-lock-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 24px;
-  padding: 2px 8px;
-  border: 1px solid var(--status-info-border);
-  border-radius: 999px;
-  color: var(--status-info-text);
-  background: var(--status-info-bg);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: default;
 }
 
 .action-btn {

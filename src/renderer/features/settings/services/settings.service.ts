@@ -18,11 +18,9 @@ import { switchLanguage } from '@renderer/features/i18n';
 import { sanitizeWorkbenchSettings } from '@renderer/features/workbench/constants/workbench.constants';
 import { normalizeTrustedRemoteImageHosts } from '@shared/preview-security.constants';
 import {
-  OFFICIAL_AI_MODELS,
-  OFFICIAL_AI_SOURCE_IDS,
-  getOfficialAiSources,
-  isOfficialAiSourceId,
-} from '@shared/official-ai.constants';
+  hasUsableAiSource,
+  isLegacySnaptiumAiSourceId,
+} from '@shared/ai-settings-migration';
 import {
   getAiProviderCapabilities,
   inferAiProvider,
@@ -67,7 +65,7 @@ function normalizeAiSources(value: unknown): AISource[] {
   const customSources = Array.isArray(value) ? value.map((source): AISource | null => {
     const normalized = (source ?? {}) as Partial<AISource>;
     const id = String(normalized.id ?? '');
-    if (!id || isOfficialAiSourceId(id)) {
+    if (!id || isLegacySnaptiumAiSourceId(id)) {
       return null;
     }
 
@@ -85,31 +83,28 @@ function normalizeAiSources(value: unknown): AISource[] {
       aiModel: String(normalized.aiModel ?? ''),
       capabilities: capabilities.length > 0 ? capabilities : getAiProviderCapabilities(provider),
       provider,
-      official: false,
-      locked: false,
     };
   }).filter((source): source is AISource => source !== null) : [];
 
-  return [
-    ...getOfficialAiSources(),
-    ...customSources,
-  ];
+  return customSources;
 }
 
 function normalizeAiAssistantSettings(
   baseConfig: AppSettings['aiAssistant'],
   incomingConfig?: Partial<AppSettings['aiAssistant']>,
+  aiSources: AISource[] = [],
 ): AppSettings['aiAssistant'] {
   const mergedConfig = {
     ...baseConfig,
     ...(incomingConfig ?? {}),
   };
 
-  if (!mergedConfig.sourceId || mergedConfig.sourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
+  if (!hasUsableAiSource(aiSources, mergedConfig.sourceId, 'chat')) {
     return {
       ...mergedConfig,
-      sourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-      model: OFFICIAL_AI_MODELS.CHAT,
+      enabled: false,
+      sourceId: '',
+      model: '',
     };
   }
 
@@ -119,22 +114,30 @@ function normalizeAiAssistantSettings(
 function normalizeKnowledgeCopilotSettings(
   baseConfig: AppSettings['knowledgeCopilot'],
   incomingConfig?: Partial<AppSettings['knowledgeCopilot']>,
+  aiSources: AISource[] = [],
 ): AppSettings['knowledgeCopilot'] {
   const mergedConfig = {
     ...baseConfig,
     ...(incomingConfig ?? {}),
   };
 
-  if (!mergedConfig.embeddingSourceId || mergedConfig.embeddingSourceId === OFFICIAL_AI_SOURCE_IDS.EMBEDDING) {
-    mergedConfig.embeddingSourceId = OFFICIAL_AI_SOURCE_IDS.EMBEDDING;
-    mergedConfig.embeddingModel = OFFICIAL_AI_MODELS.EMBEDDING;
+  if (!hasUsableAiSource(aiSources, mergedConfig.embeddingSourceId, 'embedding')) {
+    mergedConfig.enabled = false;
+    mergedConfig.embeddingSourceId = '';
+    mergedConfig.embeddingModel = '';
   }
 
-  if (mergedConfig.askChatSourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
-    mergedConfig.askChatModel = OFFICIAL_AI_MODELS.CHAT;
+  if (!hasUsableAiSource(aiSources, mergedConfig.askChatSourceId, 'chat')) {
+    mergedConfig.askChatSourceId = '';
+    mergedConfig.askChatModel = '';
   }
-  if (mergedConfig.agentChatSourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
-    mergedConfig.agentChatModel = OFFICIAL_AI_MODELS.CHAT;
+  if (!hasUsableAiSource(aiSources, mergedConfig.agentChatSourceId, 'chat')) {
+    mergedConfig.agentChatSourceId = '';
+    mergedConfig.agentChatModel = '';
+  }
+  if (!hasUsableAiSource(aiSources, mergedConfig.rerankerSourceId, 'reranker')) {
+    mergedConfig.rerankerSourceId = '';
+    mergedConfig.rerankerModel = '';
   }
 
   return {
@@ -147,13 +150,14 @@ function normalizeKnowledgeCopilotSettings(
 }
 
 function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettings> | null): AppSettings {
+  const aiSources = normalizeAiSources(incomingConfig?.aiSources ?? baseConfig.aiSources);
   if (!incomingConfig) {
     return {
       ...baseConfig,
-      aiSources: normalizeAiSources(baseConfig.aiSources),
-      aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant),
+      aiSources,
+      aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, undefined, aiSources),
       previewAppearance: { ...baseConfig.previewAppearance },
-      knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot),
+      knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot, undefined, aiSources),
       sync: {
         ...baseConfig.sync,
         webdav: { ...baseConfig.sync.webdav },
@@ -179,8 +183,8 @@ function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettin
     windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? baseConfig.windowCloseAction),
     accentMode: normalizeAccentMode(incomingConfig.accentMode ?? baseConfig.accentMode),
     appUIFont: String(incomingConfig.appUIFont ?? baseConfig.appUIFont),
-    aiSources: normalizeAiSources(incomingConfig.aiSources ?? baseConfig.aiSources),
-    aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, incomingConfig.aiAssistant),
+    aiSources,
+    aiAssistant: normalizeAiAssistantSettings(baseConfig.aiAssistant, incomingConfig.aiAssistant, aiSources),
     previewAppearance: {
       ...baseConfig.previewAppearance,
       ...(incomingConfig.previewAppearance ?? {}),
@@ -188,7 +192,7 @@ function mergeConfig(baseConfig: AppSettings, incomingConfig?: Partial<AppSettin
         incomingConfig.previewAppearance?.trustedRemoteImageHosts ?? baseConfig.previewAppearance.trustedRemoteImageHosts,
       ),
     },
-    knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot),
+    knowledgeCopilot: normalizeKnowledgeCopilotSettings(baseConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot, aiSources),
     sync: {
       ...baseConfig.sync,
       ...(incomingConfig.sync ?? {}),

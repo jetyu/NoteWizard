@@ -1,5 +1,4 @@
 import { AI_PROVIDERS, type AiProvider } from '@shared/ai-provider.constants';
-import snaptiumLogoUrl from '@assets/logo/app-logo-32.png';
 import openAiLogoUrl from '@assets/images/ai-providers/openai.svg';
 import openaiCompatibleLogoUrl from '@assets/images/ai-providers/openaiCompatible.svg';
 import siliconFlowLogoUrl from '@assets/images/ai-providers/siliconflow.svg';
@@ -19,7 +18,6 @@ export interface AiProviderPresentation {
 }
 
 export const AI_PROVIDER_PRESENTATIONS = {
-  [AI_PROVIDERS.SNAPTIUM]: { labelKey: 'aiProvider.snaptium', logoUrl: snaptiumLogoUrl },
   [AI_PROVIDERS.SILICONFLOW]: { labelKey: 'aiProvider.siliconflow', logoUrl: siliconFlowLogoUrl },
   [AI_PROVIDERS.OPENAI]: { labelKey: 'aiProvider.openai', logoUrl: openAiLogoUrl },
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: { labelKey: 'aiProvider.openaiCompatible', logoUrl: openaiCompatibleLogoUrl },

@@ -6,7 +6,6 @@
   <HistoryDialog />
   <NotePropertiesDialog />
   <AccessControlOverlay />
-  <LicenseDialog />
 </template>
 
 
@@ -28,10 +27,8 @@ import { HistoryDialog, NotePropertiesDialog } from '@renderer/features/workspac
 import { useSyncLifecycle } from '@renderer/features/sync';
 import { AccessControlOverlay } from '@renderer/features/security';
 import { useFavoritesStore } from '@renderer/features/favorites/store/favorites.store';
-import { LicenseDialog, useLicenseDialog } from '@renderer/features/license';
 import { electronApi } from '@renderer/core/bridge/electronApi';
 import { useUpdaterStore } from '@renderer/features/updater';
-import { licenseService } from '@renderer/features/license/services/license.service';
 import { useAppShellStore } from './store/appShell.store';
 import { useQuickCapture } from '@renderer/features/quick-capture';
 
@@ -41,7 +38,6 @@ const shortcutsStore = useShortcutsStore();
 const workspaceStore = useWorkspaceStore();
 const favoritesStore = useFavoritesStore();
 const updaterStore = useUpdaterStore();
-const { initMainProcessListeners } = useLicenseDialog();
 const { initializeKnowledgeCopilot, setupVfsAutoIndex } = useKnowledgeCopilotInitialization();
 const { initializeSync, setupAutoSync } = useSyncLifecycle();
 const quickCapture = useQuickCapture();
@@ -56,11 +52,6 @@ const unsubscribers: Array<(() => void)> = [];
 
 onMounted(async () => {
   await updaterStore.initialize();
-  await licenseService.initialize();
-  const removeLicenseMenuListener = initMainProcessListeners();
-  if (removeLicenseMenuListener) {
-    unsubscribers.push(removeLicenseMenuListener);
-  }
   await settingsStore.loadSettings();
   appShellStore.initializeActiveMainView(settingsStore.config.appShell.activeMainView);
   await shortcutsStore.initialize();
@@ -121,7 +112,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   updaterStore.dispose();
-  licenseService.dispose();
   quickCapture.dispose();
   unsubscribers.forEach((unsub) => unsub());
 });

@@ -9,7 +9,6 @@
         type="button"
         class="startup-switch"
         :class="{ enabled: settingsStore.config.sync.enabled }"
-        :disabled="isLicenseLocked"
         @click="toggleSyncEnabled"
       >
         <span class="startup-switch-track">
@@ -76,7 +75,6 @@
             :class="{ active: selectedProvider === SYNC_PROVIDERS.WEBDAV }"
             role="radio"
             :aria-checked="selectedProvider === SYNC_PROVIDERS.WEBDAV"
-            :disabled="isProviderConfigDisabled"
             @click="handleProviderSelect(SYNC_PROVIDERS.WEBDAV)"
           >
             <IconServer :size="16" />
@@ -88,7 +86,6 @@
             :class="{ active: selectedProvider === SYNC_PROVIDERS.OSS_S3 }"
             role="radio"
             :aria-checked="selectedProvider === SYNC_PROVIDERS.OSS_S3"
-            :disabled="isProviderConfigDisabled"
             @click="handleProviderSelect(SYNC_PROVIDERS.OSS_S3)"
           >
             <IconDatabase :size="16" />
@@ -101,7 +98,6 @@
           class="settings-nav-btn"
           :title="selectedProviderSettingLabel"
           :aria-label="selectedProviderSettingLabel"
-          :disabled="isProviderConfigDisabled"
           @click="handleEditSelectedProvider"
         >
           <IconPencil :size="16" />
@@ -111,7 +107,6 @@
           class="settings-nav-btn sync-provider-reset-btn"
           :title="selectedProviderResetLabel"
           :aria-label="selectedProviderResetLabel"
-          :disabled="isProviderConfigDisabled"
           @click="handleClearSelectedProvider"
         >
           <IconTrash :size="16" />
@@ -132,7 +127,7 @@
           <button
             type="button"
             class="action-button primary"
-            :disabled="isLicenseLocked || syncStore.isSyncing || !settingsStore.config.sync.enabled"
+            :disabled="syncStore.isSyncing || !settingsStore.config.sync.enabled"
             @click="handleSyncNow"
           >
             <span v-if="syncStore.isSyncing" class="spinner small"></span>
@@ -183,7 +178,6 @@ import { useWorkspaceStore } from '@renderer/features/workspace/store/workspace.
 import { securityService, normalizeSecurityError } from '@renderer/features/security';
 import { settingsService } from '../../../services/settings.service';
 import { systemDialog } from '../../../services/system-dialog.service';
-import { useLicenseGate } from '@renderer/features/license';
 
 const emit = defineEmits<{
   (e: 'editProvider', provider: SyncProvider): void;
@@ -193,8 +187,6 @@ const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const syncStore = useSyncStore();
 const workspaceStore = useWorkspaceStore();
-const syncLicenseGate = useLicenseGate('sync');
-const isLicenseLocked = computed(() => !syncLicenseGate.allowed.value);
 
 const isConfigReady = computed(() => syncService.isConfigReady(settingsStore.config.sync));
 const { statusLabel, statusToneClass, formattedLastSynced } = useSyncPresentation();
@@ -215,8 +207,7 @@ const hasSyncSummaryDetails = computed(() =>
   syncSummaryCounts.value.conflicts > 0
 );
 
-const isSyncDisabled = computed(() => isLicenseLocked.value || !settingsStore.config.sync.enabled);
-const isProviderConfigDisabled = computed(() => isLicenseLocked.value);
+const isSyncDisabled = computed(() => !settingsStore.config.sync.enabled);
 const selectedProvider = computed<SyncProvider>(() =>
   settingsStore.config.sync.provider === SYNC_PROVIDERS.OSS_S3 ? SYNC_PROVIDERS.OSS_S3 : SYNC_PROVIDERS.WEBDAV
 );
@@ -228,15 +219,6 @@ const selectedProviderDescription = computed(() =>
 );
 const selectedProviderSettingLabel = computed(() => `${selectedProviderLabel.value} ${t('common.setting')}`);
 const selectedProviderResetLabel = computed(() => `${selectedProviderLabel.value} ${t('common.reset')}`);
-
-const requestLicenseAccessIfNeeded = (): boolean => {
-  if (!isLicenseLocked.value) {
-    return false;
-  }
-
-  syncLicenseGate.requestAccess();
-  return true;
-};
 
 async function showSyncDialog(message: string, type: 'error' | 'warning' = 'warning'): Promise<void> {
   if (type === 'error') {
@@ -253,10 +235,6 @@ async function showSyncDialog(message: string, type: 'error' | 'warning' = 'warn
 }
 
 const toggleSyncEnabled = async () => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   const nextEnabled = !settingsStore.config.sync.enabled;
   if (!nextEnabled) {
     await settingsStore.updateSyncSetting('enabled', false);
@@ -267,10 +245,6 @@ const toggleSyncEnabled = async () => {
 };
 
 const toggleAutoSyncOnSave = () => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   if (isSyncDisabled.value) {
     return;
   }
@@ -279,10 +253,6 @@ const toggleAutoSyncOnSave = () => {
 };
 
 const handleIntervalChange = (event: Event) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   if (isSyncDisabled.value) {
     return;
   }
@@ -291,14 +261,6 @@ const handleIntervalChange = (event: Event) => {
 };
 
 const handleProviderSelect = async (provider: SyncProvider) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
-  if (isProviderConfigDisabled.value) {
-    return;
-  }
-
   await settingsStore.updateSyncSetting('provider', provider);
 };
 
@@ -391,10 +353,6 @@ async function ensureE2eeReadyForSync(): Promise<boolean> {
 }
 
 const handleSyncNow = async () => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   if (!isConfigReady.value) {
     await showSyncDialog(t('sync.error.notConfigured'));
     return;
@@ -412,10 +370,6 @@ const handleSyncNow = async () => {
 };
 
 const handleEditBtnClick = (provider: SyncProvider) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   emit('editProvider', provider);
 };
 
@@ -424,10 +378,6 @@ const handleEditSelectedProvider = () => {
 };
 
 const handleClearBtnClick = async (provider: SyncProvider) => {
-  if (requestLicenseAccessIfNeeded()) {
-    return;
-  }
-
   const providerName = provider === SYNC_PROVIDERS.WEBDAV ? t('option.sync.webdav') : t('option.sync.oss');
   const confirmed = await settingsService.confirmResetSyncProvider(providerName);
   if (confirmed) {

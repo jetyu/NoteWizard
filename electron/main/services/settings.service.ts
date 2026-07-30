@@ -10,11 +10,9 @@ import {
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
 import {
-  OFFICIAL_AI_MODELS,
-  OFFICIAL_AI_SOURCE_IDS,
-  getOfficialAiSources,
-  isOfficialAiSourceId,
-} from '../../shared/official-ai.constants.js';
+  hasUsableAiSource,
+  isLegacySnaptiumAiSourceId,
+} from '../../shared/ai-settings-migration.js';
 import {
   DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS,
   normalizeTrustedRemoteImageHosts,
@@ -185,8 +183,6 @@ interface AiSourceSettings {
   aiModel: string;
   capabilities: string[];
   provider: AiProvider;
-  official?: boolean;
-  locked?: boolean;
 }
 
 function interpolateMessage(template: string, replacements: Record<string, string> = {}): string {
@@ -326,7 +322,7 @@ function normalizeCustomAiSource(value: unknown): AiSourceSettings | null {
   }
 
   const id = String(value.id ?? '').trim();
-  if (!id || isOfficialAiSourceId(id)) {
+  if (!id || isLegacySnaptiumAiSourceId(id)) {
     return null;
   }
 
@@ -342,8 +338,6 @@ function normalizeCustomAiSource(value: unknown): AiSourceSettings | null {
     aiModel: String(value.aiModel ?? '').trim(),
     capabilities: capabilities.length > 0 ? capabilities : getAiProviderCapabilities(provider),
     provider,
-    official: false,
-    locked: false,
   };
 }
 
@@ -354,15 +348,13 @@ function normalizeAiSources(value: unknown): AiSourceSettings[] {
       .filter((source): source is AiSourceSettings => source !== null)
     : [];
 
-  return [
-    ...getOfficialAiSources(),
-    ...customSources,
-  ];
+  return customSources;
 }
 
 function normalizeAiAssistantConfig(
   defaultConfig: AppSettings['aiAssistant'],
   incomingConfig: SettingsInput['aiAssistant'],
+  aiSources: AiSourceSettings[],
 ): Record<string, unknown> {
   const mergedConfig: Record<string, unknown> = {
     ...defaultConfig,
@@ -370,11 +362,12 @@ function normalizeAiAssistantConfig(
   };
   const sourceId = String(mergedConfig.sourceId ?? '').trim();
 
-  if (!sourceId || sourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
+  if (!hasUsableAiSource(aiSources, sourceId, 'chat')) {
     return {
       ...mergedConfig,
-      sourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-      model: OFFICIAL_AI_MODELS.CHAT,
+      enabled: false,
+      sourceId: '',
+      model: '',
     };
   }
 
@@ -384,6 +377,7 @@ function normalizeAiAssistantConfig(
 function normalizeKnowledgeCopilotConfig(
   defaultConfig: AppSettings['knowledgeCopilot'],
   incomingConfig: SettingsInput['knowledgeCopilot'],
+  aiSources: AiSourceSettings[],
 ): Record<string, unknown> {
   const mergedConfig: Record<string, unknown> = {
     ...defaultConfig,
@@ -403,16 +397,24 @@ function normalizeKnowledgeCopilotConfig(
   delete nextConfig.chatSourceId;
   delete nextConfig.chatModel;
 
-  if (!embeddingSourceId || embeddingSourceId === OFFICIAL_AI_SOURCE_IDS.EMBEDDING) {
-    nextConfig.embeddingSourceId = OFFICIAL_AI_SOURCE_IDS.EMBEDDING;
-    nextConfig.embeddingModel = OFFICIAL_AI_MODELS.EMBEDDING;
+  if (!hasUsableAiSource(aiSources, embeddingSourceId, 'embedding')) {
+    nextConfig.enabled = false;
+    nextConfig.embeddingSourceId = '';
+    nextConfig.embeddingModel = '';
   }
 
-  if (askChatSourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
-    nextConfig.askChatModel = OFFICIAL_AI_MODELS.CHAT;
+  if (!hasUsableAiSource(aiSources, askChatSourceId, 'chat')) {
+    nextConfig.askChatSourceId = '';
+    nextConfig.askChatModel = '';
   }
-  if (agentChatSourceId === OFFICIAL_AI_SOURCE_IDS.CHAT) {
-    nextConfig.agentChatModel = OFFICIAL_AI_MODELS.CHAT;
+  if (!hasUsableAiSource(aiSources, agentChatSourceId, 'chat')) {
+    nextConfig.agentChatSourceId = '';
+    nextConfig.agentChatModel = '';
+  }
+  const rerankerSourceId = String(mergedConfig.rerankerSourceId ?? '').trim();
+  if (!hasUsableAiSource(aiSources, rerankerSourceId, 'reranker')) {
+    nextConfig.rerankerSourceId = '';
+    nextConfig.rerankerModel = '';
   }
 
   nextConfig.chunkSize = clampInteger(nextConfig.chunkSize, 500, 500, 800);
@@ -431,15 +433,16 @@ function normalizeUpdateCheckInterval(value: unknown): number {
 }
 
 function mergeConfigWithDefaults(defaultConfig: AppSettings, incomingConfig: SettingsInput = {}): AppSettings {
+  const aiSources = normalizeAiSources(incomingConfig.aiSources ?? defaultConfig.aiSources);
   return {
     ...defaultConfig,
     ...incomingConfig,
     windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? defaultConfig.windowCloseAction),
     accentMode: normalizeAccentMode(incomingConfig.accentMode ?? defaultConfig.accentMode),
     appUIFont: String(incomingConfig.appUIFont ?? defaultConfig.appUIFont),
-    aiSources: normalizeAiSources(incomingConfig.aiSources ?? defaultConfig.aiSources),
-    aiAssistant: normalizeAiAssistantConfig(defaultConfig.aiAssistant, incomingConfig.aiAssistant),
-    knowledgeCopilot: normalizeKnowledgeCopilotConfig(defaultConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot),
+    aiSources,
+    aiAssistant: normalizeAiAssistantConfig(defaultConfig.aiAssistant, incomingConfig.aiAssistant, aiSources),
+    knowledgeCopilot: normalizeKnowledgeCopilotConfig(defaultConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot, aiSources),
     previewAppearance: normalizePreviewAppearanceConfig(incomingConfig.previewAppearance),
     sync: normalizeSyncConfig(incomingConfig.sync),
     autoCheckUpdates: incomingConfig.autoCheckUpdates ?? defaultConfig.autoCheckUpdates,
@@ -551,11 +554,11 @@ export const settingsService = {
       autoCloseBrackets: true,
       autoIndent: true,
       showStatusBar: true,
-      aiSources: getOfficialAiSources(),
+      aiSources: [],
       aiAssistant: {
         enabled: false,
-        sourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-        model: OFFICIAL_AI_MODELS.CHAT,
+        sourceId: '',
+        model: '',
         typingDelay: 2000,
         minInputLength: 10,
         writingStyle: AI_WRITING_DEFAULTS.STYLE,
@@ -564,14 +567,14 @@ export const settingsService = {
       },
       knowledgeCopilot: {
         enabled: false,
-        embeddingSourceId: OFFICIAL_AI_SOURCE_IDS.EMBEDDING,
-        embeddingModel: OFFICIAL_AI_MODELS.EMBEDDING,
-        askChatSourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-        askChatModel: OFFICIAL_AI_MODELS.CHAT,
-        agentChatSourceId: OFFICIAL_AI_SOURCE_IDS.CHAT,
-        agentChatModel: OFFICIAL_AI_MODELS.CHAT,
-        rerankerSourceId: OFFICIAL_AI_SOURCE_IDS.RERANKER,
-        rerankerModel: OFFICIAL_AI_MODELS.RERANKER,
+        embeddingSourceId: '',
+        embeddingModel: '',
+        askChatSourceId: '',
+        askChatModel: '',
+        agentChatSourceId: '',
+        agentChatModel: '',
+        rerankerSourceId: '',
+        rerankerModel: '',
         defaultMode: 'ask',
         agentExecutionMode: 'confirm',
         chunkSize: 500,

@@ -43,8 +43,7 @@ class SiliconFlowReranker extends BaseDocumentCompressor {
 }
 
 function isOpenAiCompatibleProvider(provider: AiProvider): boolean {
-  return provider === AI_PROVIDERS.SNAPTIUM
-    || provider === AI_PROVIDERS.OPENAI
+  return provider === AI_PROVIDERS.OPENAI
     || provider === AI_PROVIDERS.OPENAI_COMPATIBLE
     || provider === AI_PROVIDERS.SILICONFLOW
     || provider === AI_PROVIDERS.OPENROUTER
@@ -106,8 +105,7 @@ export function createProviderEmbeddings(config: AiProviderModelConfig): Embeddi
 export function createProviderReranker(config: AiProviderModelConfig): BaseDocumentCompressor {
   requireApiKey(config);
   if (config.provider === AI_PROVIDERS.SILICONFLOW
-    || config.provider === AI_PROVIDERS.OPENAI_COMPATIBLE
-    || config.provider === AI_PROVIDERS.SNAPTIUM) {
+    || config.provider === AI_PROVIDERS.OPENAI_COMPATIBLE) {
     return new SiliconFlowReranker(config);
   }
 

@@ -27,7 +27,6 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettings } from '@renderer/features/settings/composables/useSettings';
 import { useAbout } from '@renderer/features/about';
-import { useLicenseDialog } from '@renderer/features/license';
 import { useUpdaterStore } from '@renderer/features/updater';
 import { MENU_CONFIG, type MenuAction } from '@shared/menu.config';
 import { useWorkspaceStore } from '@renderer/features/workspace/store/workspace.store';
@@ -36,7 +35,6 @@ import { isDev } from '@renderer/config/env';
 const { t } = useI18n();
 const { openSettings } = useSettings();
 const { openAbout } = useAbout();
-const { openLicenseDialog } = useLicenseDialog();
 const workspaceStore = useWorkspaceStore();
 const updaterStore = useUpdaterStore();
 
@@ -175,9 +173,6 @@ function handleAction(action?: MenuAction) {
       break;
     case 'feedback':
       window.open('https://github.com/jetyu/Snaptium/issues');
-      break;
-    case 'activateLicense':
-      openLicenseDialog();
       break;
     case 'website':
       window.open('https://snaptium.com');
