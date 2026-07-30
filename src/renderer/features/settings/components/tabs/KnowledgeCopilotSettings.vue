@@ -300,7 +300,8 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
   if (key === 'embeddingSourceId') {
     if (value === settingsStore.config.knowledgeCopilot[key]) return;
 
-    const confirmed = await settingsService.confirmEmbeddingSourceChange(
+    const isEnabled = settingsStore.config.knowledgeCopilot.enabled;
+    const confirmed = !isEnabled || await settingsService.confirmEmbeddingSourceChange(
       settingsStore.config.knowledgeCopilot.embeddingSourceId,
       String(value)
     );
@@ -311,7 +312,7 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
 
     await settingsStore.updateKnowledgeCopilotSetting(key, value);
 
-    if (!settingsStore.config.knowledgeCopilot.enabled) {
+    if (!isEnabled) {
       return;
     }
 

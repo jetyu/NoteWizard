@@ -8,8 +8,8 @@ The desktop client currently treats AI source configuration, AI writing, Knowled
 
 - Remove every runtime license gate and all client activation infrastructure.
 - Remove official AI sources and make custom OpenAI-compatible/Ollama sources the only AI path.
-- Preserve valid custom provider configuration during upgrades and imports.
-- Leave AI-dependent features in a clear unconfigured state when their legacy official source disappears.
+- Preserve valid custom provider configuration during settings saves and imports.
+- Keep feature enablement independent from provider selection while leaving unconfigured operations unavailable.
 - Remove obsolete cross-layer public APIs instead of leaving always-allowed compatibility shims.
 
 **Non-Goals:**
@@ -23,26 +23,24 @@ The desktop client currently treats AI source configuration, AI writing, Knowled
 
 1. **Delete license infrastructure instead of forcing a permanent free state.** An always-free license model would retain state, network requests, IPC, UI, and future ambiguity without providing value.
 2. **Delete official AI integration together with licensing.** Official sources cannot operate safely without authentication and quota enforcement. Keeping them as unavailable cards would preserve the same onboarding and maintenance burden.
-3. **Normalize legacy settings at the Main settings boundary.** Main remains the source of truth for persisted and imported configuration. Legacy official source IDs are filtered, custom sources are preserved, and dependent enabled states are disabled only when their required source is no longer valid.
+3. **Normalize current settings at the Main settings boundary.** Main remains the source of truth for persisted and imported configuration. Invalid source selections are cleared, valid custom sources are preserved, and normalization does not override feature enablement.
 4. **Do not silently choose replacement providers.** Provider selection can affect cost, privacy, model behavior, and embedding compatibility. Users must explicitly select a custom source.
 5. **Remove public IPC and bridge contracts.** No compatibility stubs are retained because they would expose a misleading API and no external renderer consumers are supported.
 6. **Leave old local license files untouched.** The new client stops reading and writing them. Automatic deletion would add destructive migration behavior solely to remove inert files.
+7. **Allow provider selection while AI features are disabled.** Source selectors depend only on compatible configured sources, so feature switches and provider setup do not lock each other.
 
 ## Risks / Trade-offs
 
-- [Existing users configured with official sources lose AI configuration] → Clear only legacy selections, disable affected features, and preserve all custom sources.
-- [Knowledge indexes may have been created with the removed official embedding model] → Disable Knowledge Copilot when its embedding source is removed so reconfiguration is explicit before future indexing.
 - [Removing broad cross-layer APIs causes compile failures] → Delete from Main through Preload and Renderer in one change and run all layer-specific builds.
 - [External product copy may still advertise paid plans] → Record backend and website retirement as a coordinated release action outside this repository.
 
-## Migration Plan
+## Implementation Plan
 
-1. Ship settings normalization before feature use during application startup.
-2. Filter the three legacy official source IDs from saved and imported source arrays.
-3. Clear selections that reference those IDs; disable AI Assistant or Knowledge Copilot when a required source is absent.
-4. Remove license initialization and all entitlement checks.
-5. Remove official source definitions and all client-facing activation surfaces.
-6. Rollback, if needed, requires reinstalling the previous release; untouched local license files remain available to that version.
+1. Remove license initialization and all entitlement checks.
+2. Remove official source definitions and all client-facing activation surfaces.
+3. Keep custom source normalization at existing settings boundaries without any official-source compatibility branch.
+4. Preserve AI feature switches when a compatible source has not yet been selected.
+5. Keep source selectors available whenever at least one compatible custom source exists.
 
 ## Open Questions
 

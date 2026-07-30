@@ -20,22 +20,22 @@ The application SHALL use only AI sources explicitly configured by the user and 
 
 #### Scenario: Fresh installation has no AI provider
 - **WHEN** Snaptium starts with default settings
-- **THEN** no official AI source is present and AI-dependent features remain disabled until the user configures a source
+- **THEN** no official AI source is present and AI-dependent operations require the user to configure a source
 
-### Requirement: Legacy official AI settings migrate safely
-The application SHALL remove legacy Snaptium official AI sources and their selections while preserving custom sources and unrelated settings.
+#### Scenario: User configures AI while a feature is disabled
+- **WHEN** AI Assistant or Knowledge Copilot is disabled and at least one compatible custom source exists
+- **THEN** the user can select and save that source before enabling the feature
 
-#### Scenario: Upgrade contains only official AI selections
-- **WHEN** saved settings reference a legacy `snaptium-official-*` source
-- **THEN** the source and selection are cleared and the affected AI-dependent feature is disabled
+#### Scenario: User enables AI before selecting a source
+- **WHEN** the user enables AI Assistant or Knowledge Copilot without a compatible source selected
+- **THEN** the enabled setting is preserved and the feature remains unconfigured until a source is selected
 
-#### Scenario: Upgrade contains custom sources
-- **WHEN** saved settings contain one or more custom sources alongside legacy official sources
-- **THEN** every valid custom source and valid custom selection is preserved
+### Requirement: AI settings contain no official-source compatibility
+The application SHALL normalize only user-managed AI sources and SHALL NOT retain official-source identifiers, filters, or migration branches.
 
-#### Scenario: Imported configuration contains official sources
-- **WHEN** a configuration package containing legacy official source records is imported
-- **THEN** the same filtering and dependent-setting normalization are applied before persistence
+#### Scenario: Settings are saved or imported
+- **WHEN** AI settings cross a Main or Renderer settings boundary
+- **THEN** valid custom sources are preserved and invalid selections are cleared without changing feature enablement
 
 ### Requirement: License and official AI client contracts are absent
 The application SHALL NOT expose license activation, validation, device management, feature entitlement, official AI token, or official AI source APIs through Main, Preload, Renderer, menus, or runtime diagnostics.
