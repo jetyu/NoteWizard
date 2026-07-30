@@ -5,7 +5,7 @@ import { useSettingsStore } from '../store/settings.store';
 const activeTab = ref('general');
 const OPEN_SETTINGS_EVENT = 'settings-open-requested';
 
-export function useSettings() {
+export function useSettingsPanel() {
   const settingsStore = useSettingsStore();
 
   const openSettings = (tab?: string) => {

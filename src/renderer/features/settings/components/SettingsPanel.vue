@@ -55,7 +55,7 @@ import {
   IconRefreshDot,
 } from '@tabler/icons-vue';
 import { useUpdaterStore } from '@renderer/features/updater';
-import { useSettings } from '../composables/useSettings';
+import { useSettingsPanel } from '../composables/useSettingsPanel';
 import { useSettingsStore } from '../store/settings.store';
 import GeneralSettings from './tabs/GeneralSettings.vue';
 import SoftwareUpdateSettings from './tabs/SoftwareUpdateSettings.vue';
@@ -74,7 +74,7 @@ import AccessControlSettings from './tabs/AccessControlSettings.vue';
 const { t } = useI18n();
 const updaterStore = useUpdaterStore();
 const settingsStore = useSettingsStore();
-const { activeTab, setActiveTab } = useSettings();
+const { activeTab, setActiveTab } = useSettingsPanel();
 let hasAutoCheckedUpdates = false;
 
 type TabItem =

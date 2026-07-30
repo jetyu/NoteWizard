@@ -16,9 +16,7 @@ import SidebarManagerDialog from './components/SidebarManagerDialog.vue';
 import { useSettingsStore } from '@renderer/features/settings';
 import { AboutDialog } from '@renderer/features/about';
 import { TrashDialog } from '@renderer/features/trash';
-import { useEditorSettings } from '@renderer/features/settings/composables/useEditorSettings';
-
-import { useGeneralSettings } from '@renderer/features/settings/composables/useGeneralSettings';
+import { useSettingsAppearance } from '@renderer/features/settings/composables/useSettingsAppearance';
 import { useShortcutsStore } from '@renderer/features/shortcuts';
 import { useCommandRegistration } from '@renderer/features/shortcuts/composables/useCommandRegistration';
 import { useKnowledgeCopilotInitialization } from '@renderer/features/knowledge-copilot';
@@ -42,8 +40,7 @@ const { initializeKnowledgeCopilot, setupVfsAutoIndex } = useKnowledgeCopilotIni
 const { initializeSync, setupAutoSync } = useSyncLifecycle();
 const quickCapture = useQuickCapture();
 
-useEditorSettings();
-useGeneralSettings();
+useSettingsAppearance();
 useCommandRegistration();
 quickCapture.start();
 

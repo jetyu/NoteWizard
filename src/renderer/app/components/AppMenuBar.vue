@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useSettings } from '@renderer/features/settings/composables/useSettings';
+import { useSettingsPanel } from '@renderer/features/settings/composables/useSettingsPanel';
 import { useAbout } from '@renderer/features/about';
 import { useUpdaterStore } from '@renderer/features/updater';
 import { MENU_CONFIG, type MenuAction } from '@shared/menu.config';
@@ -33,7 +33,7 @@ import { useWorkspaceStore } from '@renderer/features/workspace/store/workspace.
 import { isDev } from '@renderer/config/env';
 
 const { t } = useI18n();
-const { openSettings } = useSettings();
+const { openSettings } = useSettingsPanel();
 const { openAbout } = useAbout();
 const workspaceStore = useWorkspaceStore();
 const updaterStore = useUpdaterStore();
