@@ -1,9 +1,15 @@
 import { ipcMain, app } from 'electron';
+import { z } from 'zod';
 import { settingsService } from '../../services/settings.service.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 
 const logger = loggerService.createLogger('Electron:Settings IPC');
+const SettingsSaveSchema = z.record(z.string(), z.unknown());
+
+export function parseSettingsSavePayload(value: unknown): Record<string, unknown> {
+  return SettingsSaveSchema.parse(value);
+}
 
 export function registerSettingsIpcHandlers() {
   /**
@@ -20,10 +26,10 @@ export function registerSettingsIpcHandlers() {
    * Handle saving the configuration
    */
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SAVE, async (_event, config) => {
-    const nextConfig = await settingsService.saveConfig(config);
-    loggerService.updateConfig(nextConfig);
+    const settings = await settingsService.saveConfig(parseSettingsSavePayload(config));
+    loggerService.updateConfig(settings);
     logger.debug('Settings saved and updated');
-    return nextConfig;
+    return settings;
   });
 
   /**

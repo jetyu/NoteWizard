@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron';
 import { z } from 'zod';
-import { knowledgeCopilotIndexService } from '../../services/knowledge-copilot-index.service.js';
-import { runKnowledgeCopilotTask } from '../../services/knowledge-copilot-task.service.js';
+import { knowledgeCopilotIndexService } from '../../services/knowledge-copilot/knowledge-copilot-index.service.js';
+import { runKnowledgeCopilotTask } from '../../services/knowledge-copilot/knowledge-copilot-task.service.js';
 import { aiConfigService } from '../../services/ai-config.service.js';
-import { answerKnowledgeQuestionStream } from '../../services/knowledge-copilot-qa.service.js';
+import { answerKnowledgeQuestionStream } from '../../services/knowledge-copilot/knowledge-copilot-qa.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';

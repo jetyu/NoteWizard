@@ -156,7 +156,6 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type AccentMode = 'black' | 'azureBlue' | 'indigo' | 'cyan' | 'teal';
 
 export interface AppSettings {
-  knowledgeCopilotSchemaVersion: number;
   language: string;
   autoStartup: boolean;
   windowCloseAction: WindowCloseAction;
@@ -203,7 +202,6 @@ function createDefaultSyncConfig(): SyncSettings {
 
 function createDefaultConfig(): AppSettings {
   return {
-    knowledgeCopilotSchemaVersion: 1,
     language: 'en-US',
     autoStartup: false,
     windowCloseAction: 'minimize',

@@ -2,23 +2,31 @@ import { app, dialog, BrowserWindow } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { $t } from '../utils/i18n.js';
-import { AI_WRITING_DEFAULTS } from '../../shared/ai.constants.js';
+import {
+  AI_WRITING_DEFAULTS,
+  isValidAiWritingMode,
+  isValidAiWritingScenario,
+  isValidAiWritingStyle,
+  type AiWritingMode,
+  type AiWritingScenario,
+  type AiWritingStyle,
+} from '../../shared/ai.constants.js';
 import {
   getAiProviderCapabilities,
   inferAiProvider,
   isAiProvider,
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
-import {
-  DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS,
-  normalizeTrustedRemoteImageHosts,
-} from '../../shared/preview-security.constants.js';
+import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.constants.js';
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
-import { DEFAULT_UPDATE_CHANNEL, normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
+import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
 import { getErrorCode, getErrorMessage } from '../../shared/utils/error.utils.js';
 import { VFS_CONSTANTS } from '../constants/vfs.constants.js';
 import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
-import { type AccessControlTimeout } from '../../shared/e2ee.constants.js';
+import {
+  ACCESS_CONTROL_TIMEOUT_OPTIONS,
+  type AccessControlTimeout,
+} from '../../shared/e2ee.constants.js';
 import { loggerService } from './log/logger.service.js';
 import { previewPolicyService } from './preview-policy.service.js';
 import { keyManagerService } from './key-manager.service.js';
@@ -64,6 +72,56 @@ interface PreviewAppearanceConfig {
   fontFamily: string;
 }
 
+interface AiAssistantConfig {
+  enabled: boolean;
+  sourceId: string;
+  model: string;
+  triggerMode: AiWritingMode;
+  autoContinue: boolean;
+  writingStyle: AiWritingStyle;
+  writingScenario: AiWritingScenario;
+  systemPrompt: string;
+}
+
+interface KnowledgeCopilotConfig {
+  enabled: boolean;
+  embeddingSourceId: string;
+  embeddingModel: string;
+  askChatSourceId: string;
+  askChatModel: string;
+  agentChatSourceId: string;
+  agentChatModel: string;
+  rerankerSourceId: string;
+  rerankerModel: string;
+  defaultMode: 'ask' | 'agent';
+  agentExecutionMode: 'confirm' | 'auto';
+  chunkSize: number;
+  chunkOverlap: number;
+  topK: number;
+  similarityThreshold: number;
+  autoIndex: boolean;
+  indexOnSave: boolean;
+  lastIndexedAt: number | null;
+  indexSignatures: Record<string, string>;
+  indexChunkCounts: Record<string, number>;
+  cachedTotalChunks: number;
+}
+
+interface AppShellConfig {
+  activeMainView: string;
+  customSidebarModules: string[];
+  maxCustomSidebarModules: number;
+}
+
+interface WorkbenchConfig {
+  recentQuestions: unknown[];
+  conversationThreads: unknown[];
+  recommendationFeedback: unknown[];
+  onboardingGuideActivated: boolean;
+  onboardingGuideDismissed: boolean;
+  agentWriteMode: 'confirm' | 'auto';
+}
+
 interface SettingsMessageOptions {
   type?: 'none' | 'info' | 'error' | 'question' | 'warning';
   title?: string;
@@ -90,7 +148,6 @@ export interface AccessControlConfig {
 }
 
 interface AppSettings {
-  knowledgeCopilotSchemaVersion: number;
   language: string;
   autoStartup: boolean;
   windowCloseAction: WindowCloseAction;
@@ -109,8 +166,8 @@ interface AppSettings {
   autoIndent: boolean;
   showStatusBar: boolean;
   aiSources: AiSourceSettings[];
-  aiAssistant: Record<string, unknown>;
-  knowledgeCopilot: Record<string, unknown>;
+  aiAssistant: AiAssistantConfig;
+  knowledgeCopilot: KnowledgeCopilotConfig;
   sync: SyncConfig;
   loggingEnabled: boolean;
   logLevel: LogLevel;
@@ -122,18 +179,8 @@ interface AppSettings {
   maxHistoryVersions: number;
   trashAutoClearDays: number;
   snapshotInterval: number;
-  appShell: {
-    activeMainView: string;
-    customSidebarModules: string[];
-    maxCustomSidebarModules: number;
-  };
-  workbench: {
-    recentQuestions: unknown[];
-    recommendationFeedback: unknown[];
-    onboardingGuideActivated: boolean;
-    onboardingGuideDismissed: boolean;
-    agentWriteMode: 'confirm' | 'auto';
-  };
+  appShell: AppShellConfig;
+  workbench: WorkbenchConfig;
   accessControl: AccessControlConfig;
 }
 
@@ -142,26 +189,11 @@ interface SnaptiumConfigPackage {
   version: number;
   exportedAt: number;
   app: string;
-  settings: SettingsInput;
+  settings: unknown;
   e2ee?: {
     keySlots?: KeySlots;
   };
 }
-
-type SyncConfigInput = Partial<SyncConfig> & {
-  webdav?: Partial<SyncWebDavConfig>;
-  ossS3?: Partial<SyncOssS3Config>;
-};
-
-type SettingsInput = Partial<AppSettings> & {
-  aiAssistant?: Partial<Record<string, unknown>>;
-  knowledgeCopilot?: Partial<Record<string, unknown>>;
-  previewAppearance?: Partial<PreviewAppearanceConfig>;
-  sync?: SyncConfigInput;
-  accessControl?: Partial<AccessControlConfig>;
-  workbench?: Partial<AppSettings['workbench']>;
-  knowledgeAgent?: Partial<Record<string, unknown>>;
-};
 
 const logger = loggerService.createLogger('Electron:Settings Service');
 const LOG_AUTO_CLEAR_DAY_OPTIONS: ReadonlySet<number> = new Set<number>([0, 10, 20]);
@@ -169,7 +201,6 @@ const SNAPTIUM_CONFIG_PACKAGE_TYPE = 'sppcfg' as const;
 const SNAPTIUM_CONFIG_PACKAGE_VERSION = 1;
 const SNAPTIUM_CONFIG_EXTENSION = 'sppcfg' as const;
 const DEFAULT_WINDOW_CLOSE_ACTION: WindowCloseAction = 'minimize';
-const KNOWLEDGE_COPILOT_SCHEMA_VERSION = 1;
 
 interface AiSourceSettings {
   id: string;
@@ -191,18 +222,30 @@ function normalizeWindowCloseAction(value: unknown): WindowCloseAction {
   return value === 'exit' ? 'exit' : DEFAULT_WINDOW_CLOSE_ACTION;
 }
 
+function normalizeBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function normalizeString(value: unknown, fallback: string = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
 function normalizeAccentMode(value: unknown): AccentMode {
   return value === 'black' || value === 'azureBlue' || value === 'indigo' || value === 'cyan' || value === 'teal'
     ? value
     : 'azureBlue';
 }
 
-function normalizeLogLevel(logLevel: unknown): LogLevel {
-  if (typeof logLevel !== 'string') {
+function normalizeThemeMode(value: unknown): AppSettings['themeMode'] {
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
+function normalizeLogLevel(value: unknown): LogLevel {
+  if (typeof value !== 'string') {
     return 'error';
   }
 
-  const normalizedLevel = logLevel.toLowerCase();
+  const normalizedLevel = value.toLowerCase();
   const supportedLevels: ReadonlySet<string> = new Set<string>(['debug', 'info', 'warn', 'error']);
 
   if (!supportedLevels.has(normalizedLevel)) {
@@ -216,27 +259,17 @@ function normalizeLogAutoClearDays(days: unknown): number {
   const normalizedDays = Number(days);
 
   if (!Number.isFinite(normalizedDays)) {
-    return 0;
+    return 10;
   }
 
-  return LOG_AUTO_CLEAR_DAY_OPTIONS.has(normalizedDays) ? normalizedDays : 0;
+  return LOG_AUTO_CLEAR_DAY_OPTIONS.has(normalizedDays) ? normalizedDays : 10;
 }
 
-function normalizeLoggingConfig(config: AppSettings): AppSettings {
-  return {
-    ...config,
-    loggingEnabled: Boolean(config.loggingEnabled),
-    logLevel: normalizeLogLevel(config.logLevel),
-    logAutoClearDays: normalizeLogAutoClearDays(config.logAutoClearDays),
-  };
-}
-
-function createDefaultSyncConfig(): SyncConfig {
-  return {
-    ...DEFAULT_SYNC_SETTINGS,
-    webdav: { ...DEFAULT_SYNC_SETTINGS.webdav },
-    ossS3: { ...DEFAULT_SYNC_SETTINGS.ossS3 },
-  };
+function normalizeAllowedInteger(value: unknown, values: readonly number[], fallback: number): number {
+  const normalizedValue = Math.trunc(Number(value));
+  return Number.isFinite(normalizedValue) && values.includes(normalizedValue)
+    ? normalizedValue
+    : fallback;
 }
 
 function normalizeSyncProvider(provider: unknown): SyncConfig['provider'] {
@@ -249,56 +282,50 @@ function normalizeSyncIntervalMinutes(value: unknown): number {
   return supportedIntervals.has(normalizedValue) ? normalizedValue : SYNC_INTERVALS.MANUAL;
 }
 
-function normalizeSyncConfig(config: SyncConfigInput = {}): SyncConfig {
-  const defaultConfig = createDefaultSyncConfig();
-  const mergedConfig = {
-    ...defaultConfig,
-    ...config,
-    webdav: {
-      ...defaultConfig.webdav,
-      ...(config.webdav || {}),
-    },
-    ossS3: {
-      ...defaultConfig.ossS3,
-      ...(config.ossS3 || {}),
-    },
-  };
+function normalizeSyncConfig(value: unknown): SyncConfig {
+  const config = toRecord(value);
+  const webdav = toRecord(config.webdav);
+  const ossS3 = toRecord(config.ossS3);
+  const lastSyncedAt = typeof config.lastSyncedAt === 'number' && Number.isFinite(config.lastSyncedAt)
+    ? config.lastSyncedAt
+    : null;
 
   return {
-    ...mergedConfig,
-    enabled: Boolean(mergedConfig.enabled),
-    provider: normalizeSyncProvider(mergedConfig.provider),
-    intervalMinutes: normalizeSyncIntervalMinutes(mergedConfig.intervalMinutes),
-    autoSyncOnSave: Boolean(mergedConfig.autoSyncOnSave),
-    remotePath: String(mergedConfig.remotePath ?? defaultConfig.remotePath).trim() || defaultConfig.remotePath,
+    enabled: normalizeBoolean(config.enabled, DEFAULT_SYNC_SETTINGS.enabled),
+    provider: normalizeSyncProvider(config.provider),
+    intervalMinutes: normalizeSyncIntervalMinutes(config.intervalMinutes),
+    autoSyncOnSave: normalizeBoolean(config.autoSyncOnSave, DEFAULT_SYNC_SETTINGS.autoSyncOnSave),
+    remotePath: normalizeString(config.remotePath, DEFAULT_SYNC_SETTINGS.remotePath).trim()
+      || DEFAULT_SYNC_SETTINGS.remotePath,
     webdav: {
-      url: String(mergedConfig.webdav.url ?? '').trim(),
-      username: String(mergedConfig.webdav.username ?? '').trim(),
-      password: String(mergedConfig.webdav.password ?? ''),
+      url: normalizeString(webdav.url).trim(),
+      username: normalizeString(webdav.username).trim(),
+      password: normalizeString(webdav.password),
     },
     ossS3: {
-      endpoint: String(mergedConfig.ossS3.endpoint ?? '').trim(),
-      region: String(mergedConfig.ossS3.region ?? '').trim(),
-      bucket: String(mergedConfig.ossS3.bucket ?? '').trim(),
-      accessKeyId: String(mergedConfig.ossS3.accessKeyId ?? '').trim(),
-      secretAccessKey: String(mergedConfig.ossS3.secretAccessKey ?? ''),
-      forcePathStyle: Boolean(mergedConfig.ossS3.forcePathStyle),
+      endpoint: normalizeString(ossS3.endpoint).trim(),
+      region: normalizeString(ossS3.region).trim(),
+      bucket: normalizeString(ossS3.bucket).trim(),
+      accessKeyId: normalizeString(ossS3.accessKeyId).trim(),
+      secretAccessKey: normalizeString(ossS3.secretAccessKey),
+      forcePathStyle: normalizeBoolean(ossS3.forcePathStyle, DEFAULT_SYNC_SETTINGS.ossS3.forcePathStyle),
     },
-    lastSyncedAt: Number.isFinite(Number(mergedConfig.lastSyncedAt)) ? Number(mergedConfig.lastSyncedAt) : null,
+    lastSyncedAt,
   };
 }
 
-function normalizePreviewAppearanceConfig(config: Partial<PreviewAppearanceConfig> = {}): PreviewAppearanceConfig {
+function normalizePreviewAppearanceConfig(value: unknown): PreviewAppearanceConfig {
+  const config = toRecord(value);
   const remoteImageMode = config.remoteImageMode === 'blocked' ? 'blocked' :
     config.remoteImageMode === 'all' ? 'all' : 'trusted';
 
   return {
-    allowHtml: config.allowHtml !== false,
-    allowInlineSvg: config.allowInlineSvg !== false,
+    allowHtml: normalizeBoolean(config.allowHtml, true),
+    allowInlineSvg: normalizeBoolean(config.allowInlineSvg, true),
     remoteImageMode,
     trustedRemoteImageHosts: normalizeTrustedRemoteImageHosts(config.trustedRemoteImageHosts),
-    fontSize: Number.isFinite(Number(config.fontSize)) ? Number(config.fontSize) : 16,
-    fontFamily: String(config.fontFamily || ''),
+    fontSize: clampInteger(config.fontSize, 16, 10, 32),
+    fontFamily: normalizeString(config.fontFamily),
   };
 }
 
@@ -310,6 +337,22 @@ function normalizeStringArray(value: unknown): string[] {
   return value
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     .map((item) => item.trim());
+}
+
+function normalizeStringRecord(value: unknown): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(toRecord(value))
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+  );
+}
+
+function normalizeNumberRecord(value: unknown): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(toRecord(value))
+      .filter((entry): entry is [string, number] => {
+        return typeof entry[1] === 'number' && Number.isFinite(entry[1]);
+      }),
+  );
 }
 
 function normalizeCustomAiSource(value: unknown): AiSourceSettings | null {
@@ -358,85 +401,84 @@ function normalizeAiSourceSelection(
   return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
 }
 
-function normalizeAiAssistantConfig(
-  defaultConfig: AppSettings['aiAssistant'],
-  incomingConfig: SettingsInput['aiAssistant'],
-  aiSources: AiSourceSettings[],
-): Record<string, unknown> {
-  const mergedConfig: Record<string, unknown> = {
-    ...defaultConfig,
-    ...(incomingConfig || {}),
-  };
+function normalizeAiAssistantConfig(value: unknown, aiSources: AiSourceSettings[]): AiAssistantConfig {
+  const config = toRecord(value);
   const sourceSelection = normalizeAiSourceSelection(
-    String(mergedConfig.sourceId ?? '').trim(),
-    String(mergedConfig.model ?? '').trim(),
+    normalizeString(config.sourceId).trim(),
+    normalizeString(config.model).trim(),
     aiSources,
     'chat',
   );
 
   return {
-    ...mergedConfig,
+    enabled: normalizeBoolean(config.enabled, false),
     ...sourceSelection,
+    triggerMode: isValidAiWritingMode(config.triggerMode)
+      ? config.triggerMode
+      : AI_WRITING_DEFAULTS.MODE,
+    autoContinue: normalizeBoolean(config.autoContinue, AI_WRITING_DEFAULTS.AUTO_CONTINUE),
+    writingStyle: isValidAiWritingStyle(config.writingStyle)
+      ? config.writingStyle
+      : AI_WRITING_DEFAULTS.STYLE,
+    writingScenario: isValidAiWritingScenario(config.writingScenario)
+      ? config.writingScenario
+      : AI_WRITING_DEFAULTS.SCENARIO,
+    systemPrompt: normalizeString(config.systemPrompt),
   };
 }
 
-function normalizeKnowledgeCopilotConfig(
-  defaultConfig: AppSettings['knowledgeCopilot'],
-  incomingConfig: SettingsInput['knowledgeCopilot'],
-  aiSources: AiSourceSettings[],
-): Record<string, unknown> {
-  const mergedConfig: Record<string, unknown> = {
-    ...defaultConfig,
-    ...(incomingConfig || {}),
-  };
-  const embeddingSourceId = String(mergedConfig.embeddingSourceId ?? '').trim();
-  const legacyChatSourceId = String(mergedConfig.chatSourceId ?? '').trim();
-  const legacyChatModel = String(mergedConfig.chatModel ?? '').trim();
-  const askChatSourceId = String(mergedConfig.askChatSourceId ?? legacyChatSourceId).trim();
-  const agentChatSourceId = String(mergedConfig.agentChatSourceId ?? legacyChatSourceId).trim();
-  const nextConfig: Record<string, unknown> = { ...mergedConfig };
+function normalizeKnowledgeCopilotConfig(value: unknown, aiSources: AiSourceSettings[]): KnowledgeCopilotConfig {
+  const config = toRecord(value);
   const embeddingSelection = normalizeAiSourceSelection(
-    embeddingSourceId,
-    String(mergedConfig.embeddingModel ?? '').trim(),
+    normalizeString(config.embeddingSourceId).trim(),
+    normalizeString(config.embeddingModel).trim(),
     aiSources,
     'embedding',
   );
   const askChatSelection = normalizeAiSourceSelection(
-    askChatSourceId,
-    String(mergedConfig.askChatModel ?? legacyChatModel).trim(),
+    normalizeString(config.askChatSourceId).trim(),
+    normalizeString(config.askChatModel).trim(),
     aiSources,
     'chat',
   );
   const agentChatSelection = normalizeAiSourceSelection(
-    agentChatSourceId,
-    String(mergedConfig.agentChatModel ?? legacyChatModel).trim(),
+    normalizeString(config.agentChatSourceId).trim(),
+    normalizeString(config.agentChatModel).trim(),
     aiSources,
     'chat',
   );
   const rerankerSelection = normalizeAiSourceSelection(
-    String(mergedConfig.rerankerSourceId ?? '').trim(),
-    String(mergedConfig.rerankerModel ?? '').trim(),
+    normalizeString(config.rerankerSourceId).trim(),
+    normalizeString(config.rerankerModel).trim(),
     aiSources,
     'reranker',
   );
 
-  nextConfig.embeddingSourceId = embeddingSelection.sourceId;
-  nextConfig.embeddingModel = embeddingSelection.model;
-  nextConfig.askChatSourceId = askChatSelection.sourceId;
-  nextConfig.askChatModel = askChatSelection.model;
-  nextConfig.agentChatSourceId = agentChatSelection.sourceId;
-  nextConfig.agentChatModel = agentChatSelection.model;
-  nextConfig.rerankerSourceId = rerankerSelection.sourceId;
-  nextConfig.rerankerModel = rerankerSelection.model;
-  delete nextConfig.chatSourceId;
-  delete nextConfig.chatModel;
-
-  nextConfig.chunkSize = clampInteger(nextConfig.chunkSize, 500, 500, 800);
-  nextConfig.chunkOverlap = clampInteger(nextConfig.chunkOverlap, 50, 50, 100);
-  nextConfig.topK = clampInteger(nextConfig.topK, 5, 1, 10);
-  nextConfig.similarityThreshold = clampNumber(nextConfig.similarityThreshold, 0.45, 0, 1);
-
-  return nextConfig;
+  return {
+    enabled: normalizeBoolean(config.enabled, false),
+    embeddingSourceId: embeddingSelection.sourceId,
+    embeddingModel: embeddingSelection.model,
+    askChatSourceId: askChatSelection.sourceId,
+    askChatModel: askChatSelection.model,
+    agentChatSourceId: agentChatSelection.sourceId,
+    agentChatModel: agentChatSelection.model,
+    rerankerSourceId: rerankerSelection.sourceId,
+    rerankerModel: rerankerSelection.model,
+    defaultMode: config.defaultMode === 'agent' ? 'agent' : 'ask',
+    agentExecutionMode: config.agentExecutionMode === 'auto' ? 'auto' : 'confirm',
+    chunkSize: clampInteger(config.chunkSize, 500, 500, 800),
+    chunkOverlap: clampInteger(config.chunkOverlap, 50, 50, 100),
+    topK: clampInteger(config.topK, 5, 1, 10),
+    similarityThreshold: clampNumber(config.similarityThreshold, 0.45, 0, 1),
+    autoIndex: normalizeBoolean(config.autoIndex, true),
+    indexOnSave: normalizeBoolean(config.indexOnSave, true),
+    lastIndexedAt: typeof config.lastIndexedAt === 'number' && Number.isFinite(config.lastIndexedAt)
+      ? config.lastIndexedAt
+      : null,
+    indexSignatures: normalizeStringRecord(config.indexSignatures),
+    indexChunkCounts: normalizeNumberRecord(config.indexChunkCounts),
+    cachedTotalChunks: Math.max(0, clampInteger(config.cachedTotalChunks, 0, 0, Number.MAX_SAFE_INTEGER)),
+  };
 }
 
 function normalizeUpdateCheckInterval(value: unknown): number {
@@ -446,86 +488,101 @@ function normalizeUpdateCheckInterval(value: unknown): number {
     : UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL;
 }
 
-function mergeConfigWithDefaults(defaultConfig: AppSettings, incomingConfig: SettingsInput = {}): AppSettings {
-  const aiSources = normalizeAiSources(incomingConfig.aiSources ?? defaultConfig.aiSources);
+function normalizeAppShellConfig(value: unknown): AppShellConfig {
+  const config = toRecord(value);
+  const customSidebarModules = Array.isArray(config.customSidebarModules)
+    ? normalizeStringArray(config.customSidebarModules)
+    : ['search', 'settings', 'trash'];
+
   return {
-    ...defaultConfig,
-    ...incomingConfig,
-    windowCloseAction: normalizeWindowCloseAction(incomingConfig.windowCloseAction ?? defaultConfig.windowCloseAction),
-    accentMode: normalizeAccentMode(incomingConfig.accentMode ?? defaultConfig.accentMode),
-    appUIFont: String(incomingConfig.appUIFont ?? defaultConfig.appUIFont),
-    aiSources,
-    aiAssistant: normalizeAiAssistantConfig(defaultConfig.aiAssistant, incomingConfig.aiAssistant, aiSources),
-    knowledgeCopilot: normalizeKnowledgeCopilotConfig(defaultConfig.knowledgeCopilot, incomingConfig.knowledgeCopilot, aiSources),
-    previewAppearance: normalizePreviewAppearanceConfig(incomingConfig.previewAppearance),
-    sync: normalizeSyncConfig(incomingConfig.sync),
-    autoCheckUpdates: incomingConfig.autoCheckUpdates ?? defaultConfig.autoCheckUpdates,
-    updateCheckInterval: normalizeUpdateCheckInterval(incomingConfig.updateCheckInterval),
-    updateChannel: normalizeUpdateChannel(incomingConfig.updateChannel ?? defaultConfig.updateChannel),
-    accessControl: {
-      ...defaultConfig.accessControl,
-      ...(incomingConfig.accessControl || {}),
-    },
-    workbench: {
-      ...defaultConfig.workbench,
-      ...(incomingConfig.workbench || {}),
-      recentQuestions: Array.isArray(incomingConfig.workbench?.recentQuestions)
-        ? incomingConfig.workbench.recentQuestions
-        : defaultConfig.workbench.recentQuestions,
-      recommendationFeedback: Array.isArray(incomingConfig.workbench?.recommendationFeedback)
-        ? incomingConfig.workbench.recommendationFeedback
-        : defaultConfig.workbench.recommendationFeedback,
-      onboardingGuideActivated: incomingConfig.workbench?.onboardingGuideActivated === true,
-      onboardingGuideDismissed: incomingConfig.workbench?.onboardingGuideDismissed === true,
-      agentWriteMode: incomingConfig.workbench?.agentWriteMode === 'auto' ? 'auto' : 'confirm',
-    },
+    activeMainView: normalizeString(config.activeMainView, 'workbench').trim() || 'workbench',
+    customSidebarModules,
+    maxCustomSidebarModules: clampInteger(config.maxCustomSidebarModules, 4, 1, 10),
   };
 }
 
-async function migrateKnowledgeCopilotSettings(
-  incomingConfig: SettingsInput,
-  defaultConfig: AppSettings,
-): Promise<{ config: SettingsInput; migrated: boolean }> {
-  const currentVersion = Number(incomingConfig.knowledgeCopilotSchemaVersion ?? 0);
-  if (currentVersion >= KNOWLEDGE_COPILOT_SCHEMA_VERSION) {
-    return { config: incomingConfig, migrated: false };
-  }
+function normalizeWorkbenchConfig(value: unknown): WorkbenchConfig {
+  const config = toRecord(value);
 
-  const recentQuestions = Array.isArray(incomingConfig.workbench?.recentQuestions)
-    ? incomingConfig.workbench.recentQuestions.filter((entry) => {
-      if (!isRecord(entry)) return true;
-      return entry.mode !== 'ask' && entry.mode !== 'agent-task';
-    })
-    : [];
-  const migratedConfig: SettingsInput = {
-    ...incomingConfig,
-    knowledgeCopilotSchemaVersion: KNOWLEDGE_COPILOT_SCHEMA_VERSION,
-    knowledgeCopilot: { ...defaultConfig.knowledgeCopilot },
-    workbench: {
-      ...defaultConfig.workbench,
-      ...(incomingConfig.workbench ?? {}),
-      recentQuestions,
-    },
+  return {
+    recentQuestions: Array.isArray(config.recentQuestions) ? config.recentQuestions : [],
+    conversationThreads: Array.isArray(config.conversationThreads) ? config.conversationThreads : [],
+    recommendationFeedback: Array.isArray(config.recommendationFeedback) ? config.recommendationFeedback : [],
+    onboardingGuideActivated: normalizeBoolean(config.onboardingGuideActivated, false),
+    onboardingGuideDismissed: normalizeBoolean(config.onboardingGuideDismissed, false),
+    agentWriteMode: config.agentWriteMode === 'auto' ? 'auto' : 'confirm',
   };
-  delete migratedConfig.knowledgeAgent;
+}
 
-  const workspaceRoot = typeof incomingConfig.noteSavePath === 'string' && incomingConfig.noteSavePath.trim()
-    ? incomingConfig.noteSavePath.trim()
-    : defaultConfig.noteSavePath;
-  const obsoletePaths = [
-    path.join(workspaceRoot, '.lancedb', 'knowledge_agent_chunks.lance'),
-    path.join(workspaceRoot, '.lancedb', 'knowledge_copilot_chunks.lance'),
-    path.join(workspaceRoot, '.snaptium', 'knowledge-agent-checkpoints.sqlite'),
-  ];
-  await Promise.all(obsoletePaths.map(async (obsoletePath) => {
-    await fs.rm(obsoletePath, { recursive: true, force: true });
-  }));
-  logger.info('Migrated settings to Knowledge Copilot schema v1');
-  return { config: migratedConfig, migrated: true };
+function normalizeAccessControlConfig(value: unknown): AccessControlConfig {
+  const config = toRecord(value);
+  const supportedTimeouts: readonly number[] = Object.values(ACCESS_CONTROL_TIMEOUT_OPTIONS);
+  const timeout = normalizeAllowedInteger(
+    config.autoLockTimeoutMinutes,
+    supportedTimeouts,
+    ACCESS_CONTROL_TIMEOUT_OPTIONS.DISABLED,
+  ) as AccessControlTimeout;
+
+  return {
+    enabled: normalizeBoolean(config.enabled, false),
+    lockOnStartup: normalizeBoolean(config.lockOnStartup, false),
+    autoLockTimeoutMinutes: timeout,
+  };
+}
+
+export function normalizeSettings(raw: unknown = {}): AppSettings {
+  const config = toRecord(raw);
+  const aiSources = normalizeAiSources(config.aiSources);
+  const defaultLanguage = app.getLocale().toLowerCase().startsWith('en') ? 'en-US' : 'zh-CN';
+  const defaultNoteSavePath = path.join(
+    app.getPath(VFS_CONSTANTS.DOCUMENTS_FOLDER),
+    VFS_CONSTANTS.CURRENT_WORKSPACE_NAME,
+  );
+
+  return {
+    language: normalizeString(config.language, defaultLanguage).trim() || defaultLanguage,
+    autoStartup: normalizeBoolean(config.autoStartup, false),
+    windowCloseAction: normalizeWindowCloseAction(config.windowCloseAction),
+    themeMode: normalizeThemeMode(config.themeMode),
+    accentMode: normalizeAccentMode(config.accentMode),
+    appUIFont: normalizeString(config.appUIFont),
+    previewAppearance: normalizePreviewAppearanceConfig(config.previewAppearance),
+    editorFontSize: clampInteger(config.editorFontSize, 14, 10, 32),
+    editorFont: normalizeString(config.editorFont),
+    showLineNumbers: normalizeBoolean(config.showLineNumbers, true),
+    wordWrap: normalizeBoolean(config.wordWrap, true),
+    codeFolding: normalizeBoolean(config.codeFolding, false),
+    highlightActiveLine: normalizeBoolean(config.highlightActiveLine, true),
+    bracketMatching: normalizeBoolean(config.bracketMatching, true),
+    autoCloseBrackets: normalizeBoolean(config.autoCloseBrackets, true),
+    autoIndent: normalizeBoolean(config.autoIndent, true),
+    showStatusBar: normalizeBoolean(config.showStatusBar, true),
+    aiSources,
+    aiAssistant: normalizeAiAssistantConfig(config.aiAssistant, aiSources),
+    knowledgeCopilot: normalizeKnowledgeCopilotConfig(config.knowledgeCopilot, aiSources),
+    sync: normalizeSyncConfig(config.sync),
+    loggingEnabled: normalizeBoolean(config.loggingEnabled, false),
+    logLevel: normalizeLogLevel(config.logLevel),
+    logAutoClearDays: normalizeLogAutoClearDays(config.logAutoClearDays),
+    noteSavePath: normalizeString(config.noteSavePath, defaultNoteSavePath).trim() || defaultNoteSavePath,
+    autoCheckUpdates: normalizeBoolean(config.autoCheckUpdates, true),
+    updateCheckInterval: normalizeUpdateCheckInterval(config.updateCheckInterval),
+    updateChannel: normalizeUpdateChannel(config.updateChannel),
+    maxHistoryVersions: normalizeAllowedInteger(config.maxHistoryVersions, [0, 10, 20, 50, 100], 50),
+    trashAutoClearDays: normalizeAllowedInteger(config.trashAutoClearDays, [0, 7, 30], 30),
+    snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [15, 30, 60], 15),
+    appShell: normalizeAppShellConfig(config.appShell),
+    workbench: normalizeWorkbenchConfig(config.workbench),
+    accessControl: normalizeAccessControlConfig(config.accessControl),
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
 }
 
 function isSnaptiumConfigPackage(value: unknown): value is SnaptiumConfigPackage {
@@ -541,98 +598,6 @@ export const settingsService = {
     return path.join(app.getPath(VFS_CONSTANTS.USER_DATA), VFS_CONSTANTS.PREFERENCES_FILE);
   },
 
-  getDefaultConfig(): AppSettings {
-    return {
-      knowledgeCopilotSchemaVersion: KNOWLEDGE_COPILOT_SCHEMA_VERSION,
-      language: app.getLocale().toLowerCase().startsWith('en') ? 'en-US' : 'zh-CN',
-      autoStartup: false,
-      windowCloseAction: DEFAULT_WINDOW_CLOSE_ACTION,
-      themeMode: 'system',
-      accentMode: 'azureBlue',
-      appUIFont: '',
-      previewAppearance: {
-        allowHtml: true,
-        allowInlineSvg: true,
-        remoteImageMode: 'trusted',
-        trustedRemoteImageHosts: [...DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS],
-        fontSize: 16,
-        fontFamily: '',
-      },
-      editorFontSize: 14,
-      editorFont: '',
-      showLineNumbers: true,
-      wordWrap: true,
-      codeFolding: false,
-      highlightActiveLine: true,
-      bracketMatching: true,
-      autoCloseBrackets: true,
-      autoIndent: true,
-      showStatusBar: true,
-      aiSources: [],
-      aiAssistant: {
-        enabled: false,
-        sourceId: '',
-        model: '',
-        typingDelay: 2000,
-        minInputLength: 10,
-        writingStyle: AI_WRITING_DEFAULTS.STYLE,
-        writingScenario: AI_WRITING_DEFAULTS.SCENARIO,
-        systemPrompt: '',
-      },
-      knowledgeCopilot: {
-        enabled: false,
-        embeddingSourceId: '',
-        embeddingModel: '',
-        askChatSourceId: '',
-        askChatModel: '',
-        agentChatSourceId: '',
-        agentChatModel: '',
-        rerankerSourceId: '',
-        rerankerModel: '',
-        defaultMode: 'ask',
-        agentExecutionMode: 'confirm',
-        chunkSize: 500,
-        chunkOverlap: 50,
-        topK: 5,
-        similarityThreshold: 0.45,
-        autoIndex: true,
-        indexOnSave: true,
-        lastIndexedAt: null,
-        indexSignatures: {},
-        indexChunkCounts: {},
-        cachedTotalChunks: 0,
-      },
-      sync: createDefaultSyncConfig(),
-      loggingEnabled: false,
-      logLevel: 'error',
-      logAutoClearDays: 10,
-      noteSavePath: path.join(app.getPath(VFS_CONSTANTS.DOCUMENTS_FOLDER), VFS_CONSTANTS.CURRENT_WORKSPACE_NAME),
-      autoCheckUpdates: true,
-      updateCheckInterval: UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL,
-      updateChannel: DEFAULT_UPDATE_CHANNEL,
-      maxHistoryVersions: 50,
-      trashAutoClearDays: 30,
-      snapshotInterval: 15,
-      appShell: {
-        activeMainView: 'workbench',
-        customSidebarModules: ['search', 'settings', 'trash'],
-        maxCustomSidebarModules: 4,
-      },
-      workbench: {
-        recentQuestions: [],
-        recommendationFeedback: [],
-        onboardingGuideActivated: false,
-        onboardingGuideDismissed: false,
-        agentWriteMode: 'confirm',
-      },
-      accessControl: {
-        enabled: false,
-        lockOnStartup: false,
-        autoLockTimeoutMinutes: 0, // DISABLED
-      },
-    };
-  },
-
   /**
    * Load settings from file
    */
@@ -640,36 +605,31 @@ export const settingsService = {
     const filePath = this.getSettingsPath();
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      const parsed = JSON.parse(content) as SettingsInput;
-      const defaultConfig = this.getDefaultConfig();
-      const migration = await migrateKnowledgeCopilotSettings(parsed, defaultConfig);
-      const nextConfig = normalizeLoggingConfig(mergeConfigWithDefaults(defaultConfig, migration.config));
-      if (migration.migrated) {
-        await fs.writeFile(filePath, JSON.stringify(nextConfig, null, 2), 'utf-8');
-      }
-      previewPolicyService.updateConfig(nextConfig);
-      return nextConfig;
+      const parsed: unknown = JSON.parse(content);
+      const settings = normalizeSettings(parsed);
+      previewPolicyService.updateConfig(settings);
+      return settings;
     } catch (error) {
       if (getErrorCode(error) !== 'ENOENT') {
         logger.error('Failed to load settings', { error: getErrorMessage(error) });
       }
-      const nextConfig = normalizeLoggingConfig(this.getDefaultConfig());
-      previewPolicyService.updateConfig(nextConfig);
-      return nextConfig;
+      const settings = normalizeSettings();
+      previewPolicyService.updateConfig(settings);
+      return settings;
     }
   },
 
   /**
    * Save settings to file
    */
-  async saveConfig(config: SettingsInput): Promise<AppSettings> {
+  async saveConfig(config: unknown): Promise<AppSettings> {
     const filePath = this.getSettingsPath();
     try {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
-      const nextConfig = normalizeLoggingConfig(mergeConfigWithDefaults(this.getDefaultConfig(), config));
-      await fs.writeFile(filePath, JSON.stringify(nextConfig, null, 2), 'utf-8');
-      previewPolicyService.updateConfig(nextConfig);
-      return nextConfig;
+      const settings = normalizeSettings(config);
+      await fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
+      previewPolicyService.updateConfig(settings);
+      return settings;
     } catch (error) {
       logger.error('Failed to save settings', { error: getErrorMessage(error) });
       throw error;
@@ -900,8 +860,8 @@ export const settingsService = {
 
     try {
       const targetFilePath = this.getSettingsPath();
-      const defaultConfig = this.getDefaultConfig();
-      await fs.writeFile(targetFilePath, JSON.stringify(defaultConfig, null, 2), 'utf-8');
+      const settings = normalizeSettings();
+      await fs.writeFile(targetFilePath, JSON.stringify(settings, null, 2), 'utf-8');
       return true;
     } catch (error) {
       logger.error('Failed to reset settings', { error: getErrorMessage(error) });
@@ -935,17 +895,17 @@ export const settingsService = {
         throw new Error('Invalid Snaptium config package');
       }
 
-      const nextConfig = normalizeLoggingConfig(mergeConfigWithDefaults(this.getDefaultConfig(), parsed.settings));
+      const settings = normalizeSettings(parsed.settings);
 
       const targetFilePath = this.getSettingsPath();
       await fs.mkdir(path.dirname(targetFilePath), { recursive: true });
-      await fs.writeFile(targetFilePath, JSON.stringify(nextConfig, null, 2), 'utf-8');
+      await fs.writeFile(targetFilePath, JSON.stringify(settings, null, 2), 'utf-8');
 
       if (parsed.e2ee?.keySlots) {
         await keyManagerService.restoreKeySlots(parsed.e2ee.keySlots);
       }
 
-      previewPolicyService.updateConfig(nextConfig);
+      previewPolicyService.updateConfig(settings);
 
       return true;
     } catch (error) {

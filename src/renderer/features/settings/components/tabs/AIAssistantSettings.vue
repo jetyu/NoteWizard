@@ -171,6 +171,5 @@ const handleWritingScenarioChange = async (event: Event) => {
   await handleAssistantUpdate('writingScenario', value);
 };
 
-// Removed handleAssistantNumberUpdate as typingDelay is removed
 </script>
 

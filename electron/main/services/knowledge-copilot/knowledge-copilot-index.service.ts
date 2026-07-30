@@ -1,11 +1,11 @@
 import { vectorStoreService } from './vector-store.service.js';
-import { loggerService } from './log/logger.service.js';
-import { getErrorMessage } from '../services/error.service.js';
+import { loggerService } from '../log/logger.service.js';
+import { getErrorMessage } from '../error.service.js';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
-import { createProviderEmbeddings, createProviderReranker } from './ai-provider.service.js';
+import { createProviderEmbeddings, createProviderReranker } from '../ai-provider.service.js';
 import { SnaptiumLanceVectorStore } from './snaptium-lance-vector-store.js';
-import type { AiProvider } from '../../shared/ai-provider.constants.js';
+import type { AiProvider } from '../../../shared/ai-provider.constants.js';
 
 const logger = loggerService.createLogger('Main:KnowledgeCopilotIndexService');
 

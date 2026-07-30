@@ -1,4 +1,4 @@
-import { KNOWLEDGE_COPILOT_CONVERSATION_LIMITS, type KnowledgeCopilotConversationContext, type KnowledgeCopilotConversationTurn } from '../../shared/knowledge-copilot.constants.js';
+import { KNOWLEDGE_COPILOT_CONVERSATION_LIMITS, type KnowledgeCopilotConversationContext, type KnowledgeCopilotConversationTurn } from '../../../shared/knowledge-copilot.constants.js';
 
 export function formatKnowledgeCopilotConversationHistory(history: KnowledgeCopilotConversationTurn[]): string {
   return history.map((turn, index) => [
