@@ -10,10 +10,6 @@ import {
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
 import {
-  hasUsableAiSource,
-  isLegacySnaptiumAiSourceId,
-} from '../../shared/ai-settings-migration.js';
-import {
   DEFAULT_TRUSTED_REMOTE_IMAGE_HOSTS,
   normalizeTrustedRemoteImageHosts,
 } from '../../shared/preview-security.constants.js';
@@ -322,7 +318,7 @@ function normalizeCustomAiSource(value: unknown): AiSourceSettings | null {
   }
 
   const id = String(value.id ?? '').trim();
-  if (!id || isLegacySnaptiumAiSourceId(id)) {
+  if (!id) {
     return null;
   }
 
@@ -351,6 +347,17 @@ function normalizeAiSources(value: unknown): AiSourceSettings[] {
   return customSources;
 }
 
+function normalizeAiSourceSelection(
+  sourceId: string,
+  model: string,
+  aiSources: AiSourceSettings[],
+  capability: string,
+): { sourceId: string; model: string } {
+  const source = aiSources.find(item => item.id === sourceId);
+  const isUsable = source && (source.capabilities.length === 0 || source.capabilities.includes(capability));
+  return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
+}
+
 function normalizeAiAssistantConfig(
   defaultConfig: AppSettings['aiAssistant'],
   incomingConfig: SettingsInput['aiAssistant'],
@@ -360,18 +367,17 @@ function normalizeAiAssistantConfig(
     ...defaultConfig,
     ...(incomingConfig || {}),
   };
-  const sourceId = String(mergedConfig.sourceId ?? '').trim();
+  const sourceSelection = normalizeAiSourceSelection(
+    String(mergedConfig.sourceId ?? '').trim(),
+    String(mergedConfig.model ?? '').trim(),
+    aiSources,
+    'chat',
+  );
 
-  if (!hasUsableAiSource(aiSources, sourceId, 'chat')) {
-    return {
-      ...mergedConfig,
-      enabled: false,
-      sourceId: '',
-      model: '',
-    };
-  }
-
-  return mergedConfig;
+  return {
+    ...mergedConfig,
+    ...sourceSelection,
+  };
 }
 
 function normalizeKnowledgeCopilotConfig(
@@ -389,33 +395,41 @@ function normalizeKnowledgeCopilotConfig(
   const askChatSourceId = String(mergedConfig.askChatSourceId ?? legacyChatSourceId).trim();
   const agentChatSourceId = String(mergedConfig.agentChatSourceId ?? legacyChatSourceId).trim();
   const nextConfig: Record<string, unknown> = { ...mergedConfig };
+  const embeddingSelection = normalizeAiSourceSelection(
+    embeddingSourceId,
+    String(mergedConfig.embeddingModel ?? '').trim(),
+    aiSources,
+    'embedding',
+  );
+  const askChatSelection = normalizeAiSourceSelection(
+    askChatSourceId,
+    String(mergedConfig.askChatModel ?? legacyChatModel).trim(),
+    aiSources,
+    'chat',
+  );
+  const agentChatSelection = normalizeAiSourceSelection(
+    agentChatSourceId,
+    String(mergedConfig.agentChatModel ?? legacyChatModel).trim(),
+    aiSources,
+    'chat',
+  );
+  const rerankerSelection = normalizeAiSourceSelection(
+    String(mergedConfig.rerankerSourceId ?? '').trim(),
+    String(mergedConfig.rerankerModel ?? '').trim(),
+    aiSources,
+    'reranker',
+  );
 
-  nextConfig.askChatSourceId = askChatSourceId;
-  nextConfig.askChatModel = String(mergedConfig.askChatModel ?? legacyChatModel).trim();
-  nextConfig.agentChatSourceId = agentChatSourceId;
-  nextConfig.agentChatModel = String(mergedConfig.agentChatModel ?? legacyChatModel).trim();
+  nextConfig.embeddingSourceId = embeddingSelection.sourceId;
+  nextConfig.embeddingModel = embeddingSelection.model;
+  nextConfig.askChatSourceId = askChatSelection.sourceId;
+  nextConfig.askChatModel = askChatSelection.model;
+  nextConfig.agentChatSourceId = agentChatSelection.sourceId;
+  nextConfig.agentChatModel = agentChatSelection.model;
+  nextConfig.rerankerSourceId = rerankerSelection.sourceId;
+  nextConfig.rerankerModel = rerankerSelection.model;
   delete nextConfig.chatSourceId;
   delete nextConfig.chatModel;
-
-  if (!hasUsableAiSource(aiSources, embeddingSourceId, 'embedding')) {
-    nextConfig.enabled = false;
-    nextConfig.embeddingSourceId = '';
-    nextConfig.embeddingModel = '';
-  }
-
-  if (!hasUsableAiSource(aiSources, askChatSourceId, 'chat')) {
-    nextConfig.askChatSourceId = '';
-    nextConfig.askChatModel = '';
-  }
-  if (!hasUsableAiSource(aiSources, agentChatSourceId, 'chat')) {
-    nextConfig.agentChatSourceId = '';
-    nextConfig.agentChatModel = '';
-  }
-  const rerankerSourceId = String(mergedConfig.rerankerSourceId ?? '').trim();
-  if (!hasUsableAiSource(aiSources, rerankerSourceId, 'reranker')) {
-    nextConfig.rerankerSourceId = '';
-    nextConfig.rerankerModel = '';
-  }
 
   nextConfig.chunkSize = clampInteger(nextConfig.chunkSize, 500, 500, 800);
   nextConfig.chunkOverlap = clampInteger(nextConfig.chunkOverlap, 50, 50, 100);

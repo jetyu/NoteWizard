@@ -18,10 +18,6 @@ import { switchLanguage } from '@renderer/features/i18n';
 import { sanitizeWorkbenchSettings } from '@renderer/features/workbench/constants/workbench.constants';
 import { normalizeTrustedRemoteImageHosts } from '@shared/preview-security.constants';
 import {
-  hasUsableAiSource,
-  isLegacySnaptiumAiSourceId,
-} from '@shared/ai-settings-migration';
-import {
   getAiProviderCapabilities,
   inferAiProvider,
   isAiProvider,
@@ -65,7 +61,7 @@ function normalizeAiSources(value: unknown): AISource[] {
   const customSources = Array.isArray(value) ? value.map((source): AISource | null => {
     const normalized = (source ?? {}) as Partial<AISource>;
     const id = String(normalized.id ?? '');
-    if (!id || isLegacySnaptiumAiSourceId(id)) {
+    if (!id) {
       return null;
     }
 
@@ -89,6 +85,17 @@ function normalizeAiSources(value: unknown): AISource[] {
   return customSources;
 }
 
+function normalizeAiSourceSelection(
+  sourceId: string,
+  model: string,
+  aiSources: AISource[],
+  capability: string,
+): { sourceId: string; model: string } {
+  const source = aiSources.find(item => item.id === sourceId);
+  const isUsable = source && (source.capabilities.length === 0 || source.capabilities.includes(capability));
+  return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
+}
+
 function normalizeAiAssistantSettings(
   baseConfig: AppSettings['aiAssistant'],
   incomingConfig?: Partial<AppSettings['aiAssistant']>,
@@ -98,17 +105,17 @@ function normalizeAiAssistantSettings(
     ...baseConfig,
     ...(incomingConfig ?? {}),
   };
+  const sourceSelection = normalizeAiSourceSelection(
+    mergedConfig.sourceId,
+    mergedConfig.model,
+    aiSources,
+    'chat',
+  );
 
-  if (!hasUsableAiSource(aiSources, mergedConfig.sourceId, 'chat')) {
-    return {
-      ...mergedConfig,
-      enabled: false,
-      sourceId: '',
-      model: '',
-    };
-  }
-
-  return mergedConfig;
+  return {
+    ...mergedConfig,
+    ...sourceSelection,
+  };
 }
 
 function normalizeKnowledgeCopilotSettings(
@@ -120,28 +127,41 @@ function normalizeKnowledgeCopilotSettings(
     ...baseConfig,
     ...(incomingConfig ?? {}),
   };
-
-  if (!hasUsableAiSource(aiSources, mergedConfig.embeddingSourceId, 'embedding')) {
-    mergedConfig.enabled = false;
-    mergedConfig.embeddingSourceId = '';
-    mergedConfig.embeddingModel = '';
-  }
-
-  if (!hasUsableAiSource(aiSources, mergedConfig.askChatSourceId, 'chat')) {
-    mergedConfig.askChatSourceId = '';
-    mergedConfig.askChatModel = '';
-  }
-  if (!hasUsableAiSource(aiSources, mergedConfig.agentChatSourceId, 'chat')) {
-    mergedConfig.agentChatSourceId = '';
-    mergedConfig.agentChatModel = '';
-  }
-  if (!hasUsableAiSource(aiSources, mergedConfig.rerankerSourceId, 'reranker')) {
-    mergedConfig.rerankerSourceId = '';
-    mergedConfig.rerankerModel = '';
-  }
+  const embeddingSelection = normalizeAiSourceSelection(
+    mergedConfig.embeddingSourceId,
+    mergedConfig.embeddingModel,
+    aiSources,
+    'embedding',
+  );
+  const askChatSelection = normalizeAiSourceSelection(
+    mergedConfig.askChatSourceId,
+    mergedConfig.askChatModel,
+    aiSources,
+    'chat',
+  );
+  const agentChatSelection = normalizeAiSourceSelection(
+    mergedConfig.agentChatSourceId,
+    mergedConfig.agentChatModel,
+    aiSources,
+    'chat',
+  );
+  const rerankerSelection = normalizeAiSourceSelection(
+    mergedConfig.rerankerSourceId,
+    mergedConfig.rerankerModel,
+    aiSources,
+    'reranker',
+  );
 
   return {
     ...mergedConfig,
+    embeddingSourceId: embeddingSelection.sourceId,
+    embeddingModel: embeddingSelection.model,
+    askChatSourceId: askChatSelection.sourceId,
+    askChatModel: askChatSelection.model,
+    agentChatSourceId: agentChatSelection.sourceId,
+    agentChatModel: agentChatSelection.model,
+    rerankerSourceId: rerankerSelection.sourceId,
+    rerankerModel: rerankerSelection.model,
     chunkSize: clampInteger(mergedConfig.chunkSize, 500, 500, 800),
     chunkOverlap: clampInteger(mergedConfig.chunkOverlap, 50, 50, 100),
     topK: clampInteger(mergedConfig.topK, 5, 1, 10),

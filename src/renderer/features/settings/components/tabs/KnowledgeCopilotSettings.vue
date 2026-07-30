@@ -28,10 +28,10 @@
             <p class="setting-label">{{ t('label.knowledgeCopilotEmbeddingModel') }}</p>
             <p class="setting-description">{{ t('text.knowledgeCopilotEmbeddingModel') }}</p>
           </div>
-          <label class="select-shell" :class="{ disabled: !settingsStore.config.knowledgeCopilot.enabled }">
+          <label class="select-shell" :class="{ disabled: embeddingSources.length === 0 }">
             <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.embeddingSourceId"
               @change="handleKnowledgeCopilotUpdate('embeddingSourceId', ($event.target as HTMLSelectElement).value, $event)"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled">
+              :disabled="embeddingSources.length === 0">
               <option v-if="embeddingSources.length === 0" value="">{{
                 t('option.default.selectOption') }}</option>
               <option v-for="source in embeddingSources" :key="source.id" :value="source.id">
@@ -51,10 +51,10 @@
             <p class="setting-description">{{ t('text.knowledgeCopilotChatModel') }}</p>
           </div>
           <label class="select-shell"
-            :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
+            :class="{ disabled: chatSources.length === 0 }">
             <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.askChatSourceId"
               @change="handleKnowledgeCopilotUpdate('askChatSourceId', ($event.target as HTMLSelectElement).value)"
-              :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
+              :disabled="chatSources.length === 0">
               <option value="">{{
                 t('option.knowledgeCopilot.disabled') }}</option>
               <option v-for="source in chatSources" :key="source.id" :value="source.id">
@@ -70,10 +70,10 @@
             <p class="setting-label">{{ t('label.knowledgeCopilotAgentChatModel') }}</p>
             <p class="setting-description">{{ t('text.knowledgeCopilotAgentChatModel') }}</p>
           </div>
-          <label class="select-shell" :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
+          <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
               <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
                 @change="handleKnowledgeCopilotUpdate('agentChatSourceId', ($event.target as HTMLSelectElement).value)"
-                :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
+                :disabled="chatSources.length === 0">
                 <option value="">{{ t('option.knowledgeCopilot.disabled') }}</option>
                 <option v-for="source in chatSources" :key="source.id" :value="source.id">{{ source.name }}</option>
               </select>
@@ -86,10 +86,10 @@
             <p class="setting-description">{{ t('text.knowledgeCopilotRerankerSource') }}</p>
           </div>
           <label class="select-shell"
-            :class="{ disabled: rerankerSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
+            :class="{ disabled: rerankerSources.length === 0 }">
             <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rerankerSourceId"
               @change="handleKnowledgeCopilotUpdate('rerankerSourceId', ($event.target as HTMLSelectElement).value)"
-              :disabled="rerankerSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
+              :disabled="rerankerSources.length === 0">
               <option value="">{{
                 t('option.knowledgeCopilot.disabled') }}</option>
               <option v-for="source in rerankerSources" :key="source.id" :value="source.id">
@@ -310,6 +310,10 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
     }
 
     await settingsStore.updateKnowledgeCopilotSetting(key, value);
+
+    if (!settingsStore.config.knowledgeCopilot.enabled) {
+      return;
+    }
 
     try {
       await knowledgeCopilotService.initialize();

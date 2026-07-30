@@ -25,10 +25,10 @@
           <p class="setting-label">{{ t('label.selectAIAssistantSourceName') }}</p>
           <p class="setting-description">{{ t('text.selectAIAssistantSourceName') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: !settingsStore.config.aiAssistant.enabled }">
+        <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
           <select class="settings-select" :value="settingsStore.config.aiAssistant.sourceId"
             @change="handleSourceIdChange"
-            :disabled="!settingsStore.config.aiAssistant.enabled">
+            :disabled="chatSources.length === 0">
             <option v-if="chatSources.length === 0" value="" disabled>{{
               t('option.default.selectOption') }}</option>
             <option v-for="source in chatSources" :key="source.id" :value="source.id">
