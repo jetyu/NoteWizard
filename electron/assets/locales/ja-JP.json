@@ -286,7 +286,7 @@
   "label.knowledgeCopilot": "ナレッジベース検索",
   "label.knowledgeCopilotAgentChatModel": "Knowledge Agent モデルサービス",
   "label.knowledgeCopilotAutoIndex": "自動インデックス",
-  "label.knowledgeCopilotChatModel": "Q&A 用モデルサービス",
+  "label.knowledgeCopilotChatModel": "Knowledge Ask モデルサービス",
   "label.knowledgeCopilotChunkOverlap": "チャンクのオーバーラップ",
   "label.knowledgeCopilotChunkSize": "テキストチャンクサイズ",
   "label.knowledgeCopilotEmbeddingModel": "埋め込みモデルサービス",
