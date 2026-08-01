@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "輸入問題後開始問答",
   "search.noResultsSemantic": "找不到相關筆記。請確認知識庫索引已更新，或改用其他關鍵字搜尋",
   "search.pressEnterToSelect": "使用 ↑↓ 選取，按 Enter 開啟對應筆記",
-  "search.quickPlaceholder": "快速尋找筆記...",
+  "search.quickFindPlaceholder": "快速尋找筆記...",
   "search.recentConversations": "最近記錄",
   "search.searchNote": "搜尋筆記",
   "search.semanticHint": "使用向量語意理解搜尋知識庫，精準找出相關筆記",

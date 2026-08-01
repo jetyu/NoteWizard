@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "質問を入力して Q&A を開始",
   "search.noResultsSemantic": "関連するノートが見つかりませんでした。ナレッジベースのインデックスが更新されているか確認するか、別のキーワードで再検索してください",
   "search.pressEnterToSelect": "↑↓ で選択し、Enter で該当ノートを開く",
-  "search.quickPlaceholder": "ノートをすばやく検索...",
+  "search.quickFindPlaceholder": "ノートをすばやく検索...",
   "search.recentConversations": "最近の会話",
   "search.searchNote": "ノートを検索",
   "search.semanticHint": "ベクトルによる意味検索を使用して、関連するノートを高精度に検索します",

@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "Starten Sie eine Q&A nach Eingabe einer Frage",
   "search.noResultsSemantic": "Keine verwandten Notizen gefunden. Bitte stellen Sie sicher, dass der Wissensdatenbank-Index aktualisiert ist, oder versuchen Sie es mit anderen Schlüsselwörtern.",
   "search.pressEnterToSelect": "Mit ↑↓ auswählen, mit der Eingabetaste die Notiz öffnen",
-  "search.quickPlaceholder": "Notizen schnell finden...",
+  "search.quickFindPlaceholder": "Notizen schnell finden...",
   "search.recentConversations": "aktuelle Aufzeichnungen",
   "search.searchNote": "Notizen suchen",
   "search.semanticHint": "Intelligente Wissensdatenbank-Suche basierend auf semantischem Vektorverständnis zur präzisen Suche verwandter Notizen",

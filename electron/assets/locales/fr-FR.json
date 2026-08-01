@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "Commencez une Q&A après avoir saisi une question",
   "search.noResultsSemantic": "Aucun résultat pertinent trouvé. Veuillez vérifier si l'index de la base de connaissances est à jour ou essayez d'autres mots-clés",
   "search.pressEnterToSelect": "Utilisez ↑↓ pour sélectionner, Entrée pour accéder à la note",
-  "search.quickPlaceholder": "Rechercher rapidement des notes...",
+  "search.quickFindPlaceholder": "Rechercher rapidement des notes...",
   "search.recentConversations": "enregistrements récents",
   "search.searchNote": "Rechercher une note",
   "search.semanticHint": "Recherche intelligente basée sur la compréhension sémantique vectorielle pour une correspondance précise des notes",

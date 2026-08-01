@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "Inizia Q&A dopo aver inserito una domanda",
   "search.noResultsSemantic": "Nessuna nota rilevante trovata. Verifica l'indice o prova altre parole chiave.",
   "search.pressEnterToSelect": "Usa ↑↓ per selezionare e Invio per aprire la nota corrispondente",
-  "search.quickPlaceholder": "Trova rapidamente le note...",
+  "search.quickFindPlaceholder": "Trova rapidamente le note...",
   "search.recentConversations": "registrazioni recenti",
   "search.searchNote": "Cerca nelle note",
   "search.semanticHint": "Ricerca intelligente basata sulla semantica vettoriale",
