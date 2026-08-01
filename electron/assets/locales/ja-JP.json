@@ -27,7 +27,7 @@
   "aiProvider.siliconflow": "SiliconFlow",
   "aiProvider.snaptium": "Snaptium",
   "aiProvider.volcengine": "Volcengine",
-  "aiProvider.zhipu": "Z.ai (GLM)",
+  "aiProvider.zhipu": "Zhipu AI (GLM)",
   "appShell.mainView.favorites.label": "お気に入り",
   "appShell.mainView.tags.label": "タグ",
   "appShell.mainView.workbench.label": "ワークベンチ",
