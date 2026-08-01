@@ -625,6 +625,7 @@
   "text.aiAssistant": "基于输入内容智能补全与优化（改写、润色、精简、总结）；Tab 接受，Esc 取消",
   "text.aiAutoContinue": "接受建议后，基于当前上下文进行下一步内容预测，实现连续式补全",
   "text.aiModelInputHint": "可直接输入模型名称，或从已获取的模型列表中选择",
+  "text.aiModelUnavailable": "暂无可用 AI 模型，请先添加 AI 服务配置",
   "text.aiSourcePartnerDescription": "感谢全球领先的 AI 能力提供商硅基流动对本项目的赞助与支持，为用户带来稳定、高性价比的 AI 模型服务",
   "text.aiSourcePartnerDocsLink": "如何配置 AI 服务?",
   "text.aiSourcePartnerEntryLink": "前往专属合作入口",

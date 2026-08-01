@@ -26,7 +26,9 @@
         <section class="setting-card">
           <div class="setting-copy">
             <p class="setting-label">{{ t('label.knowledgeCopilotEmbeddingModel') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotEmbeddingModel') }}</p>
+            <p class="setting-description">{{ embeddingSources.length === 0
+              ? t('text.aiModelUnavailable')
+              : t('text.knowledgeCopilotEmbeddingModel') }}</p>
           </div>
           <label class="select-shell" :class="{ disabled: embeddingSources.length === 0 }">
             <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.embeddingSourceId"
@@ -48,7 +50,9 @@
         <section class="setting-card">
           <div class="setting-copy">
             <p class="setting-label">{{ t('label.knowledgeCopilotChatModel') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotChatModel') }}</p>
+            <p class="setting-description">{{ chatSources.length === 0
+              ? t('text.aiModelUnavailable')
+              : t('text.knowledgeCopilotChatModel') }}</p>
           </div>
           <label class="select-shell"
             :class="{ disabled: chatSources.length === 0 }">
@@ -68,7 +72,9 @@
         <section class="setting-card">
           <div class="setting-copy">
             <p class="setting-label">{{ t('label.knowledgeCopilotAgentChatModel') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotAgentChatModel') }}</p>
+            <p class="setting-description">{{ chatSources.length === 0
+              ? t('text.aiModelUnavailable')
+              : t('text.knowledgeCopilotAgentChatModel') }}</p>
           </div>
           <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
               <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
@@ -83,7 +89,9 @@
         <section class="setting-card">
           <div class="setting-copy">
             <p class="setting-label">{{ t('label.knowledgeCopilotRerankerSource') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotRerankerSource') }}</p>
+            <p class="setting-description">{{ rerankerSources.length === 0
+              ? t('text.aiModelUnavailable')
+              : t('text.knowledgeCopilotRerankerSource') }}</p>
           </div>
           <label class="select-shell"
             :class="{ disabled: rerankerSources.length === 0 }">
