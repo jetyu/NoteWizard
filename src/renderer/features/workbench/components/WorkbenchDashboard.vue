@@ -302,7 +302,7 @@
 import { computed, onMounted, ref, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import defaultHeroUrl from '@assets/images/default-hero.png';
+import defaultHeroUrl from '@assets/images/wallpaper/default-hero.png';
 import { renderMarkdown } from '@renderer/core/markdown/markdownRenderer';
 import {
   IconPencil,

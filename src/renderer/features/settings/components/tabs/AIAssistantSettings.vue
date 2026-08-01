@@ -23,7 +23,9 @@
       <section class="setting-card">
         <div class="setting-copy">
           <p class="setting-label">{{ t('label.selectAIAssistantSourceName') }}</p>
-          <p class="setting-description">{{ t('text.selectAIAssistantSourceName') }}</p>
+          <p class="setting-description">{{ chatSources.length === 0
+            ? t('text.aiModelUnavailable')
+            : t('text.selectAIAssistantSourceName') }}</p>
         </div>
         <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
           <select class="settings-select" :value="settingsStore.config.aiAssistant.sourceId"

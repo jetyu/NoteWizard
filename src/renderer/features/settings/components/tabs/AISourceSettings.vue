@@ -2,6 +2,10 @@
   <div class="ai-source-settings">
     <div class="header-actions">
       <h3 class="panel-title">{{ t('pref.pane.aiSources') }}</h3>
+      <div class="official-ai-sponsor">
+        <img :src="siliconFlowLogoUrl" alt="" aria-hidden="true" class="official-ai-sponsor-logo" />
+        <span>{{ t('text.officialInnerAiSource') }}</span>
+      </div>
     </div>
 
     <div class="source-list">
@@ -87,13 +91,13 @@
             <label class="setting-label">{{ t('label.aiBaseUrl') }} <span class="required-mark">{{ t('label.starSign')
                 }}</span></label>
             <input v-model="newSource.baseUrl" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiAPIEndpoint')" />
+              :placeholder="aiEndpointPlaceholder" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiModel') }} <span class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <input v-model="newSource.aiModel" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiModel')" />
+              :placeholder="aiModelPlaceholder" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiApiKey') }} <span v-if="requiresApiKey" class="required-mark">{{ t('label.starSign')
@@ -186,7 +190,7 @@ import { systemDialog } from '../../services/system-dialog.service';
 import { createLogger } from '../../../logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { IconPlus, IconBulb, IconTrash, IconPencil, IconChevronDown, IconCheck } from '@tabler/icons-vue';
-import siliconFlowLogoUrl from '@assets/images/siliconflow.png';
+import siliconFlowLogoUrl from '@assets/images/ai-partner/siliconflow.png';
 import PasswordInput from '../PasswordInput.vue';
 
 const { t } = useI18n();
@@ -223,6 +227,12 @@ const newSource = reactive<{
 });
 const selectableProviders = SELECTABLE_AI_PROVIDERS;
 const requiresApiKey = computed(() => newSource.provider !== AI_PROVIDERS.OLLAMA);
+const aiEndpointPlaceholder = computed(() => newSource.provider === AI_PROVIDERS.AZURE_OPENAI
+  ? t('placeholder.azureOpenAIEndpoint')
+  : t('placeholder.aiAPIEndpoint'));
+const aiModelPlaceholder = computed(() => newSource.provider === AI_PROVIDERS.AZURE_OPENAI
+  ? t('placeholder.azureOpenAIDeploymentName')
+  : t('placeholder.aiModel'));
 
 const capabilityOptions = [
   { value: 'embedding', labelKey: 'label.aiCapabilityEmbedding' },
@@ -555,6 +565,24 @@ const formatCapabilities = (capabilities: string[]): string => {
 
 .header-actions .panel-title {
   margin-bottom: 0;
+}
+
+.official-ai-sponsor {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.official-ai-sponsor-logo {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  height: 20px;
 }
 
 .add-form-card {

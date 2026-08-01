@@ -1,6 +1,6 @@
 ## 1. Provider presets
 
-- [x] 1.1 Add stable provider identities, default endpoints, chat capabilities, and endpoint inference for Qwen, Doubao, Kimi, Zhipu AI, and Grok.
+- [x] 1.1 Add stable provider identities, default endpoints, chat capabilities, and endpoint inference for Alibaba Cloud Model Studio, Volcengine, Kimi, Zhipu AI, and Grok.
 - [x] 1.2 Route the curated providers through the existing OpenAI-compatible chat adapter.
 
 ## 2. Settings presentation
