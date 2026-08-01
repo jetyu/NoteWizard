@@ -87,13 +87,13 @@
             <label class="setting-label">{{ t('label.aiBaseUrl') }} <span class="required-mark">{{ t('label.starSign')
                 }}</span></label>
             <input v-model="newSource.baseUrl" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiAPIEndpoint')" />
+              :placeholder="aiEndpointPlaceholder" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiModel') }} <span class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <input v-model="newSource.aiModel" type="text" class="settings-input"
-              :placeholder="t('placeholder.aiModel')" />
+              :placeholder="aiModelPlaceholder" />
           </div>
           <div class="source-form-group">
             <label class="setting-label">{{ t('label.aiApiKey') }} <span v-if="requiresApiKey" class="required-mark">{{ t('label.starSign')
@@ -223,6 +223,12 @@ const newSource = reactive<{
 });
 const selectableProviders = SELECTABLE_AI_PROVIDERS;
 const requiresApiKey = computed(() => newSource.provider !== AI_PROVIDERS.OLLAMA);
+const aiEndpointPlaceholder = computed(() => newSource.provider === AI_PROVIDERS.AZURE_OPENAI
+  ? t('placeholder.azureOpenAIEndpoint')
+  : t('placeholder.aiAPIEndpoint'));
+const aiModelPlaceholder = computed(() => newSource.provider === AI_PROVIDERS.AZURE_OPENAI
+  ? t('placeholder.azureOpenAIDeploymentName')
+  : t('placeholder.aiModel'));
 
 const capabilityOptions = [
   { value: 'embedding', labelKey: 'label.aiCapabilityEmbedding' },

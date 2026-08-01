@@ -1,6 +1,8 @@
 import { AI_PROVIDERS, type AiProvider } from '@shared/ai-provider.constants';
 import openAiLogoUrl from '@assets/images/ai-providers/openai.svg';
+import azureOpenAiLogoUrl from '@assets/images/ai-providers/azure.svg';
 import openaiCompatibleLogoUrl from '@assets/images/ai-providers/openaiCompatible.svg';
+import fireworksLogoUrl from '@assets/images/ai-providers/fireworks.svg';
 import siliconFlowLogoUrl from '@assets/images/ai-providers/siliconflow.svg';
 import geminiLogoUrl from '@assets/images/ai-providers/gemini.svg';
 import ollamaLogoUrl from '@assets/images/ai-providers/ollama.svg';
@@ -20,7 +22,9 @@ export interface AiProviderPresentation {
 export const AI_PROVIDER_PRESENTATIONS = {
   [AI_PROVIDERS.SILICONFLOW]: { labelKey: 'aiProvider.siliconflow', logoUrl: siliconFlowLogoUrl },
   [AI_PROVIDERS.OPENAI]: { labelKey: 'aiProvider.openai', logoUrl: openAiLogoUrl },
+  [AI_PROVIDERS.AZURE_OPENAI]: { labelKey: 'aiProvider.azureOpenAI', logoUrl: azureOpenAiLogoUrl },
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: { labelKey: 'aiProvider.openaiCompatible', logoUrl: openaiCompatibleLogoUrl },
+  [AI_PROVIDERS.FIREWORKS]: { labelKey: 'aiProvider.fireworks', logoUrl: fireworksLogoUrl },
   [AI_PROVIDERS.GOOGLE_GEMINI]: { labelKey: 'aiProvider.googleGemini', logoUrl: geminiLogoUrl },
   [AI_PROVIDERS.OLLAMA]: { labelKey: 'aiProvider.ollama', logoUrl: ollamaLogoUrl },
   [AI_PROVIDERS.OPENROUTER]: { labelKey: 'aiProvider.openRouter', logoUrl: openRouterLogoUrl },
@@ -35,7 +39,6 @@ export const AI_PROVIDER_PRESENTATIONS = {
 export const SELECTABLE_AI_PROVIDERS: AiProvider[] = [
   AI_PROVIDERS.SILICONFLOW,
   AI_PROVIDERS.OPENAI,
-  AI_PROVIDERS.OPENAI_COMPATIBLE,
   AI_PROVIDERS.DEEPSEEK,
   AI_PROVIDERS.QWEN,
   AI_PROVIDERS.DOUBAO,
@@ -44,7 +47,10 @@ export const SELECTABLE_AI_PROVIDERS: AiProvider[] = [
   AI_PROVIDERS.GOOGLE_GEMINI,
   AI_PROVIDERS.GROK,
   AI_PROVIDERS.OLLAMA,
+  AI_PROVIDERS.AZURE_OPENAI,
+  AI_PROVIDERS.FIREWORKS,
   AI_PROVIDERS.OPENROUTER,
+  AI_PROVIDERS.OPENAI_COMPATIBLE,
 ];
 
 export function getAiProviderPresentation(provider: AiProvider): AiProviderPresentation {

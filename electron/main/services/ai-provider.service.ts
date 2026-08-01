@@ -15,7 +15,7 @@ export interface AiProviderModelConfig {
   model: string;
 }
 
-class SiliconFlowReranker extends BaseDocumentCompressor {
+class OpenAiCompatibleReranker extends BaseDocumentCompressor {
   constructor(private readonly config: AiProviderModelConfig) {
     super();
   }
@@ -44,7 +44,9 @@ class SiliconFlowReranker extends BaseDocumentCompressor {
 
 function isOpenAiCompatibleProvider(provider: AiProvider): boolean {
   return provider === AI_PROVIDERS.OPENAI
+    || provider === AI_PROVIDERS.AZURE_OPENAI
     || provider === AI_PROVIDERS.OPENAI_COMPATIBLE
+    || provider === AI_PROVIDERS.FIREWORKS
     || provider === AI_PROVIDERS.SILICONFLOW
     || provider === AI_PROVIDERS.OPENROUTER
     || provider === AI_PROVIDERS.DEEPSEEK
@@ -105,8 +107,9 @@ export function createProviderEmbeddings(config: AiProviderModelConfig): Embeddi
 export function createProviderReranker(config: AiProviderModelConfig): BaseDocumentCompressor {
   requireApiKey(config);
   if (config.provider === AI_PROVIDERS.SILICONFLOW
+    || config.provider === AI_PROVIDERS.FIREWORKS
     || config.provider === AI_PROVIDERS.OPENAI_COMPATIBLE) {
-    return new SiliconFlowReranker(config);
+    return new OpenAiCompatibleReranker(config);
   }
 
   throw new Error(`Provider ${config.provider} does not support reranking`);
