@@ -16,8 +16,8 @@ export const AI_PROVIDERS = {
   OLLAMA: 'ollama',
   OPENROUTER: 'openrouter',
   DEEPSEEK: 'deepseek',
-  QWEN: 'qwen',
-  DOUBAO: 'doubao',
+  ALIBABA_CLOUD_MODEL_STUDIO: 'alibaba-cloud-model-studio',
+  VOLCENGINE: 'volcengine',
   KIMI: 'kimi',
   ZHIPU: 'zhipu',
   GROK: 'grok',
@@ -35,8 +35,8 @@ export const AI_PROVIDER_DEFAULT_BASE_URLS = {
   [AI_PROVIDERS.OLLAMA]: 'http://127.0.0.1:11434',
   [AI_PROVIDERS.OPENROUTER]: 'https://openrouter.ai/api/v1',
   [AI_PROVIDERS.DEEPSEEK]: 'https://api.deepseek.com',
-  [AI_PROVIDERS.QWEN]: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-  [AI_PROVIDERS.DOUBAO]: 'https://ark.cn-beijing.volces.com/api/v3',
+  [AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO]: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  [AI_PROVIDERS.VOLCENGINE]: 'https://ark.cn-beijing.volces.com/api/v3',
   [AI_PROVIDERS.KIMI]: 'https://api.moonshot.ai/v1',
   [AI_PROVIDERS.ZHIPU]: 'https://open.bigmodel.cn/api/paas/v4',
   [AI_PROVIDERS.GROK]: 'https://api.x.ai/v1',
@@ -52,8 +52,8 @@ export const AI_PROVIDER_CAPABILITIES = {
   [AI_PROVIDERS.OLLAMA]: ['chat', 'embedding'],
   [AI_PROVIDERS.OPENROUTER]: ['chat', 'embedding', 'reranker'],
   [AI_PROVIDERS.DEEPSEEK]: ['chat'],
-  [AI_PROVIDERS.QWEN]: ['chat'],
-  [AI_PROVIDERS.DOUBAO]: ['chat'],
+  [AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO]: ['chat'],
+  [AI_PROVIDERS.VOLCENGINE]: ['chat'],
   [AI_PROVIDERS.KIMI]: ['chat'],
   [AI_PROVIDERS.ZHIPU]: ['chat'],
   [AI_PROVIDERS.GROK]: ['chat'],
@@ -68,9 +68,6 @@ const AI_PROVIDER_BY_HOSTNAME = new Map<string, AiProvider>([
   ['generativelanguage.googleapis.com', AI_PROVIDERS.GOOGLE_GEMINI],
   ['openrouter.ai', AI_PROVIDERS.OPENROUTER],
   ['api.deepseek.com', AI_PROVIDERS.DEEPSEEK],
-  ['dashscope.aliyuncs.com', AI_PROVIDERS.QWEN],
-  ['maas.aliyuncs.com', AI_PROVIDERS.QWEN],
-  ['ark.cn-beijing.volces.com', AI_PROVIDERS.DOUBAO],
   ['api.moonshot.ai', AI_PROVIDERS.KIMI],
   ['open.bigmodel.cn', AI_PROVIDERS.ZHIPU],
   ['api.x.ai', AI_PROVIDERS.GROK],
@@ -97,6 +94,19 @@ export function inferAiProvider(baseUrl: string): AiProvider {
       || hostname.endsWith('.services.ai.azure.com');
     if (isAzureOpenAiHost && pathname.endsWith('/openai/v1')) {
       return AI_PROVIDERS.AZURE_OPENAI;
+    }
+
+    const isAlibabaCloudModelStudioHost = hostname === 'dashscope.aliyuncs.com'
+      || hostname === 'dashscope-us.aliyuncs.com'
+      || hostname === 'dashscope-intl.aliyuncs.com'
+      || hostname.endsWith('.dashscope.aliyuncs.com')
+      || hostname.endsWith('.maas.aliyuncs.com');
+    if (isAlibabaCloudModelStudioHost) {
+      return AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO;
+    }
+
+    if (hostname.startsWith('ark.') && hostname.endsWith('.volces.com')) {
+      return AI_PROVIDERS.VOLCENGINE;
     }
 
     return AI_PROVIDER_BY_HOSTNAME.get(hostname) ?? AI_PROVIDERS.OPENAI_COMPATIBLE;

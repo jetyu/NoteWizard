@@ -6,7 +6,7 @@ AI sources persist a provider identity, endpoint, API key, model, and enabled ca
 
 ### Goals
 
-- Offer Qwen, Doubao, Kimi, Zhipu AI, and Grok as distinct provider presets.
+- Offer Alibaba Cloud Model Studio, Volcengine, Kimi, Zhipu AI, and Grok as distinct provider presets.
 - Supply each preset's documented OpenAI-compatible endpoint and chat capability.
 - Reuse the existing OpenAI-compatible LangChain adapter and local logo presentation pattern.
 - Infer the provider identity for sources that use the known endpoints.
@@ -40,4 +40,4 @@ The renderer references local SVG assets through the existing provider-presentat
 
 ## Migration Plan
 
-No data migration is needed. Existing saved sources remain valid; sources using a known new endpoint will be identified as the corresponding preset when inferred. Removing a preset in a future version would leave its persisted value intact but would require a compatibility fallback before an older version could use it.
+No explicit data migration or legacy provider alias is included. Sources using recognized Alibaba Cloud Model Studio or Volcengine endpoints are identified from their URLs during normalization; sources that retain the former `qwen` or `doubao` value with an unrecognized custom endpoint fall back to the generic OpenAI-compatible provider.

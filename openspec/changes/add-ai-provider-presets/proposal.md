@@ -4,9 +4,10 @@ Users can connect additional mainstream model services through the generic OpenA
 
 ## What Changes
 
-- Add Qwen (Alibaba Cloud Model Studio), Doubao (Volcengine Ark), Kimi, Zhipu AI (GLM), and xAI Grok as selectable AI provider presets.
+- Add Alibaba Cloud Model Studio, Volcengine, Kimi, Zhipu AI (GLM), and xAI Grok as selectable AI provider presets.
 - Provide each preset with its supported default endpoint, chat capability, consistent color brand mark, and source-card presentation.
 - Extend provider inference so existing sources using the new known endpoints receive the corresponding provider identity.
+- **BREAKING**: Use platform provider identities for Alibaba Cloud Model Studio and Volcengine; the former `qwen` and `doubao` provider values are not retained as aliases.
 
 ## Capabilities
 

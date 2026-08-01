@@ -24,6 +24,26 @@ describe('AI provider constants', () => {
       .toBe(AI_PROVIDERS.FIREWORKS);
   });
 
+  it('uses platform identities for Alibaba Cloud Model Studio and Volcengine', () => {
+    expect(AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO).toBe('alibaba-cloud-model-studio');
+    expect(AI_PROVIDERS.VOLCENGINE).toBe('volcengine');
+    expect(isAiProvider('qwen')).toBe(false);
+    expect(isAiProvider('doubao')).toBe(false);
+  });
+
+  it.each([
+    'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    'https://dashscope-us.aliyuncs.com/compatible-mode/v1',
+    'https://workspace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1',
+  ])('infers Alibaba Cloud Model Studio from a supported endpoint: %s', (baseUrl) => {
+    expect(inferAiProvider(baseUrl)).toBe(AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO);
+  });
+
+  it('infers Volcengine from its regional endpoint', () => {
+    expect(inferAiProvider('https://ark.cn-beijing.volces.com/api/v3'))
+      .toBe(AI_PROVIDERS.VOLCENGINE);
+  });
+
   it.each([
     'https://notes.openai.azure.com/openai/v1',
     'https://notes.openai.azure.com/openai/v1/',
