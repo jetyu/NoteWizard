@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "Mulai tanya jawab setelah memasukkan pertanyaan",
   "search.noResultsSemantic": "Tidak ada catatan terkait ditemukan, harap konfirmasikan bahwa indeks basis pengetahuan sudah diperbarui atau coba gunakan kata kunci yang berbeda",
   "search.pressEnterToSelect": "Gunakan ↑↓ untuk memilih, lalu tekan Enter untuk membuka catatan",
-  "search.quickPlaceholder": "Temukan catatan dengan cepat...",
+  "search.quickFindPlaceholder": "Temukan catatan dengan cepat...",
   "search.recentConversations": "catatan terkini",
   "search.searchNote": "Cari Catatan",
   "search.semanticHint": "Pencarian basis pengetahuan cerdas berdasarkan pemahaman semantik vektor, mencocokkan catatan terkait dengan presisi",

@@ -2,43 +2,76 @@
   <div class="app-search" :class="{ 'is-active': isFocused || searchQuery }" @click.stop @dblclick.stop>
     <div class="app-search__input-wrapper">
       <IconSearch class="app-search__icon" :size="14" />
-      <input ref="inputRef" v-model="searchQuery" type="text" class="app-search__input"
-        :placeholder="t('search.quickPlaceholder')" @focus="handleFocus" @blur="handleBlur" @input="handleInput"
+      <input ref="inputRef" v-model="searchQuery" type="text" class="app-search__input" role="combobox"
+        aria-autocomplete="list" aria-haspopup="listbox" :aria-expanded="isDropdownVisible"
+        :aria-controls="QUICK_SEARCH_LISTBOX_ID" :aria-activedescendant="activeOptionId"
+        :placeholder="t('search.quickFindPlaceholder')" @focus="handleFocus" @blur="handleBlur" @input="handleInput"
         @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)"
-        @keydown.enter="selectHighlighted" @keydown.esc="handleEsc" />
-      <button v-if="searchQuery" class="app-search__clear" @click="clearSearch">
+        @keydown.enter.prevent="selectHighlighted" @keydown.esc="handleEsc" />
+      <button v-if="searchQuery" type="button" class="app-search__clear" :title="t('button.clear')"
+        @mousedown.prevent @click="clearSearch">
         <IconX :size="12" />
       </button>
     </div>
 
     <transition name="dropdown-fade">
-      <div v-if="showDropdown && results.length > 0" class="app-search__dropdown" @mouseenter="clearCloseTimer"
+      <div v-if="isDropdownVisible" class="app-search__dropdown" @mouseenter="clearCloseTimer"
         @mouseleave="startCloseTimer" @click.stop @dblclick.stop>
-        <div class="app-search__results">
-          <div v-for="(result, index) in results" :key="result.id" class="app-search__result-item"
-            :class="{ 'is-highlighted': highlightedIndex === index }" @click="selectResult(result)"
-            @mouseenter="highlightedIndex = index">
-            <div class="app-search__result-info">
-              <IconFileText :size="14" class="app-search__result-icon" />
-              <span class="app-search__result-title">{{ result.title }}</span>
-            </div>
-            <div v-if="result.matches.length > 0" class="app-search__result-match">
-              <span class="app-search__match-text" v-html="highlightMatch(result.matches[0])"></span>
+        <template v-if="isHistoryMode">
+          <div class="app-search__history-header">
+            <IconHistory :size="14" />
+            <span>{{ t('search.quickHistory') }}</span>
+          </div>
+          <div :id="QUICK_SEARCH_LISTBOX_ID" class="app-search__results" role="listbox">
+            <div v-for="(query, index) in searchHistory" :id="getHistoryOptionId(index)" :key="query"
+              class="app-search__result-item app-search__history-item"
+              :class="{ 'is-highlighted': highlightedIndex === index }" role="option"
+              :aria-selected="highlightedIndex === index" @click="selectHistoryQuery(query)"
+              @mouseenter="highlightedIndex = index">
+              <div class="app-search__result-info app-search__history-info">
+                <IconHistory :size="14" class="app-search__result-icon" />
+                <span class="app-search__history-query">{{ query }}</span>
+              </div>
+              <button type="button" class="app-search__history-delete" :title="t('button.delete')"
+                :aria-label="t('button.delete')" @mousedown.prevent @click.stop="deleteHistoryQuery(query)">
+                <IconTrash :size="13" />
+              </button>
             </div>
           </div>
-        </div>
-        <div class="app-search__footer">
-          <span class="app-search__hint">{{ t('search.pressEnterToSelect') }}</span>
-        </div>
+          <div class="app-search__footer app-search__history-footer">
+            <button type="button" class="app-search__clear-history" @mousedown.prevent @click="clearSearchHistory">
+              {{ t('search.clearHistory') }}
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <div :id="QUICK_SEARCH_LISTBOX_ID" class="app-search__results" role="listbox">
+            <div v-for="(result, index) in results" :id="getResultOptionId(index)" :key="result.id"
+              class="app-search__result-item" :class="{ 'is-highlighted': highlightedIndex === index }"
+              role="option" :aria-selected="highlightedIndex === index" @click="selectResult(result)"
+              @mouseenter="highlightedIndex = index">
+              <div class="app-search__result-info">
+                <IconFileText :size="14" class="app-search__result-icon" />
+                <span class="app-search__result-title">{{ result.title }}</span>
+              </div>
+              <div v-if="result.matches.length > 0" class="app-search__result-match">
+                <span class="app-search__match-text" v-html="highlightMatch(result.matches[0])"></span>
+              </div>
+            </div>
+          </div>
+          <div class="app-search__footer">
+            <span class="app-search__hint">{{ t('search.pressEnterToSelect') }}</span>
+          </div>
+        </template>
       </div>
     </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconSearch, IconX, IconFileText } from '@tabler/icons-vue';
+import { IconFileText, IconHistory, IconSearch, IconTrash, IconX } from '@tabler/icons-vue';
 import { searchService, type SearchResult, type SearchMatch } from '@renderer/features/search/services/search.service';
 import { useWorkspace } from '@renderer/features/workspace';
 import { useAppShellStore } from '../store/appShell.store';
@@ -49,8 +82,10 @@ const { selectNote } = useWorkspace();
 const appShellStore = useAppShellStore();
 const { quickSearchRequest } = useSearch();
 
+const QUICK_SEARCH_LISTBOX_ID = 'quick-search-listbox';
 const searchQuery = ref('');
 const results = ref<SearchResult[]>([]);
+const searchHistory = ref<string[]>(searchService.quickHistory.list());
 const isFocused = ref(false);
 const showDropdown = ref(false);
 const highlightedIndex = ref(0);
@@ -58,22 +93,33 @@ const inputRef = ref<HTMLInputElement | null>(null);
 let searchTimeout: number | null = null;
 let closeTimer: number | null = null;
 
+const isHistoryMode = computed(() => searchQuery.value.trim().length === 0);
+const activeItemCount = computed(() => {
+  return isHistoryMode.value ? searchHistory.value.length : results.value.length;
+});
+const isDropdownVisible = computed(() => showDropdown.value && activeItemCount.value > 0);
+const activeOptionId = computed<string | undefined>(() => {
+  if (!isDropdownVisible.value) {
+    return undefined;
+  }
+
+  return isHistoryMode.value
+    ? getHistoryOptionId(highlightedIndex.value)
+    : getResultOptionId(highlightedIndex.value);
+});
+
 function focusInput(selectAll = true) {
   clearCloseTimer();
   inputRef.value?.focus({ preventScroll: true });
   if (selectAll) {
     inputRef.value?.select();
   }
-  if (searchQuery.value && results.value.length > 0) {
-    showDropdown.value = true;
-  }
+  showDropdown.value = activeItemCount.value > 0;
 }
 
 function handleFocus() {
   isFocused.value = true;
-  if (searchQuery.value) {
-    showDropdown.value = true;
-  }
+  showDropdown.value = activeItemCount.value > 0;
 }
 
 function handleBlur() {
@@ -90,28 +136,52 @@ function handleEsc() {
 }
 
 function handleInput() {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
+  clearSearchTimeout();
 
   const query = searchQuery.value.trim();
+  results.value = [];
+  highlightedIndex.value = 0;
   if (!query) {
-    results.value = [];
-    showDropdown.value = false;
+    showDropdown.value = searchHistory.value.length > 0;
     return;
   }
 
-  searchTimeout = window.setTimeout(async () => {
-    results.value = await searchService.searchNotes(query);
-    showDropdown.value = results.value.length > 0;
-    highlightedIndex.value = 0;
+  showDropdown.value = false;
+  searchTimeout = window.setTimeout(() => {
+    searchTimeout = null;
+    void runSearch(query);
   }, 300);
 }
 
 function clearSearch() {
+  clearSearchTimeout();
   searchQuery.value = '';
   results.value = [];
-  showDropdown.value = false;
+  highlightedIndex.value = 0;
+  showDropdown.value = isFocused.value && searchHistory.value.length > 0;
+}
+
+async function runSearch(query: string): Promise<void> {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    return;
+  }
+
+  const nextResults = await searchService.searchNotes(normalizedQuery);
+  if (searchQuery.value.trim() !== normalizedQuery) {
+    return;
+  }
+
+  results.value = nextResults;
+  highlightedIndex.value = 0;
+  showDropdown.value = isFocused.value && nextResults.length > 0;
+}
+
+function clearSearchTimeout(): void {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
 }
 
 function startCloseTimer() {
@@ -129,19 +199,64 @@ function clearCloseTimer() {
 }
 
 function moveHighlight(delta: number) {
-  if (!showDropdown.value) return;
-  highlightedIndex.value = (highlightedIndex.value + delta + results.value.length) % results.value.length;
+  if (!isDropdownVisible.value || activeItemCount.value === 0) return;
+  highlightedIndex.value = (
+    highlightedIndex.value + delta + activeItemCount.value
+  ) % activeItemCount.value;
 }
 
 function selectHighlighted() {
-  if (showDropdown.value && results.value[highlightedIndex.value]) {
-    selectResult(results.value[highlightedIndex.value]);
+  if (!isDropdownVisible.value) {
+    return;
+  }
+
+  if (isHistoryMode.value) {
+    const query = searchHistory.value[highlightedIndex.value];
+    if (query) {
+      selectHistoryQuery(query);
+    }
+    return;
+  }
+
+  const result = results.value[highlightedIndex.value];
+  if (result) {
+    void selectResult(result);
   }
 }
 
+function selectHistoryQuery(query: string): void {
+  clearSearchTimeout();
+  clearCloseTimer();
+  searchQuery.value = query;
+  results.value = [];
+  highlightedIndex.value = 0;
+  showDropdown.value = false;
+  inputRef.value?.focus({ preventScroll: true });
+  void runSearch(query);
+}
+
+function deleteHistoryQuery(query: string): void {
+  searchHistory.value = searchService.quickHistory.remove(query);
+  highlightedIndex.value = Math.min(
+    highlightedIndex.value,
+    Math.max(0, searchHistory.value.length - 1),
+  );
+  showDropdown.value = searchHistory.value.length > 0;
+  void nextTick(() => inputRef.value?.focus({ preventScroll: true }));
+}
+
+function clearSearchHistory(): void {
+  searchHistory.value = searchService.quickHistory.clear();
+  highlightedIndex.value = 0;
+  showDropdown.value = false;
+  void nextTick(() => inputRef.value?.focus({ preventScroll: true }));
+}
+
 async function selectResult(result: SearchResult) {
+  const query = searchQuery.value.trim();
   await appShellStore.setActiveMainView('workspace');
   selectNote(result.id);
+  searchHistory.value = searchService.quickHistory.record(query);
 
   // Dispatch jump event for highlighting if match exists
   if (result.matches.length > 0) {
@@ -153,6 +268,16 @@ async function selectResult(result: SearchResult) {
 
   showDropdown.value = false;
   searchQuery.value = '';
+  results.value = [];
+  highlightedIndex.value = 0;
+}
+
+function getHistoryOptionId(index: number): string {
+  return `quick-search-history-${index}`;
+}
+
+function getResultOptionId(index: number): string {
+  return `quick-search-result-${index}`;
 }
 
 function highlightMatch(match: SearchMatch): string {
@@ -179,7 +304,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  if (searchTimeout) clearTimeout(searchTimeout);
+  clearSearchTimeout();
   clearCloseTimer();
 });
 </script>
@@ -283,6 +408,16 @@ onBeforeUnmount(() => {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
+.app-search__history-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 4px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .app-search__results {
   max-height: 400px;
   overflow-y: auto;
@@ -307,6 +442,55 @@ onBeforeUnmount(() => {
 [data-theme='dark'] .app-search__result-item:hover,
 [data-theme='dark'] .app-search__result-item.is-highlighted {
   background: color-mix(in srgb, #ffffff 8%, transparent);
+}
+
+.app-search__history-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+}
+
+.app-search__history-info {
+  min-width: 0;
+}
+
+.app-search__history-query {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-search__history-delete {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.app-search__history-item:hover .app-search__history-delete,
+.app-search__history-item.is-highlighted .app-search__history-delete,
+.app-search__history-delete:focus-visible {
+  opacity: 1;
+}
+
+.app-search__history-delete:hover,
+.app-search__history-delete:focus-visible {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+  outline: none;
 }
 
 .app-search__result-info {
@@ -347,6 +531,27 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--panel-border);
   background: color-mix(in srgb, var(--text) 2%, transparent);
   text-align: right;
+}
+
+.app-search__history-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.app-search__clear-history {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.app-search__clear-history:hover,
+.app-search__clear-history:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+  outline: none;
 }
 
 .app-search__hint {

@@ -2,7 +2,7 @@
   <div class="ai-source-settings">
     <div class="header-actions">
       <h3 class="panel-title">{{ t('pref.pane.aiSources') }}</h3>
-      <div class="official-ai-sponsor">
+      <div v-if="!showAddForm" class="official-ai-sponsor">
         <img :src="siliconFlowLogoUrl" alt="" aria-hidden="true" class="official-ai-sponsor-logo" />
         <span>{{ t('text.officialInnerAiSource') }}</span>
       </div>

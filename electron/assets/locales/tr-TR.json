@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "Sorunuzu girdikten sonra sohbeti başlatın",
   "search.noResultsSemantic": "İlgili not bulunamadı, lütfen bilgi tabanı dizininin güncel olduğundan emin olun veya farklı anahtar kelimelerle aramayı deneyin",
   "search.pressEnterToSelect": "Seçmek için ↑↓ tuşlarını, notu açmak için Enter tuşunu kullanın",
-  "search.quickPlaceholder": "Notları hızlıca ara...",
+  "search.quickFindPlaceholder": "Notları hızlıca ara...",
   "search.recentConversations": "Son Sohbetler",
   "search.searchNote": "Not Ara",
   "search.semanticHint": "Vektör anlamsal anlayışına dayalı akıllı bilgi tabanı araması, ilgili notları hassas bir şekilde eşleştirir",

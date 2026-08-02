@@ -353,10 +353,24 @@ function normalizeAiSourceSelection(
   model: string,
   aiSources: AiSourceConfig[],
   capability: string,
+  fallbackToFirstAvailable = false,
 ): { sourceId: string; model: string } {
   const source = aiSources.find(item => item.id === sourceId);
   const isUsable = source && (source.capabilities.length === 0 || source.capabilities.includes(capability));
-  return isUsable ? { sourceId, model } : { sourceId: '', model: '' };
+  if (isUsable) {
+    return { sourceId, model: model || source.aiModel };
+  }
+
+  if (fallbackToFirstAvailable) {
+    const fallbackSource = aiSources.find(item => (
+      item.capabilities.length === 0 || item.capabilities.includes(capability)
+    ));
+    if (fallbackSource) {
+      return { sourceId: fallbackSource.id, model: fallbackSource.aiModel };
+    }
+  }
+
+  return { sourceId: '', model: '' };
 }
 
 export function normalizeAiAssistantConfig(
@@ -369,6 +383,7 @@ export function normalizeAiAssistantConfig(
     normalizeString(config.model).trim(),
     aiSources,
     'chat',
+    true,
   );
 
   return {
@@ -398,6 +413,7 @@ export function normalizeKnowledgeCopilotConfig(
     normalizeString(config.embeddingModel).trim(),
     aiSources,
     'embedding',
+    true,
   );
   const askChatSelection = normalizeAiSourceSelection(
     normalizeString(config.askChatSourceId).trim(),

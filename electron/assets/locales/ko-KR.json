@@ -569,7 +569,7 @@
   "search.newKnowledgeChatPreview": "질문을 입력하여 대화를 시작하세요.",
   "search.noResultsSemantic": "관련 노트를 찾지 못했습니다. 지식 베이스 인덱스가 최신 상태인지 확인하거나 다른 키워드로 다시 검색해 보세요.",
   "search.pressEnterToSelect": "↑↓ 키로 선택하고 Enter 키로 노트를 엽니다",
-  "search.quickPlaceholder": "노트 빠르게 찾기...",
+  "search.quickFindPlaceholder": "노트 빠르게 찾기...",
   "search.recentConversations": "최근 기록",
   "search.searchNote": "노트 검색",
   "search.semanticHint": "벡터 시맨틱 검색으로 지식 베이스에서 관련 노트를 정확하게 찾습니다.",
