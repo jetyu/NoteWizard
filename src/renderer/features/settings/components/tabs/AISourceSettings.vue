@@ -19,10 +19,14 @@
                   class="provider-logo source-provider-logo" />
                 <div class="source-heading-copy">
                   <h4 class="source-title">{{ source.name }}</h4>
-                  <span class="source-provider">{{ getAiProviderLabel(source.provider) }}</span>
+                  <span class="source-provider">
+                    {{ isBuiltInAiSource(source)
+                      ? t('aiProvider.snaptium')
+                      : getAiProviderLabel(source.provider) }}
+                  </span>
                 </div>
               </div>
-              <div class="settings-card-actions">
+              <div v-if="!isBuiltInAiSource(source)" class="settings-card-actions">
                 <button class="action-btn" @click="handleEditSource(source)" :title="t('common.editor')">
                   <IconPencil :size="14" />
                 </button>
@@ -32,15 +36,23 @@
               </div>
             </div>
             <div class="source-details">
-              <div class="detail-item">
+              <div v-if="!isBuiltInAiSource(source)" class="detail-item">
                 <span class="label">{{ t('label.aiBaseUrl') }}</span>
                 <span class="value" :title="source.baseUrl">{{ source.baseUrl }}</span>
               </div>
-              <div class="detail-item">
+              <template v-if="isBuiltInAiSource(source)">
+                <div v-for="modelRow in builtInModelRows" :key="modelRow.capability" class="detail-item">
+                  <span class="label">{{ t(modelRow.labelKey) }}</span>
+                  <span class="value" :title="resolveAiSourceModel(source, modelRow.capability)">
+                    {{ resolveAiSourceModel(source, modelRow.capability) }}
+                  </span>
+                </div>
+              </template>
+              <div v-else class="detail-item">
                 <span class="label">{{ t('label.aiModel') }}</span>
                 <span class="value" :title="source.aiModel">{{ source.aiModel }}</span>
               </div>
-              <div class="detail-item">
+              <div v-if="!isBuiltInAiSource(source)" class="detail-item">
                 <span class="label">{{ t('label.aiCapabilities') }}</span>
                 <span class="value" :title="formatCapabilities(source.capabilities)">{{
                   formatCapabilities(source.capabilities) }}</span>
@@ -183,7 +195,15 @@ import { ref, computed, reactive, onBeforeUnmount, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '../../store/settings.store';
 import type { AISource } from '../../store/settings.store';
-import { AI_PROVIDER_DEFAULT_BASE_URLS, AI_PROVIDERS, getAiProviderCapabilities, type AiProvider } from '@shared/ai-provider.constants';
+import {
+  AI_PROVIDER_DEFAULT_BASE_URLS,
+  AI_PROVIDERS,
+  getAiProviderCapabilities,
+  resolveAiSourceModel,
+  type AiCapability,
+  type AiProvider,
+} from '@shared/ai-provider.constants';
+import { isBuiltInAiSourceId } from '@shared/built-in-ai.constants';
 import { getAiProviderPresentation, SELECTABLE_AI_PROVIDERS } from '../../config/ai-providers';
 import { settingsService } from '../../services/settings.service';
 import { systemDialog } from '../../services/system-dialog.service';
@@ -239,6 +259,14 @@ const capabilityOptions = [
   { value: 'chat', labelKey: 'label.aiCapabilityChat' },
   { value: 'reranker', labelKey: 'label.aiCapabilityReranker' },
 ] as const;
+
+const builtInModelRows: ReadonlyArray<{ capability: AiCapability; labelKey: string }> = [
+  { capability: 'chat', labelKey: 'label.aiCapabilityChat' },
+  { capability: 'embedding', labelKey: 'label.aiCapabilityEmbedding' },
+  { capability: 'reranker', labelKey: 'label.aiCapabilityReranker' },
+];
+
+const isBuiltInAiSource = (source: AISource): boolean => isBuiltInAiSourceId(source.id);
 
 // Basic validation for testing (All 4 marked fields are now mandatory)
 const canTest = computed(() => {
@@ -300,6 +328,8 @@ const handleAddSource = async () => {
 };
 
 const handleEditSource = (source: AISource) => {
+  if (isBuiltInAiSource(source)) return;
+
   editingSourceId.value = source.id;
   newSource.provider = source.provider;
   newSource.name = source.name;
@@ -409,6 +439,8 @@ const handleTestNewSource = async () => {
 };
 
 const removeSource = async (source: AISource) => {
+  if (isBuiltInAiSource(source)) return;
+
   const confirmed = await settingsService.confirmDeleteAiSource(source.name);
   if (confirmed) {
     await settingsStore.aiSources.remove(source.id);

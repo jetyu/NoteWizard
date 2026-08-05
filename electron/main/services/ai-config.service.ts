@@ -7,7 +7,14 @@ import {
   isValidAiWritingScenario,
   isValidAiWritingStyle,
 } from '../../shared/ai.constants.js';
-import type { AiProvider } from '../../shared/ai-provider.constants.js';
+import {
+  resolveAiSourceModel,
+  type AiCapability,
+  type AiCapabilityModelMap,
+  type AiProvider,
+} from '../../shared/ai-provider.constants.js';
+import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
+import { builtInAiService } from './built-in-ai.service.js';
 
 interface AiSourceConfig {
   id: string;
@@ -15,6 +22,7 @@ interface AiSourceConfig {
   baseUrl: string;
   apiKey: string;
   aiModel: string;
+  capabilityModels?: AiCapabilityModelMap;
   capabilities: string[];
   provider: AiProvider;
 }
@@ -154,7 +162,7 @@ function resolveAssistantPromptSettings(aiAssistant: AiAssistantSettings): {
   };
 }
 
-function supportsCapability(source: AiSourceConfig, capability: string): boolean {
+function supportsCapability(source: AiSourceConfig, capability: AiCapability): boolean {
   return source.capabilities.length === 0 || source.capabilities.includes(capability);
 }
 
@@ -186,7 +194,7 @@ function resolveSourceEndpoint(source: AiSourceConfig, capability: 'chat' | 'emb
 function requireConfiguredSourceWithCapability(
   aiSources: AiSourceConfig[],
   sourceId: string,
-  capability: string,
+  capability: AiCapability,
   errorMessage: string,
 ): AiSourceConfig {
   const source = requireConfiguredSource(aiSources, sourceId, errorMessage);
@@ -195,6 +203,25 @@ function requireConfiguredSourceWithCapability(
   }
 
   return source;
+}
+
+async function resolveSourceRequest(
+  source: AiSourceConfig,
+  capability: AiCapability,
+  preferredModel: string,
+  errorMessage: string,
+): Promise<ResolvedEmbeddingConfig> {
+  if (isBuiltInAiSourceId(source.id)) {
+    return await builtInAiService.resolveRequest(capability);
+  }
+
+  return {
+    provider: source.provider,
+    baseUrl: resolveSourceBaseUrl(source),
+    endpoint: resolveSourceEndpoint(source, capability),
+    apiKey: source.apiKey,
+    model: resolveModel(preferredModel, resolveAiSourceModel(source, capability), errorMessage),
+  };
 }
 
 export const aiConfigService = {
@@ -209,25 +236,26 @@ export const aiConfigService = {
     const promptSettings = resolveAssistantPromptSettings(aiAssistant);
 
     if (!aiAssistant.enabled) {
-      throw new Error($t('aiAssistant.error.disabled', 'AI Assistant is disabled'));
+      throw new Error($t('aiAssistant.error.disabled'));
     }
 
     const source = requireConfiguredSourceWithCapability(
       config.aiSources,
       aiAssistant.sourceId,
       'chat',
-      $t('aiAssistant.error.sourceNotFound', 'AI source not found'),
+      $t('aiAssistant.error.sourceNotFound'),
     );
-    const model = resolveModel(
+    const requestConfig = await resolveSourceRequest(
+      source,
+      'chat',
       aiAssistant.model,
-      source.aiModel,
-      $t('aiAssistant.error.noModelConfigured', 'No model configured'),
+      $t('aiAssistant.error.noModelConfigured'),
     );
 
     return {
-      endpoint: resolveSourceEndpoint(source, 'chat'),
-      apiKey: source.apiKey,
-      model,
+      endpoint: requestConfig.endpoint,
+      apiKey: requestConfig.apiKey,
+      model: requestConfig.model,
       uiLanguage: config.language,
       customSystemPrompt: promptSettings.customSystemPrompt,
       writingStyle: promptSettings.writingStyle,
@@ -264,6 +292,39 @@ export const aiConfigService = {
     const rerankerSource = knowledgeCopilot.rerankerSourceId
       ? config.aiSources.find((item) => item.id === knowledgeCopilot.rerankerSourceId && supportsCapability(item, 'reranker')) ?? null
       : null;
+    const [embeddingConfig, askChatConfig, agentChatConfig, rerankerRequestConfig] = await Promise.all([
+      resolveSourceRequest(
+        embeddingSource,
+        'embedding',
+        knowledgeCopilot.embeddingModel,
+        'Embedding model not specified',
+      ),
+      askChatSource
+        ? resolveSourceRequest(
+          askChatSource,
+          'chat',
+          knowledgeCopilot.askChatModel,
+          'No Ask chat model configured',
+        )
+        : Promise.resolve(null),
+      agentChatSource
+        ? resolveSourceRequest(
+          agentChatSource,
+          'chat',
+          knowledgeCopilot.agentChatModel,
+          'No Agent chat model configured',
+        )
+        : Promise.resolve(null),
+      rerankerSource
+        ? resolveSourceRequest(
+          rerankerSource,
+          'reranker',
+          knowledgeCopilot.rerankerModel,
+          'No reranker model configured',
+        )
+        : Promise.resolve(null),
+    ]);
+
     return {
       uiLanguage: config.language,
       workspaceRoot: config.noteStoragePath,
@@ -271,39 +332,13 @@ export const aiConfigService = {
         topK: knowledgeCopilot.topK,
         similarityThreshold: knowledgeCopilot.similarityThreshold,
       },
-      embeddingConfig: {
-        provider: embeddingSource.provider,
-        baseUrl: resolveSourceBaseUrl(embeddingSource),
-        endpoint: resolveSourceEndpoint(embeddingSource, 'embedding'),
-        apiKey: embeddingSource.apiKey,
-        model: resolveModel(knowledgeCopilot.embeddingModel, embeddingSource.aiModel, 'Embedding model not specified'),
-      },
-      askChatConfig: askChatSource
-          ? {
-            provider: askChatSource.provider,
-            baseUrl: resolveSourceBaseUrl(askChatSource),
-            endpoint: resolveSourceEndpoint(askChatSource, 'chat'),
-            apiKey: askChatSource.apiKey,
-            model: resolveModel(knowledgeCopilot.askChatModel, askChatSource.aiModel, 'No Ask chat model configured'),
-          }
-        : null,
-      agentChatConfig: agentChatSource
-          ? {
-            provider: agentChatSource.provider,
-            baseUrl: resolveSourceBaseUrl(agentChatSource),
-            endpoint: resolveSourceEndpoint(agentChatSource, 'chat'),
-            apiKey: agentChatSource.apiKey,
-            model: resolveModel(knowledgeCopilot.agentChatModel, agentChatSource.aiModel, 'No Agent chat model configured'),
-          }
-        : null,
-      rerankerConfig: rerankerSource
+      embeddingConfig,
+      askChatConfig,
+      agentChatConfig,
+      rerankerConfig: rerankerSource && rerankerRequestConfig
         ? {
-            provider: rerankerSource.provider,
-            baseUrl: resolveSourceBaseUrl(rerankerSource),
+            ...rerankerRequestConfig,
             sourceId: rerankerSource.id,
-            endpoint: resolveSourceEndpoint(rerankerSource, 'reranker'),
-            apiKey: rerankerSource.apiKey,
-            model: resolveModel(knowledgeCopilot.rerankerModel, rerankerSource.aiModel, 'No reranker model configured'),
           }
         : null,
     };

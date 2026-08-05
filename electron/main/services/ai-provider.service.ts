@@ -7,6 +7,7 @@ import { BaseDocumentCompressor } from '@langchain/core/retrievers/document_comp
 import type { DocumentInterface } from '@langchain/core/documents';
 import { AI_PROVIDERS, type AiProvider } from '../../shared/ai-provider.constants.js';
 import { remoteAiService } from './remote-ai.service.js';
+import { builtInAiService } from './built-in-ai.service.js';
 
 export interface AiProviderModelConfig {
   provider: AiProvider;
@@ -44,6 +45,7 @@ class OpenAiCompatibleReranker extends BaseDocumentCompressor {
 
 function isOpenAiCompatibleProvider(provider: AiProvider): boolean {
   return provider === AI_PROVIDERS.OPENAI
+    || provider === AI_PROVIDERS.SNAPTIUM
     || provider === AI_PROVIDERS.AZURE_OPENAI
     || provider === AI_PROVIDERS.OPENAI_COMPATIBLE
     || provider === AI_PROVIDERS.FIREWORKS
@@ -64,6 +66,13 @@ function requireApiKey(config: AiProviderModelConfig): string {
   return config.apiKey;
 }
 
+async function fetchBuiltInAi(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  return builtInAiService.fetch(input, init);
+}
+
 export function createProviderChatModel(config: AiProviderModelConfig): BaseChatModel {
   const apiKey = requireApiKey(config);
   if (isOpenAiCompatibleProvider(config.provider)) {
@@ -72,7 +81,10 @@ export function createProviderChatModel(config: AiProviderModelConfig): BaseChat
       model: config.model,
       temperature: 0,
       maxRetries: 2,
-      configuration: { baseURL: config.baseUrl },
+      configuration: {
+        baseURL: config.baseUrl,
+        ...(config.provider === AI_PROVIDERS.SNAPTIUM ? { fetch: fetchBuiltInAi } : {}),
+      },
     });
   }
 
@@ -90,7 +102,14 @@ export function createProviderChatModel(config: AiProviderModelConfig): BaseChat
 export function createProviderEmbeddings(config: AiProviderModelConfig): Embeddings {
   const apiKey = requireApiKey(config);
   if (isOpenAiCompatibleProvider(config.provider)) {
-    return new OpenAIEmbeddings({ apiKey, model: config.model, configuration: { baseURL: config.baseUrl } });
+    return new OpenAIEmbeddings({
+      apiKey,
+      model: config.model,
+      configuration: {
+        baseURL: config.baseUrl,
+        ...(config.provider === AI_PROVIDERS.SNAPTIUM ? { fetch: fetchBuiltInAi } : {}),
+      },
+    });
   }
 
   if (config.provider === AI_PROVIDERS.GOOGLE_GEMINI) {
@@ -108,6 +127,7 @@ export function createProviderReranker(config: AiProviderModelConfig): BaseDocum
   requireApiKey(config);
   if (config.provider === AI_PROVIDERS.SILICONFLOW
     || config.provider === AI_PROVIDERS.FIREWORKS
+    || config.provider === AI_PROVIDERS.SNAPTIUM
     || config.provider === AI_PROVIDERS.OPENAI_COMPATIBLE) {
     return new OpenAiCompatibleReranker(config);
   }

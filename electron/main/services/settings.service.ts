@@ -15,8 +15,12 @@ import {
   getAiProviderCapabilities,
   inferAiProvider,
   isAiProvider,
+  resolveAiSourceModel,
+  type AiCapability,
+  type AiCapabilityModelMap,
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
+import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
 import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.constants.js';
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
 import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
@@ -30,6 +34,7 @@ import { UPDATER_CONSTANTS } from '../constants/updater.constants.js';
 import { loggerService } from './log/logger.service.js';
 import { previewPolicyService } from './preview-policy.service.js';
 import { keyManagerService } from './key-manager.service.js';
+import { builtInAiService } from './built-in-ai.service.js';
 import type { KeySlots } from './crypto.service.js';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -74,6 +79,7 @@ export interface AiSourceConfig {
   baseUrl: string;
   apiKey: string;
   aiModel: string;
+  capabilityModels?: AiCapabilityModelMap;
   capabilities: string[];
   provider: AiProvider;
 }
@@ -206,6 +212,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function hasOwnSetting(config: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(config, key);
+}
+
 export function toSettingsRecord(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
@@ -318,7 +328,7 @@ function normalizeAiSource(value: unknown): AiSourceConfig | null {
   }
 
   const id = normalizeString(value.id).trim();
-  if (!id) {
+  if (!id || isBuiltInAiSourceId(id)) {
     return null;
   }
 
@@ -352,13 +362,13 @@ function normalizeAiSourceSelection(
   sourceId: string,
   model: string,
   aiSources: AiSourceConfig[],
-  capability: string,
+  capability: AiCapability,
   fallbackToFirstAvailable = false,
 ): { sourceId: string; model: string } {
   const source = aiSources.find(item => item.id === sourceId);
   const isUsable = source && (source.capabilities.length === 0 || source.capabilities.includes(capability));
   if (isUsable) {
-    return { sourceId, model: model || source.aiModel };
+    return { sourceId, model: model || resolveAiSourceModel(source, capability) };
   }
 
   if (fallbackToFirstAvailable) {
@@ -366,7 +376,10 @@ function normalizeAiSourceSelection(
       item.capabilities.length === 0 || item.capabilities.includes(capability)
     ));
     if (fallbackSource) {
-      return { sourceId: fallbackSource.id, model: fallbackSource.aiModel };
+      return {
+        sourceId: fallbackSource.id,
+        model: resolveAiSourceModel(fallbackSource, capability),
+      };
     }
   }
 
@@ -383,7 +396,7 @@ export function normalizeAiAssistantConfig(
     normalizeString(config.model).trim(),
     aiSources,
     'chat',
-    true,
+    !hasOwnSetting(config, 'sourceId'),
   );
 
   return {
@@ -413,25 +426,28 @@ export function normalizeKnowledgeCopilotConfig(
     normalizeString(config.embeddingModel).trim(),
     aiSources,
     'embedding',
-    true,
+    !hasOwnSetting(config, 'embeddingSourceId'),
   );
   const askChatSelection = normalizeAiSourceSelection(
     normalizeString(config.askChatSourceId).trim(),
     normalizeString(config.askChatModel).trim(),
     aiSources,
     'chat',
+    !hasOwnSetting(config, 'askChatSourceId'),
   );
   const agentChatSelection = normalizeAiSourceSelection(
     normalizeString(config.agentChatSourceId).trim(),
     normalizeString(config.agentChatModel).trim(),
     aiSources,
     'chat',
+    !hasOwnSetting(config, 'agentChatSourceId'),
   );
   const rerankerSelection = normalizeAiSourceSelection(
     normalizeString(config.rerankerSourceId).trim(),
     normalizeString(config.rerankerModel).trim(),
     aiSources,
     'reranker',
+    !hasOwnSetting(config, 'rerankerSourceId'),
   );
 
   return {
@@ -616,7 +632,12 @@ function interpolateMessage(template: string, replacements: Record<string, strin
 
 export function normalizeSettings(raw: unknown = {}): AppSettings {
   const config = toSettingsRecord(raw);
-  const aiSources = normalizeAiSourcesConfig(config.aiSources);
+  const userAiSources = normalizeAiSourcesConfig(config.aiSources);
+  const builtInSource = builtInAiService.getPublicSource();
+  const aiSources: AiSourcesConfig = {
+    sources: [builtInSource, ...userAiSources.sources],
+  };
+  const selectionSources = [...userAiSources.sources, builtInSource];
   const defaultLanguage = app.getLocale().toLowerCase().startsWith('en') ? 'en-US' : 'zh-CN';
   const defaultStoragePath = path.join(
     app.getPath(VFS_CONSTANTS.DOCUMENTS_FOLDER),
@@ -628,8 +649,8 @@ export function normalizeSettings(raw: unknown = {}): AppSettings {
     preview: normalizePreviewConfig(config.preview),
     editor: normalizeEditorConfig(config.editor),
     aiSources,
-    aiAssistant: normalizeAiAssistantConfig(config.aiAssistant, aiSources.sources),
-    knowledgeCopilot: normalizeKnowledgeCopilotConfig(config.knowledgeCopilot, aiSources.sources),
+    aiAssistant: normalizeAiAssistantConfig(config.aiAssistant, selectionSources),
+    knowledgeCopilot: normalizeKnowledgeCopilotConfig(config.knowledgeCopilot, selectionSources),
     sync: normalizeSyncConfig(config.sync),
     noteStorage: normalizeNoteStorageConfig(config.noteStorage, defaultStoragePath),
     privacyLog: normalizePrivacyLogConfig(config.privacyLog),
@@ -637,6 +658,15 @@ export function normalizeSettings(raw: unknown = {}): AppSettings {
     appShell: normalizeAppShellConfig(config.appShell),
     workbench: normalizeWorkbenchConfig(config.workbench),
     accessControl: normalizeAccessControlConfig(config.accessControl),
+  };
+}
+
+export function stripBuiltInAiRuntimeSource(settings: AppSettings): AppSettings {
+  return {
+    ...settings,
+    aiSources: {
+      sources: settings.aiSources.sources.filter(source => !isBuiltInAiSourceId(source.id)),
+    },
   };
 }
 
@@ -682,7 +712,7 @@ export const settingsService = {
     try {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
       const settings = normalizeSettings(config);
-      await fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
+      await fs.writeFile(filePath, JSON.stringify(stripBuiltInAiRuntimeSource(settings), null, 2), 'utf-8');
       previewPolicyService.updateConfig(settings.preview);
       return settings;
     } catch (error) {
@@ -881,7 +911,7 @@ export const settingsService = {
         version: SNAPTIUM_CONFIG_PACKAGE_VERSION,
         exportedAt: Date.now(),
         app: app.getName(),
-        settings,
+        settings: stripBuiltInAiRuntimeSource(settings),
         e2ee: keySlots ? { keySlots } : undefined,
       };
 
@@ -916,7 +946,11 @@ export const settingsService = {
     try {
       const targetFilePath = this.getSettingsPath();
       const settings = normalizeSettings();
-      await fs.writeFile(targetFilePath, JSON.stringify(settings, null, 2), 'utf-8');
+      await fs.writeFile(
+        targetFilePath,
+        JSON.stringify(stripBuiltInAiRuntimeSource(settings), null, 2),
+        'utf-8',
+      );
       return true;
     } catch (error) {
       logger.error('Failed to reset settings', { error: getErrorMessage(error) });
@@ -954,7 +988,11 @@ export const settingsService = {
 
       const targetFilePath = this.getSettingsPath();
       await fs.mkdir(path.dirname(targetFilePath), { recursive: true });
-      await fs.writeFile(targetFilePath, JSON.stringify(settings, null, 2), 'utf-8');
+      await fs.writeFile(
+        targetFilePath,
+        JSON.stringify(stripBuiltInAiRuntimeSource(settings), null, 2),
+        'utf-8',
+      );
 
       if (parsed.e2ee?.keySlots) {
         await keyManagerService.restoreKeySlots(parsed.e2ee.keySlots);
