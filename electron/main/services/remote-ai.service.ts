@@ -1,6 +1,7 @@
 import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 import { isElectronNetworkRequestError, mainProcessFetch } from './network.service.js';
+import { builtInAiService } from './built-in-ai.service.js';
 
 const logger = loggerService.createLogger('Electron:Remote AI Service');
 
@@ -297,12 +298,15 @@ export const remoteAiService = {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await mainProcessFetch(endpoint, {
+      const requestInit: RequestInit = {
         method: 'POST',
         headers: this.getHeaders(apiKey),
         body: JSON.stringify(payload),
         signal: controller.signal,
-      });
+      };
+      const response = builtInAiService.isEndpoint(endpoint)
+        ? await builtInAiService.fetch(endpoint, requestInit)
+        : await mainProcessFetch(endpoint, requestInit);
 
       clearTimeout(timeoutId);
 
@@ -335,6 +339,10 @@ export const remoteAiService = {
       return data as TResponse;
     } catch (error) {
       clearTimeout(timeoutId);
+      if (builtInAiService.isEndpoint(endpoint)) {
+        throw builtInAiService.normalizeRequestError(error);
+      }
+
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timeout', { cause: error });
       }
@@ -377,7 +385,7 @@ export const remoteAiService = {
     let accumulated = '';
 
     try {
-      const response = await mainProcessFetch(endpoint, {
+      const requestInit: RequestInit = {
         method: 'POST',
         headers: this.getHeaders(apiKey),
         body: JSON.stringify({
@@ -390,7 +398,10 @@ export const remoteAiService = {
           ...(tool_choice ? { tool_choice } : {}),
         }),
         signal: controller.signal,
-      });
+      };
+      const response = builtInAiService.isEndpoint(endpoint)
+        ? await builtInAiService.fetch(endpoint, requestInit)
+        : await mainProcessFetch(endpoint, requestInit);
 
       if (!response.ok) {
         const fallback = `HTTP ${response.status}: ${response.statusText}`;
@@ -442,6 +453,10 @@ export const remoteAiService = {
 
       return { content: accumulated };
     } catch (error) {
+      if (builtInAiService.isEndpoint(endpoint)) {
+        throw builtInAiService.normalizeRequestError(error);
+      }
+
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timeout', { cause: error });
       }

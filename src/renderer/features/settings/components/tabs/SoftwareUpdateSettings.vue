@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="software-update-settings">
     <h3 class="panel-title">{{ t('label.softwareAutoUpdate') }}</h3>
 
@@ -8,13 +8,13 @@
           <p class="setting-label">{{ t('label.softwareAutoUpdate') }}</p>
           <p class="setting-description">{{ t('text.softwareAutoUpdate') }}</p>
         </div>
-        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.autoCheckUpdates }"
-          :aria-pressed="settingsStore.config.autoCheckUpdates" @click="handleAutoUpdateToggle">
+        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.softwareUpdate.autoCheck }"
+          :aria-pressed="settingsStore.config.softwareUpdate.autoCheck" @click="handleAutoUpdateToggle">
           <span class="startup-switch-track">
             <span class="startup-switch-thumb" />
           </span>
           <span class="startup-switch-text">
-            {{ settingsStore.config.autoCheckUpdates ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+            {{ settingsStore.config.softwareUpdate.autoCheck ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
           </span>
         </button>
       </section>
@@ -27,7 +27,7 @@
           </div>
           <div class="number-input-container">
             <input type="number" class="settings-input number-input" :value="updateIntervalHours" min="1" max="168"
-              :disabled="!settingsStore.config.autoCheckUpdates" @change="handleIntervalChange" />
+              :disabled="!settingsStore.config.softwareUpdate.autoCheck" @change="handleIntervalChange" />
           </div>
         </section>
 
@@ -37,7 +37,7 @@
             <p class="setting-description">{{ t('text.updateChannel') }}</p>
           </div>
           <label class="select-shell">
-            <select class="settings-select" :value="settingsStore.config.updateChannel" @change="handleChannelChange">
+            <select class="settings-select" :value="settingsStore.config.softwareUpdate.channel" @change="handleChannelChange">
               <option v-for="option in channelOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
@@ -128,7 +128,7 @@ const channelOptions = computed(() => [
   { value: 'dev' as UpdateChannel, label: t('option.updateChannel.dev') },
 ]);
 
-const updateIntervalHours = computed(() => Math.round(settingsStore.config.updateCheckInterval / (60 * 60 * 1000)));
+const updateIntervalHours = computed(() => Math.round(settingsStore.config.softwareUpdate.checkInterval / (60 * 60 * 1000)));
 const progressPercent = computed(() => Math.min(100, Math.max(0, Math.round(downloadProgress.value.percent || 0))));
 const isDownloadingState = computed(() => updatePanelState.value === 'downloading');
 const showRetryAction = computed(() =>
@@ -218,9 +218,9 @@ const updateStateToneClass = computed(() => ({
 
 async function syncUpdaterConfig(): Promise<void> {
   await updaterStore.updateConfig({
-    autoCheckUpdates: settingsStore.config.autoCheckUpdates,
-    updateCheckInterval: settingsStore.config.updateCheckInterval,
-    updateChannel: settingsStore.config.updateChannel,
+    autoCheckUpdates: settingsStore.config.softwareUpdate.autoCheck,
+    updateCheckInterval: settingsStore.config.softwareUpdate.checkInterval,
+    updateChannel: settingsStore.config.softwareUpdate.channel,
   });
 }
 
@@ -258,8 +258,8 @@ const handleRetryUpdate = async () => {
 };
 
 const handleAutoUpdateToggle = async () => {
-  const nextValue = !settingsStore.config.autoCheckUpdates;
-  await settingsStore.updateSetting('autoCheckUpdates', nextValue);
+  const nextValue = !settingsStore.config.softwareUpdate.autoCheck;
+  await settingsStore.softwareUpdate.update('autoCheck', nextValue);
   await syncUpdaterConfig();
 };
 
@@ -270,18 +270,18 @@ const handleIntervalChange = async (event: Event) => {
     return;
   }
 
-  await settingsStore.updateSetting('updateCheckInterval', nextHours * 60 * 60 * 1000);
+  await settingsStore.softwareUpdate.update('checkInterval', nextHours * 60 * 60 * 1000);
   await syncUpdaterConfig();
 };
 
 const handleChannelChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
   const nextChannel = normalizeUpdateChannel(target.value);
-  if (nextChannel === settingsStore.config.updateChannel) {
+  if (nextChannel === settingsStore.config.softwareUpdate.channel) {
     return;
   }
 
-  await settingsStore.updateSetting('updateChannel', nextChannel);
+  await settingsStore.softwareUpdate.update('channel', nextChannel);
   updaterStore.clearDiscoveredUpdate();
   await syncUpdaterConfig();
 };

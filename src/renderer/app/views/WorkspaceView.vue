@@ -164,10 +164,10 @@ const compiledPreview = computed(() => {
   }
 
   return compileMarkdown(activeNote.value.content, {
-    allowHtml: config.value.previewAppearance.allowHtml,
-    allowInlineSvg: config.value.previewAppearance.allowInlineSvg,
-    remoteImageMode: config.value.previewAppearance.remoteImageMode,
-    trustedRemoteImageHosts: config.value.previewAppearance.trustedRemoteImageHosts,
+    allowHtml: config.value.preview.allowHtml,
+    allowInlineSvg: config.value.preview.allowInlineSvg,
+    remoteImageMode: config.value.preview.remoteImageMode,
+    trustedRemoteImageHosts: config.value.preview.trustedRemoteImageHosts,
     blockedImageLabel: t('preview.remoteImageBlocked'),
     copyCodeButtonLabel: t('preview.copyCode'),
     contentId: activeNote.value.contentId,

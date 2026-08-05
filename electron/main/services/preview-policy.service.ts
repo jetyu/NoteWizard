@@ -15,10 +15,6 @@ interface PreviewAppearanceConfig {
   trustedRemoteImageHosts: string[];
 }
 
-interface PreviewPolicyConfigInput extends Partial<PreviewAppearanceConfig> {
-  previewAppearance?: Partial<PreviewAppearanceConfig>;
-}
-
 const currentPreviewAppearance: PreviewAppearanceConfig = {
   allowHtml: true,
   allowInlineSvg: true,
@@ -51,13 +47,13 @@ function normalizePreviewAppearance(
 }
 
 export const previewPolicyService = {
-  updateConfig(config: PreviewPolicyConfigInput = {}): PreviewAppearanceConfig {
-    const previewAppearance = normalizePreviewAppearance(config.previewAppearance ?? config);
-    currentPreviewAppearance.allowHtml = previewAppearance.allowHtml;
-    currentPreviewAppearance.allowInlineSvg = previewAppearance.allowInlineSvg;
-    currentPreviewAppearance.remoteImageMode = previewAppearance.remoteImageMode;
+  updateConfig(config: Partial<PreviewAppearanceConfig> = {}): PreviewAppearanceConfig {
+    const preview = normalizePreviewAppearance(config);
+    currentPreviewAppearance.allowHtml = preview.allowHtml;
+    currentPreviewAppearance.allowInlineSvg = preview.allowInlineSvg;
+    currentPreviewAppearance.remoteImageMode = preview.remoteImageMode;
     currentPreviewAppearance.trustedRemoteImageHosts = [
-      ...previewAppearance.trustedRemoteImageHosts,
+      ...preview.trustedRemoteImageHosts,
     ];
     return clonePreviewAppearance();
   },

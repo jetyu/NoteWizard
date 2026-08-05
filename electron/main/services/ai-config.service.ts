@@ -7,15 +7,14 @@ import {
   isValidAiWritingScenario,
   isValidAiWritingStyle,
 } from '../../shared/ai.constants.js';
-import { LICENSE_FEATURES, type LicensedFeature } from '../../shared/license.constants.js';
-import { inferAiProvider, isAiProvider, type AiProvider } from '../../shared/ai-provider.constants.js';
 import {
-  OFFICIAL_AI_BASE_URL,
-  OFFICIAL_AI_MODELS,
-  OFFICIAL_AI_SOURCE_IDS,
-  isOfficialAiSourceId,
-} from '../../shared/official-ai.constants.js';
-import { licenseService } from './license.service.js';
+  resolveAiSourceModel,
+  type AiCapability,
+  type AiCapabilityModelMap,
+  type AiProvider,
+} from '../../shared/ai-provider.constants.js';
+import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
+import { builtInAiService } from './built-in-ai.service.js';
 
 interface AiSourceConfig {
   id: string;
@@ -23,10 +22,9 @@ interface AiSourceConfig {
   baseUrl: string;
   apiKey: string;
   aiModel: string;
+  capabilityModels?: AiCapabilityModelMap;
   capabilities: string[];
   provider: AiProvider;
-  official: boolean;
-  locked: boolean;
 }
 
 interface AiAssistantSettings {
@@ -54,7 +52,7 @@ interface KnowledgeCopilotSettings {
 
 interface NormalizedAppConfig {
   language: string;
-  noteSavePath: string;
+  noteStoragePath: string;
   aiSources: AiSourceConfig[];
   aiAssistant: AiAssistantSettings;
   knowledgeCopilot: KnowledgeCopilotSettings;
@@ -105,106 +103,15 @@ interface ResolvedKnowledgeCopilotConfig {
   rerankerConfig: ResolvedRerankerConfig | null;
 }
 
-type UnknownRecord = Record<string, unknown>;
 type LoadedAppConfig = Awaited<ReturnType<typeof settingsService.loadConfig>>;
 
-function toRecord(value: unknown): UnknownRecord {
-  return typeof value === 'object' && value !== null
-    ? (value as UnknownRecord)
-    : {};
-}
-
-function toText(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function toBoolean(value: unknown): boolean {
-  return value === true;
-}
-
-function toFiniteNumber(value: unknown, fallback: number): number {
-  const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue : fallback;
-}
-
-function normalizeSimilarityThreshold(value: unknown): number {
-  const threshold = toFiniteNumber(value, 0.45);
-  return Math.min(1, Math.max(0, threshold));
-}
-
-function normalizeTopK(value: unknown): number {
-  const topK = Math.floor(toFiniteNumber(value, 5));
-  return Math.min(10, Math.max(1, topK));
-}
-
-function normalizeAiSource(item: unknown): AiSourceConfig {
-  const record = toRecord(item);
-  const id = toText(record.id);
-  const capabilities = Array.isArray(record.capabilities)
-    ? record.capabilities
-      .filter((capability): capability is string => typeof capability === 'string' && capability.trim().length > 0)
-      .map((capability) => capability.trim())
-    : [];
-
+function selectAiConfig(config: LoadedAppConfig): NormalizedAppConfig {
   return {
-    id,
-    name: toText(record.name),
-    baseUrl: toText(record.baseUrl),
-    apiKey: toText(record.apiKey),
-    aiModel: toText(record.aiModel),
-    capabilities,
-    provider: isAiProvider(record.provider) ? record.provider : inferAiProvider(toText(record.baseUrl)),
-    official: record.official === true || isOfficialAiSourceId(id),
-    locked: record.locked === true || isOfficialAiSourceId(id),
-  };
-}
-
-function normalizeAiSources(aiSources: unknown): AiSourceConfig[] {
-  if (!Array.isArray(aiSources)) {
-    return [];
-  }
-
-  return aiSources
-    .map((source) => normalizeAiSource(source))
-    .filter((source) => source.id.length > 0);
-}
-
-function normalizeAiAssistant(aiAssistant: unknown): AiAssistantSettings {
-  const record = toRecord(aiAssistant);
-  return {
-    enabled: toBoolean(record.enabled),
-    sourceId: toText(record.sourceId),
-    model: toText(record.model),
-    systemPrompt: typeof record.systemPrompt === 'string' ? record.systemPrompt : '',
-    writingStyle: record.writingStyle,
-    writingScenario: record.writingScenario,
-  };
-}
-
-function normalizeKnowledgeCopilotSettings(knowledgeCopilot: unknown): KnowledgeCopilotSettings {
-  const record = toRecord(knowledgeCopilot);
-  return {
-    enabled: toBoolean(record.enabled),
-    embeddingSourceId: toText(record.embeddingSourceId),
-    embeddingModel: toText(record.embeddingModel),
-    askChatSourceId: toText(record.askChatSourceId) || toText(record.chatSourceId),
-    askChatModel: toText(record.askChatModel) || toText(record.chatModel),
-    agentChatSourceId: toText(record.agentChatSourceId) || toText(record.chatSourceId),
-    agentChatModel: toText(record.agentChatModel) || toText(record.chatModel),
-    rerankerSourceId: toText(record.rerankerSourceId),
-    rerankerModel: toText(record.rerankerModel),
-    topK: normalizeTopK(record.topK),
-    similarityThreshold: normalizeSimilarityThreshold(record.similarityThreshold),
-  };
-}
-
-function normalizeAppConfig(config: LoadedAppConfig): NormalizedAppConfig {
-  return {
-    language: toText(config.language),
-    noteSavePath: toText(config.noteSavePath),
-    aiSources: normalizeAiSources(config.aiSources),
-    aiAssistant: normalizeAiAssistant(config.aiAssistant),
-    knowledgeCopilot: normalizeKnowledgeCopilotSettings(config.knowledgeCopilot),
+    language: config.general.language,
+    noteStoragePath: config.noteStorage.path,
+    aiSources: config.aiSources.sources,
+    aiAssistant: config.aiAssistant,
+    knowledgeCopilot: config.knowledgeCopilot,
   };
 }
 
@@ -255,7 +162,7 @@ function resolveAssistantPromptSettings(aiAssistant: AiAssistantSettings): {
   };
 }
 
-function supportsCapability(source: AiSourceConfig, capability: string): boolean {
+function supportsCapability(source: AiSourceConfig, capability: AiCapability): boolean {
   return source.capabilities.length === 0 || source.capabilities.includes(capability);
 }
 
@@ -264,11 +171,11 @@ function normalizeBaseUrl(baseUrl: string): string {
 }
 
 function resolveSourceBaseUrl(source: AiSourceConfig): string {
-  return normalizeBaseUrl(source.official ? OFFICIAL_AI_BASE_URL : source.baseUrl);
+  return normalizeBaseUrl(source.baseUrl);
 }
 
 function resolveSourceEndpoint(source: AiSourceConfig, capability: 'chat' | 'embedding' | 'reranker'): string {
-  const baseUrl = normalizeBaseUrl(source.official ? OFFICIAL_AI_BASE_URL : source.baseUrl);
+  const baseUrl = normalizeBaseUrl(source.baseUrl);
   if (!baseUrl) {
     throw new Error(`Missing ${capability} base URL`);
   }
@@ -284,38 +191,10 @@ function resolveSourceEndpoint(source: AiSourceConfig, capability: 'chat' | 'emb
   return `${baseUrl}/rerank`;
 }
 
-function resolveOfficialModel(source: AiSourceConfig, capability: 'chat' | 'embedding' | 'reranker'): string | null {
-  if (!source.official) {
-    return null;
-  }
-
-  if (capability === 'chat' && source.id === OFFICIAL_AI_SOURCE_IDS.CHAT) {
-    return OFFICIAL_AI_MODELS.CHAT;
-  }
-
-  if (capability === 'embedding' && source.id === OFFICIAL_AI_SOURCE_IDS.EMBEDDING) {
-    return OFFICIAL_AI_MODELS.EMBEDDING;
-  }
-
-  if (capability === 'reranker' && source.id === OFFICIAL_AI_SOURCE_IDS.RERANKER) {
-    return OFFICIAL_AI_MODELS.RERANKER;
-  }
-
-  return source.aiModel;
-}
-
-async function resolveSourceApiKey(source: AiSourceConfig, feature: LicensedFeature): Promise<string> {
-  if (source.official) {
-    return await licenseService.getAccessTokenForFeature(feature);
-  }
-
-  return source.apiKey;
-}
-
 function requireConfiguredSourceWithCapability(
   aiSources: AiSourceConfig[],
   sourceId: string,
-  capability: string,
+  capability: AiCapability,
   errorMessage: string,
 ): AiSourceConfig {
   const source = requireConfiguredSource(aiSources, sourceId, errorMessage);
@@ -326,10 +205,29 @@ function requireConfiguredSourceWithCapability(
   return source;
 }
 
+async function resolveSourceRequest(
+  source: AiSourceConfig,
+  capability: AiCapability,
+  preferredModel: string,
+  errorMessage: string,
+): Promise<ResolvedEmbeddingConfig> {
+  if (isBuiltInAiSourceId(source.id)) {
+    return await builtInAiService.resolveRequest(capability);
+  }
+
+  return {
+    provider: source.provider,
+    baseUrl: resolveSourceBaseUrl(source),
+    endpoint: resolveSourceEndpoint(source, capability),
+    apiKey: source.apiKey,
+    model: resolveModel(preferredModel, resolveAiSourceModel(source, capability), errorMessage),
+  };
+}
+
 export const aiConfigService = {
   async loadAppConfig(): Promise<NormalizedAppConfig> {
     const config = await settingsService.loadConfig();
-    return normalizeAppConfig(config);
+    return selectAiConfig(config);
   },
 
   async resolveAssistantConfig(): Promise<ResolvedAssistantConfig> {
@@ -338,25 +236,26 @@ export const aiConfigService = {
     const promptSettings = resolveAssistantPromptSettings(aiAssistant);
 
     if (!aiAssistant.enabled) {
-      throw new Error($t('aiAssistant.error.disabled', 'AI Assistant is disabled'));
+      throw new Error($t('aiAssistant.error.disabled'));
     }
 
     const source = requireConfiguredSourceWithCapability(
       config.aiSources,
       aiAssistant.sourceId,
       'chat',
-      $t('aiAssistant.error.sourceNotFound', 'AI source not found'),
+      $t('aiAssistant.error.sourceNotFound'),
     );
-    const model = resolveOfficialModel(source, 'chat') ?? resolveModel(
+    const requestConfig = await resolveSourceRequest(
+      source,
+      'chat',
       aiAssistant.model,
-      source.aiModel,
-      $t('aiAssistant.error.noModelConfigured', 'No model configured'),
+      $t('aiAssistant.error.noModelConfigured'),
     );
 
     return {
-      endpoint: resolveSourceEndpoint(source, 'chat'),
-      apiKey: await resolveSourceApiKey(source, LICENSE_FEATURES.AI_ASSISTANT),
-      model,
+      endpoint: requestConfig.endpoint,
+      apiKey: requestConfig.apiKey,
+      model: requestConfig.model,
       uiLanguage: config.language,
       customSystemPrompt: promptSettings.customSystemPrompt,
       writingStyle: promptSettings.writingStyle,
@@ -372,7 +271,7 @@ export const aiConfigService = {
       throw new Error('Knowledge Copilot is disabled in settings');
     }
 
-    if (!config.noteSavePath) {
+    if (!config.noteStoragePath) {
       throw new Error('No workspace root configured');
     }
 
@@ -393,61 +292,53 @@ export const aiConfigService = {
     const rerankerSource = knowledgeCopilot.rerankerSourceId
       ? config.aiSources.find((item) => item.id === knowledgeCopilot.rerankerSourceId && supportsCapability(item, 'reranker')) ?? null
       : null;
-    const embeddingApiKey = await resolveSourceApiKey(embeddingSource, LICENSE_FEATURES.KNOWLEDGE_COPILOT);
-    const askChatApiKey = askChatSource
-      ? await resolveSourceApiKey(askChatSource, LICENSE_FEATURES.KNOWLEDGE_COPILOT)
-      : null;
-    const agentChatApiKey = agentChatSource
-      ? await resolveSourceApiKey(agentChatSource, LICENSE_FEATURES.KNOWLEDGE_COPILOT)
-      : null;
-    const rerankerApiKey = rerankerSource
-      ? await resolveSourceApiKey(rerankerSource, LICENSE_FEATURES.KNOWLEDGE_COPILOT)
-      : null;
+    const [embeddingConfig, askChatConfig, agentChatConfig, rerankerRequestConfig] = await Promise.all([
+      resolveSourceRequest(
+        embeddingSource,
+        'embedding',
+        knowledgeCopilot.embeddingModel,
+        'Embedding model not specified',
+      ),
+      askChatSource
+        ? resolveSourceRequest(
+          askChatSource,
+          'chat',
+          knowledgeCopilot.askChatModel,
+          'No Ask chat model configured',
+        )
+        : Promise.resolve(null),
+      agentChatSource
+        ? resolveSourceRequest(
+          agentChatSource,
+          'chat',
+          knowledgeCopilot.agentChatModel,
+          'No Agent chat model configured',
+        )
+        : Promise.resolve(null),
+      rerankerSource
+        ? resolveSourceRequest(
+          rerankerSource,
+          'reranker',
+          knowledgeCopilot.rerankerModel,
+          'No reranker model configured',
+        )
+        : Promise.resolve(null),
+    ]);
 
     return {
       uiLanguage: config.language,
-      workspaceRoot: config.noteSavePath,
+      workspaceRoot: config.noteStoragePath,
       knowledgeCopilot: {
         topK: knowledgeCopilot.topK,
         similarityThreshold: knowledgeCopilot.similarityThreshold,
       },
-      embeddingConfig: {
-        provider: embeddingSource.provider,
-        baseUrl: resolveSourceBaseUrl(embeddingSource),
-        endpoint: resolveSourceEndpoint(embeddingSource, 'embedding'),
-        apiKey: embeddingApiKey,
-        model: resolveOfficialModel(embeddingSource, 'embedding')
-          ?? resolveModel(knowledgeCopilot.embeddingModel, embeddingSource.aiModel, 'Embedding model not specified'),
-      },
-      askChatConfig: askChatSource
-          ? {
-            provider: askChatSource.provider,
-            baseUrl: resolveSourceBaseUrl(askChatSource),
-            endpoint: resolveSourceEndpoint(askChatSource, 'chat'),
-            apiKey: askChatApiKey ?? '',
-            model: resolveOfficialModel(askChatSource, 'chat')
-              ?? resolveModel(knowledgeCopilot.askChatModel, askChatSource.aiModel, 'No Ask chat model configured'),
-          }
-        : null,
-      agentChatConfig: agentChatSource
-          ? {
-            provider: agentChatSource.provider,
-            baseUrl: resolveSourceBaseUrl(agentChatSource),
-            endpoint: resolveSourceEndpoint(agentChatSource, 'chat'),
-            apiKey: agentChatApiKey ?? '',
-            model: resolveOfficialModel(agentChatSource, 'chat')
-              ?? resolveModel(knowledgeCopilot.agentChatModel, agentChatSource.aiModel, 'No Agent chat model configured'),
-          }
-        : null,
-      rerankerConfig: rerankerSource
+      embeddingConfig,
+      askChatConfig,
+      agentChatConfig,
+      rerankerConfig: rerankerSource && rerankerRequestConfig
         ? {
-            provider: rerankerSource.provider,
-            baseUrl: resolveSourceBaseUrl(rerankerSource),
+            ...rerankerRequestConfig,
             sourceId: rerankerSource.id,
-            endpoint: resolveSourceEndpoint(rerankerSource, 'reranker'),
-            apiKey: rerankerApiKey ?? '',
-            model: resolveOfficialModel(rerankerSource, 'reranker')
-              ?? resolveModel(knowledgeCopilot.rerankerModel, rerankerSource.aiModel, 'No reranker model configured'),
           }
         : null,
     };

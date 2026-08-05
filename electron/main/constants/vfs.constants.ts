@@ -2,7 +2,6 @@ export const VFS_CONSTANTS = Object.freeze({
   //注意常量大小写问题
   CURRENT_WORKSPACE_NAME: 'Snaptium',
   PREFERENCES_FILE: 'preferences.json',
-  NOTE_SAVE_PATH_KEY: 'noteSavePath',
   USER_DATA: 'userData',
   DOCUMENTS_FOLDER: 'documents',
   DATABASE_FOLDER: 'Database',

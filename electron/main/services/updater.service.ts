@@ -51,11 +51,12 @@ class UpdaterService {
     }
 
     try {
-      const config = await settingsService.loadConfig();
-      this.applyUpdateSource(config.updateChannel);
+      const settings = await settingsService.loadConfig();
+      const config = settings.softwareUpdate;
+      this.applyUpdateSource(config.channel);
 
-      if (config.autoCheckUpdates) {
-        this.startAutoCheck(config.updateCheckInterval || UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL);
+      if (config.autoCheck) {
+        this.startAutoCheck(config.checkInterval || UPDATER_CONSTANTS.DEFAULT_CHECK_INTERVAL);
       }
 
       logger.debug('Updater service initialized');

@@ -10,13 +10,13 @@
           <p class="setting-description">{{ t('text.loggingEnabled') }}</p>
         </div>
 
-        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.loggingEnabled }"
-          :aria-pressed="settingsStore.config.loggingEnabled" @click="handleLoggingToggle">
+        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.privacyLog.enabled }"
+          :aria-pressed="settingsStore.config.privacyLog.enabled" @click="handleLoggingToggle">
           <span class="startup-switch-track">
             <span class="startup-switch-thumb" />
           </span>
           <span class="startup-switch-text">
-            {{ settingsStore.config.loggingEnabled ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+            {{ settingsStore.config.privacyLog.enabled ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
           </span>
         </button>
       </section>
@@ -28,9 +28,9 @@
           <p class="setting-description">{{ t('text.logLevelDesc') }}</p>
         </div>
 
-        <label class="select-shell" :class="{ disabled: !settingsStore.config.loggingEnabled }">
+        <label class="select-shell" :class="{ disabled: !settingsStore.config.privacyLog.enabled }">
           <select class="settings-select" :value="selectedLogLevel" @change="handleLogLevelChange"
-            :disabled="!settingsStore.config.loggingEnabled">
+            :disabled="!settingsStore.config.privacyLog.enabled">
             <option v-for="option in logLevelOptions" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
@@ -43,9 +43,9 @@
           <p class="setting-label">{{ t('label.logAutoClear') }}</p>
           <p class="setting-description">{{ t('text.logAutoClear') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: !settingsStore.config.loggingEnabled }">
-          <select class="settings-select" :value="settingsStore.config.logAutoClearDays ?? 10"
-            @change="handleLogAutoClearChange" :disabled="!settingsStore.config.loggingEnabled">
+        <label class="select-shell" :class="{ disabled: !settingsStore.config.privacyLog.enabled }">
+          <select class="settings-select" :value="settingsStore.config.privacyLog.autoClearDays ?? 10"
+            @change="handleLogAutoClearChange" :disabled="!settingsStore.config.privacyLog.enabled">
             <option :value="0">{{ t('option.logAutoClear.never') }}</option>
             <option :value="10">{{ t('option.logAutoClear.days10') }}</option>
             <option :value="20">{{ t('option.logAutoClear.days20') }}</option>
@@ -68,9 +68,9 @@
           <p class="setting-description">{{ t('diagnosticLog.exportDescription') }}</p>
         </div>
 
-        <button type="button" class="action-button" :disabled="settingsStore.isExportingDiagnosticLogs"
+        <button type="button" class="action-button" :disabled="settingsStore.privacyLog.isExportingDiagnostics"
           @click="handleExportDiagnosticLogs">
-          {{ settingsStore.isExportingDiagnosticLogs
+          {{ settingsStore.privacyLog.isExportingDiagnostics
             ? t('diagnosticLog.exporting')
             : t('diagnosticLog.exportAction') }}
         </button>
@@ -92,7 +92,7 @@ const LOG_AUTO_CLEAR_DAY_OPTIONS = [0, 10, 20];
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
 
-const forceDebugOption = computed(() => !isDev && settingsStore.config.logLevel === 'debug');
+const forceDebugOption = computed(() => !isDev && settingsStore.config.privacyLog.level === 'debug');
 
 const logLevelOptions = computed(() => [
   ...((isDev || forceDebugOption.value) ? [{ value: 'debug', label: t('option.logLevel.Debug') }] : []),
@@ -101,10 +101,10 @@ const logLevelOptions = computed(() => [
   { value: 'error', label: t('option.logLevel.Error') },
 ]);
 
-const selectedLogLevel = computed(() => settingsStore.config.logLevel);
+const selectedLogLevel = computed(() => settingsStore.config.privacyLog.level);
 
 const handleLoggingToggle = async () => {
-  await settingsStore.updateSetting('loggingEnabled', !settingsStore.config.loggingEnabled);
+  await settingsStore.privacyLog.update('enabled', !settingsStore.config.privacyLog.enabled);
 };
 
 const handleLogLevelChange = async (event: Event) => {
@@ -113,7 +113,7 @@ const handleLogLevelChange = async (event: Event) => {
     return;
   }
 
-  await settingsStore.updateSetting('logLevel', target.value as 'debug' | 'info' | 'warn' | 'error');
+  await settingsStore.privacyLog.update('level', target.value as 'debug' | 'info' | 'warn' | 'error');
 };
 
 const handleLogAutoClearChange = async (event: Event) => {
@@ -124,15 +124,15 @@ const handleLogAutoClearChange = async (event: Event) => {
     return;
   }
 
-  await settingsStore.updateSetting('logAutoClearDays', value);
+  await settingsStore.privacyLog.update('autoClearDays', value);
 };
 
 const handleOpenLogDir = () => {
-  settingsStore.openLogDir();
+  settingsStore.privacyLog.openDirectory();
 };
 
 const handleExportDiagnosticLogs = async () => {
-  const result = await settingsStore.exportDiagnosticLogs();
+  const result = await settingsStore.privacyLog.exportDiagnostics();
   if (!result || result.status === DIAGNOSTIC_EXPORT_STATUS.CANCELLED) {
     return;
   }

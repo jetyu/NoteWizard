@@ -56,12 +56,12 @@ const settingsStore = useSettingsStore();
 
 const handleFieldChange = (field: 'url' | 'username' | 'password', event: Event) => {
   const target = event.target as HTMLInputElement;
-  settingsStore.updateSyncProviderSetting('webdav', field, target.value);
+  settingsStore.sync.updateProvider('webdav', field, target.value);
 };
 
 const handleRemotePathChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
-  settingsStore.updateSyncSetting('remotePath', target.value);
+  settingsStore.sync.update('remotePath', target.value);
 };
 </script>
 

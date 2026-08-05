@@ -11,9 +11,6 @@
       <div class="app-window-frame__search-container">
         <AppTitleBarSearch />
       </div>
-      <div class="app-window-frame__license-container">
-        <LicenseBadge />
-      </div>
     </div>
 
     <div class="app-window-frame__controls no-drag">
@@ -42,7 +39,6 @@ import { IconX, IconMinus, IconSquare, IconCopy } from '@tabler/icons-vue';
 import { electronApi } from '@renderer/core/bridge/electronApi';
 import AppMenuBar from './AppMenuBar.vue';
 import AppTitleBarSearch from './AppTitleBarSearch.vue';
-import { LicenseBadge } from '@renderer/features/license';
 
 const { t } = useI18n();
 const appTitle = ref<string>(t('common.appName'));
@@ -196,13 +192,6 @@ onBeforeUnmount(() => {
   flex: 1;
   height: 100%;
   padding: 0 20px;
-}
-
-.app-window-frame__license-container {
-  -webkit-app-region: no-drag;
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
 }
 
 .app-window-frame__controls {

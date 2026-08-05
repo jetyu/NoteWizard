@@ -9,7 +9,7 @@
           </div>
           <div class="number-input-container">
             <input type="number" class="settings-input number-input"
-              :value="settingsStore.config.previewAppearance.fontSize" @change="handleFontSizeChange" min="10" max="32"
+              :value="settingsStore.config.preview.fontSize" @change="handleFontSizeChange" min="10" max="32"
               step="1" />
           </div>
         </section>
@@ -20,7 +20,7 @@
             <p class="setting-description">{{ t('text.previewFont') }}</p>
           </div>
           <label class="select-shell">
-            <select class="settings-select" :value="settingsStore.config.previewAppearance.fontFamily"
+            <select class="settings-select" :value="settingsStore.config.preview.fontFamily"
               @change="handleFontChange">
               <option v-for="font in fontOptions" :key="font.id" :value="font.value">
                 {{ font.label }}
@@ -35,13 +35,13 @@
           <p class="setting-description">{{ t('text.previewAllowHtml') }}</p>
         </div>
         <button type="button" class="startup-switch"
-          :class="{ enabled: settingsStore.config.previewAppearance.allowHtml }"
-          :aria-pressed="settingsStore.config.previewAppearance.allowHtml" @click="togglePreviewSetting('allowHtml')">
+          :class="{ enabled: settingsStore.config.preview.allowHtml }"
+          :aria-pressed="settingsStore.config.preview.allowHtml" @click="togglePreviewSetting('allowHtml')">
           <span class="startup-switch-track">
             <span class="startup-switch-thumb" />
           </span>
           <span class="startup-switch-text">
-            {{ settingsStore.config.previewAppearance.allowHtml ? t('checkbox.status.enabled') :
+            {{ settingsStore.config.preview.allowHtml ? t('checkbox.status.enabled') :
               t('checkbox.status.disabled') }}
           </span>
         </button>
@@ -54,14 +54,14 @@
           <p class="setting-description">{{ t('text.previewAllowInlineSvg') }}</p>
         </div>
         <button type="button" class="startup-switch"
-          :class="{ enabled: settingsStore.config.previewAppearance.allowInlineSvg }"
-          :aria-pressed="settingsStore.config.previewAppearance.allowInlineSvg"
-          :disabled="!settingsStore.config.previewAppearance.allowHtml" @click="togglePreviewSetting('allowInlineSvg')">
+          :class="{ enabled: settingsStore.config.preview.allowInlineSvg }"
+          :aria-pressed="settingsStore.config.preview.allowInlineSvg"
+          :disabled="!settingsStore.config.preview.allowHtml" @click="togglePreviewSetting('allowInlineSvg')">
           <span class="startup-switch-track">
             <span class="startup-switch-thumb" />
           </span>
           <span class="startup-switch-text">
-            {{ settingsStore.config.previewAppearance.allowInlineSvg ? t('checkbox.status.enabled') :
+            {{ settingsStore.config.preview.allowInlineSvg ? t('checkbox.status.enabled') :
               t('checkbox.status.disabled') }}
           </span>
         </button>
@@ -78,7 +78,7 @@
 
         <div class="settings-mode-control">
           <label class="select-shell">
-            <select class="settings-select" :value="settingsStore.config.previewAppearance.remoteImageMode"
+            <select class="settings-select" :value="settingsStore.config.preview.remoteImageMode"
               @change="handleRemoteImageModeChange">
               <option value="blocked">{{ t('option.previewRemoteImages.blocked') }}</option>
               <option value="trusted">{{ t('option.previewRemoteImages.trusted') }}</option>
@@ -86,7 +86,7 @@
             </select>
           </label>
 
-          <button class="settings-nav-btn" :disabled="settingsStore.config.previewAppearance.remoteImageMode !== 'trusted'"
+          <button class="settings-nav-btn" :disabled="settingsStore.config.preview.remoteImageMode !== 'trusted'"
             @click="emit('edit-trusted-hosts')" :title="t('label.previewTrustedSources')">
             <IconPencil :size="16" />
           </button>
@@ -101,7 +101,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconPencil } from '@tabler/icons-vue';
-import { useSettingsStore, type PreviewAppearanceSettings } from '../../../store/settings.store';
+import { useSettingsStore, type PreviewConfig } from '../../../store/settings.store';
 import fontProvider from '@renderer/config/font-provider.json';
 
 const { t } = useI18n();
@@ -112,22 +112,22 @@ const fontOptions = fontProvider;
 const emit = defineEmits(['edit-trusted-hosts']);
 
 const dynamicDescription = computed(() => {
-  const mode = settingsStore.config.previewAppearance.remoteImageMode;
+  const mode = settingsStore.config.preview.remoteImageMode;
   return t(`text.previewRemoteImages.${mode}`);
 });
 
 const togglePreviewSetting = async (key: 'allowHtml' | 'allowInlineSvg') => {
-  await settingsStore.updatePreviewAppearanceSetting(
+  await settingsStore.preview.update(
     key,
-    !settingsStore.config.previewAppearance[key] as PreviewAppearanceSettings[typeof key],
+    !settingsStore.config.preview[key] as PreviewConfig[typeof key],
   );
 };
 
 const handleRemoteImageModeChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updatePreviewAppearanceSetting(
+  await settingsStore.preview.update(
     'remoteImageMode',
-    target.value as PreviewAppearanceSettings['remoteImageMode'],
+    target.value as PreviewConfig['remoteImageMode'],
   );
 };
 
@@ -135,12 +135,12 @@ const handleFontSizeChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const val = parseInt(target.value, 10);
   if (!isNaN(val) && val >= 10 && val <= 32) {
-    await settingsStore.updatePreviewAppearanceSetting('fontSize', val);
+    await settingsStore.preview.update('fontSize', val);
   }
 };
 
 const handleFontChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement;
-  await settingsStore.updatePreviewAppearanceSetting('fontFamily', target.value);
+  await settingsStore.preview.update('fontFamily', target.value);
 };
 </script>

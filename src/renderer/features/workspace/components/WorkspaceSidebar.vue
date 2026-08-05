@@ -666,7 +666,22 @@ async function deleteSelectedEntries() {
 
   await workspaceStore.deleteNodes(entries.map((entry) => entry.id));
 
-  syncSelectionToActive();
+  await nextTick();
+  focusSidebar();
+}
+
+async function deleteNoteAndRestoreFocus(id: string): Promise<boolean> {
+  const deleted = await deleteNote(id);
+  await nextTick();
+  focusSidebar();
+  return deleted;
+}
+
+async function deleteNotebookAndRestoreFocus(id: string): Promise<boolean> {
+  const deleted = await deleteNotebook(id);
+  await nextTick();
+  focusSidebar();
+  return deleted;
 }
 
 async function openSelectionMenu() {
@@ -1135,8 +1150,8 @@ const { openCreateButtonMenu, openRootMenu, openNoteMenu, openNotebookMenu } =
     moveNode,
     showNoteInFolder,
     openProperties: openNotePropertiesDialog,
-    deleteNote,
-    deleteNotebook,
+    deleteNote: deleteNoteAndRestoreFocus,
+    deleteNotebook: deleteNotebookAndRestoreFocus,
     getNoteMoveTargets,
     getNotebookMoveTargets,
     resolveMoveIndex,
@@ -1200,6 +1215,7 @@ const selectedRootEntries = computed(() => {
 watch(
   treeEntries,
   (nextEntries) => {
+    workspaceStore.setVisibleTreeEntries(nextEntries);
     const validIds = new Set(nextEntries.map((entry) => entry.id));
     const nextSelectedIds = [...selectedIds.value].filter((id) => validIds.has(id));
 
@@ -1215,7 +1231,7 @@ watch(
       syncSelectionToActive();
     }
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 watch([statusLabel, formattedLastSynced, summaryItems], () => {
@@ -1230,6 +1246,7 @@ watch([statusLabel, formattedLastSynced, summaryItems], () => {
 
 onBeforeUnmount(() => {
   clearSyncHoverCardHideTimer();
+  workspaceStore.setVisibleTreeEntries([]);
   window.removeEventListener('resize', updateSyncHoverCardPosition);
   window.removeEventListener('scroll', updateSyncHoverCardPosition, true);
 });
