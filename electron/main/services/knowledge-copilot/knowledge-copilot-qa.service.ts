@@ -1,4 +1,5 @@
 import { aiConfigService } from '../ai-config.service.js';
+import { builtInAiService } from '../built-in-ai.service.js';
 import { createProviderChatModel } from '../ai-provider.service.js';
 import { knowledgeCopilotIndexService } from './knowledge-copilot-index.service.js';
 import { assessKnowledgeEvidence } from './knowledge-evidence-assessment.service.js';
@@ -99,6 +100,10 @@ export async function answerKnowledgeQuestionStream(
       ]);
       retrievalQuery = rewritten.text.trim() || query;
     } catch (error) {
+      const builtInError = builtInAiService.findRequestError(error);
+      if (builtInError) {
+        throw builtInError;
+      }
       logger.warn('Knowledge follow-up rewrite failed; using original query', {
         error: error instanceof Error ? error.message : String(error),
       });

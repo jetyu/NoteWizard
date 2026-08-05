@@ -3,6 +3,7 @@ import { createAgent, humanInTheLoopMiddleware, tool, type HITLRequest, type HIT
 import { Command, MemorySaver, type Interrupt } from '@langchain/langgraph';
 import { HumanMessage } from '@langchain/core/messages';
 import { createProviderChatModel } from '../ai-provider.service.js';
+import { builtInAiService } from '../built-in-ai.service.js';
 import { getErrorMessage } from '../error.service.js';
 import { knowledgeCopilotIndexService } from './knowledge-copilot-index.service.js';
 import { assessKnowledgeEvidence } from './knowledge-evidence-assessment.service.js';
@@ -303,7 +304,7 @@ async function executeToolWithTrace<TArgs>(
     });
     return result;
   } catch (error) {
-    const message = getErrorMessage(error);
+    const message = getErrorMessage(builtInAiService.toUserFacingError(error));
     state.steps.push({
       title: toolName,
       detail: message,

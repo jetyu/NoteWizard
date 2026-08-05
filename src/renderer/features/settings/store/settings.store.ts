@@ -8,7 +8,14 @@ import {
   type AiWritingStyle,
   type AiWritingMode,
 } from '@shared/ai.constants';
-import { AI_PROVIDERS, type AiProvider } from '@shared/ai-provider.constants';
+import {
+  AI_PROVIDERS,
+  resolveAiSourceModel,
+  type AiCapability,
+  type AiCapabilityModelMap,
+  type AiProvider,
+} from '@shared/ai-provider.constants';
+import { isBuiltInAiSourceId } from '@shared/built-in-ai.constants';
 
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
 import { DEFAULT_SYNC_SETTINGS, type SyncProvider } from '@shared/sync.constants';
@@ -71,6 +78,7 @@ export interface AISource {
   baseUrl: string;
   apiKey: string;
   aiModel: string;
+  capabilityModels?: AiCapabilityModelMap;
   capabilities: string[];
   provider: AiProvider;
 }
@@ -360,7 +368,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const isLoading = ref(false);
   const isExportingDiagnosticLogs = ref(false);
 
-  const sourceSupportsCapability = (source: AISource, capability: string): boolean => {
+  const sourceSupportsCapability = (source: AISource, capability: AiCapability): boolean => {
     return source.capabilities.length === 0 || source.capabilities.includes(capability);
   };
 
@@ -468,9 +476,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // Auto-update model if sourceId changes
     if (key === 'sourceId') {
       const source = config.value.aiSources.sources.find(s => s.id === String(value));
-      if (source && source.aiModel) {
-        config.value.aiAssistant.model = source.aiModel;
-      }
+      config.value.aiAssistant.model = source ? resolveAiSourceModel(source, 'chat') : '';
     }
 
     await saveSettings({});
@@ -498,18 +504,22 @@ export const useSettingsStore = defineStore('settings', () => {
     // Auto-update model if sourceId changes
     if (key === 'embeddingSourceId') {
       const source = config.value.aiSources.sources.find(s => s.id === String(value));
-      if (source && source.aiModel) {
-        config.value.knowledgeCopilot.embeddingModel = source.aiModel;
-      }
+      config.value.knowledgeCopilot.embeddingModel = source
+        ? resolveAiSourceModel(source, 'embedding')
+        : '';
     }
     if (key === 'askChatSourceId' || key === 'agentChatSourceId') {
       const source = config.value.aiSources.sources.find(s => s.id === String(value));
       const modelKey = key === 'askChatSourceId' ? 'askChatModel' : 'agentChatModel';
-      if (source && source.aiModel) {
-        config.value.knowledgeCopilot[modelKey] = source.aiModel;
-      } else if (value === '') {
-        config.value.knowledgeCopilot[modelKey] = '';
-      }
+      config.value.knowledgeCopilot[modelKey] = source
+        ? resolveAiSourceModel(source, 'chat')
+        : '';
+    }
+    if (key === 'rerankerSourceId') {
+      const source = config.value.aiSources.sources.find(s => s.id === String(value));
+      config.value.knowledgeCopilot.rerankerModel = source
+        ? resolveAiSourceModel(source, 'reranker')
+        : '';
     }
 
     await saveSettings({});
@@ -584,6 +594,10 @@ export const useSettingsStore = defineStore('settings', () => {
    * Remove an AI source by ID
    */
   const removeAiSource = async (id: string) => {
+    if (isBuiltInAiSourceId(id)) {
+      return;
+    }
+
     config.value.aiSources.sources = config.value.aiSources.sources.filter((s) => s.id !== id);
     if (config.value.aiAssistant.sourceId === id) {
       config.value.aiAssistant.sourceId = '';
@@ -602,6 +616,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
     if (config.value.knowledgeCopilot.rerankerSourceId === id) {
       config.value.knowledgeCopilot.rerankerSourceId = '';
+      config.value.knowledgeCopilot.rerankerModel = '';
     }
     await saveSettings({});
   };
@@ -610,6 +625,10 @@ export const useSettingsStore = defineStore('settings', () => {
    * Update an existing AI source
    */
   const updateAiSource = async (id: string, updates: Partial<AISource>) => {
+    if (isBuiltInAiSourceId(id)) {
+      return;
+    }
+
     const source = config.value.aiSources.sources.find((s) => s.id === id);
     if (source) {
       Object.assign(source, updates);

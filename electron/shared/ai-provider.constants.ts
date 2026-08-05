@@ -6,7 +6,15 @@ export const AI_CAPABILITIES = {
 
 export type AiCapability = (typeof AI_CAPABILITIES)[keyof typeof AI_CAPABILITIES];
 
+export type AiCapabilityModelMap = Partial<Record<AiCapability, string>>;
+
+export interface AiSourceModelDescriptor {
+  aiModel: string;
+  capabilityModels?: AiCapabilityModelMap;
+}
+
 export const AI_PROVIDERS = {
+  SNAPTIUM: 'snaptium',
   OPENAI: 'openai',
   AZURE_OPENAI: 'azure-openai',
   OPENAI_COMPATIBLE: 'openai-compatible',
@@ -26,6 +34,7 @@ export const AI_PROVIDERS = {
 export type AiProvider = (typeof AI_PROVIDERS)[keyof typeof AI_PROVIDERS];
 
 export const AI_PROVIDER_DEFAULT_BASE_URLS = {
+  [AI_PROVIDERS.SNAPTIUM]: '',
   [AI_PROVIDERS.OPENAI]: 'https://api.openai.com/v1',
   [AI_PROVIDERS.AZURE_OPENAI]: '',
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: '',
@@ -43,6 +52,7 @@ export const AI_PROVIDER_DEFAULT_BASE_URLS = {
 } as const satisfies Record<AiProvider, string>;
 
 export const AI_PROVIDER_CAPABILITIES = {
+  [AI_PROVIDERS.SNAPTIUM]: ['chat', 'embedding', 'reranker'],
   [AI_PROVIDERS.OPENAI]: ['chat', 'embedding'],
   [AI_PROVIDERS.AZURE_OPENAI]: ['chat', 'embedding'],
   [AI_PROVIDERS.OPENAI_COMPATIBLE]: ['chat', 'embedding', 'reranker'],
@@ -62,6 +72,7 @@ export const AI_PROVIDER_CAPABILITIES = {
 const AI_PROVIDER_SET = new Set<string>(Object.values(AI_PROVIDERS));
 
 const AI_PROVIDER_BY_HOSTNAME = new Map<string, AiProvider>([
+  ['newapi.snaptium.com', AI_PROVIDERS.SNAPTIUM],
   ['api.fireworks.ai', AI_PROVIDERS.FIREWORKS],
   ['api.siliconflow.cn', AI_PROVIDERS.SILICONFLOW],
   ['api.openai.com', AI_PROVIDERS.OPENAI],
@@ -117,4 +128,11 @@ export function inferAiProvider(baseUrl: string): AiProvider {
 
 export function getAiProviderCapabilities(provider: AiProvider): AiCapability[] {
   return [...AI_PROVIDER_CAPABILITIES[provider]];
+}
+
+export function resolveAiSourceModel(
+  source: AiSourceModelDescriptor,
+  capability: AiCapability,
+): string {
+  return source.capabilityModels?.[capability]?.trim() || source.aiModel.trim();
 }

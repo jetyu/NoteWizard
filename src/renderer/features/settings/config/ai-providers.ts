@@ -13,6 +13,7 @@ import volcengineLogoUrl from '@assets/images/ai-providers/volcengine.svg';
 import kimiLogoUrl from '@assets/images/ai-providers/kimi.svg';
 import zhipuLogoUrl from '@assets/images/ai-providers/zhipu.svg';
 import grokLogoUrl from '@assets/images/ai-providers/grok.svg';
+import snaptiumLogoUrl from '@assets/logo/app-logo-64.png';
 
 export interface AiProviderPresentation {
   labelKey: string;
@@ -20,6 +21,7 @@ export interface AiProviderPresentation {
 }
 
 export const AI_PROVIDER_PRESENTATIONS = {
+  [AI_PROVIDERS.SNAPTIUM]: { labelKey: 'aiProvider.snaptium', logoUrl: snaptiumLogoUrl },
   [AI_PROVIDERS.SILICONFLOW]: { labelKey: 'aiProvider.siliconflow', logoUrl: siliconFlowLogoUrl },
   [AI_PROVIDERS.OPENAI]: { labelKey: 'aiProvider.openai', logoUrl: openAiLogoUrl },
   [AI_PROVIDERS.AZURE_OPENAI]: { labelKey: 'aiProvider.azureOpenAI', logoUrl: azureOpenAiLogoUrl },

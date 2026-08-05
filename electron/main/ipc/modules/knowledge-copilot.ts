@@ -8,6 +8,7 @@ import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
 import { KNOWLEDGE_COPILOT_CONVERSATION_LIMITS } from '../../../shared/knowledge-copilot.constants.js';
+import { builtInAiService } from '../../services/built-in-ai.service.js';
 
 const logger = loggerService.createLogger('Main:KnowledgeCopilotIPC');
 
@@ -70,7 +71,7 @@ export function registerKnowledgeCopilotHandlers(): void {
       await knowledgeCopilotIndexService.initialize(config.workspaceRoot, config.embeddingConfig);
       return { success: true };
     } catch (error) {
-      const message = getErrorMessage(error);
+      const message = getErrorMessage(builtInAiService.toUserFacingError(error));
       logger.error(`KNOWLEDGE_COPILOT_INITIALIZE error: ${message}`);
       return { success: false, error: message };
     }
@@ -81,7 +82,7 @@ export function registerKnowledgeCopilotHandlers(): void {
       const validated = IndexNoteSchema.parse(request);
       return await knowledgeCopilotIndexService.indexNote(validated);
     } catch (error) {
-      const message = getErrorMessage(error);
+      const message = getErrorMessage(builtInAiService.toUserFacingError(error));
       logger.error(`KNOWLEDGE_COPILOT_INDEX_NOTE error: ${message}`);
       return { success: false, error: message };
     }
@@ -125,7 +126,7 @@ export function registerKnowledgeCopilotHandlers(): void {
       });
       return result;
     } catch (error) {
-      const message = getErrorMessage(error);
+      const message = getErrorMessage(builtInAiService.toUserFacingError(error));
       logger.error(`KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM error: ${message}`);
 
       event.sender.send(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM_EVENT, {
@@ -156,7 +157,7 @@ export function registerKnowledgeCopilotHandlers(): void {
         decisions: validated.decisions,
       });
     } catch (error) {
-      const message = getErrorMessage(error);
+      const message = getErrorMessage(builtInAiService.toUserFacingError(error));
       logger.error(`KNOWLEDGE_COPILOT_RUN_TASK error: ${message}`);
       return {
         success: false,
