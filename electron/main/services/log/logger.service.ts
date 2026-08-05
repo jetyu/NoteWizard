@@ -18,9 +18,9 @@ export type LogMessage = string | JsonValue | Error;
 export type LogContext = JsonValue | Error;
 
 export interface LoggerConfigUpdate {
-  loggingEnabled?: boolean;
-  logLevel?: string;
-  logAutoClearDays?: number;
+  enabled?: boolean;
+  level?: string;
+  autoClearDays?: number;
 }
 
 export interface ScopedLogger {
@@ -129,14 +129,14 @@ class LoggerService {
   }
 
   updateConfig(config: LoggerConfigUpdate): void {
-    if (config.loggingEnabled !== undefined) {
-      this.enabled = config.loggingEnabled;
+    if (config.enabled !== undefined) {
+      this.enabled = config.enabled;
     }
-    if (config.logLevel !== undefined) {
-      this.level = this.normalizeConfiguredLevel(config.logLevel);
+    if (config.level !== undefined) {
+      this.level = this.normalizeConfiguredLevel(config.level);
     }
-    if (config.logAutoClearDays !== undefined) {
-      this.cleanupDays = this.normalizeCleanupDays(config.logAutoClearDays);
+    if (config.autoClearDays !== undefined) {
+      this.cleanupDays = this.normalizeCleanupDays(config.autoClearDays);
       if (this.cleanupDays === 0) {
         this.lastCleanupDateKey = '';
       }

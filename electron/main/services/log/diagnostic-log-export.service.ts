@@ -16,7 +16,6 @@ import { $t } from '../../utils/i18n.js';
 import { getErrorMessage } from '../error.service.js';
 import { createZipArchiveFromDirectory } from '../../utils/zip.utils.js';
 import { appEnvInfoService } from '../appEnvInfo.service.js';
-import { licenseService } from '../license.service.js';
 import { settingsService } from '../settings.service.js';
 import { loggerService } from './logger.service.js';
 
@@ -54,20 +53,6 @@ export interface DiagnosticInfo {
   };
   storage: {
     notePath: string;
-  };
-  license: {
-    plan: string;
-    activated: boolean;
-    valid: boolean;
-    status: string;
-    source: string;
-    expiresAt: string | null;
-    graceExpiresAt: string | null;
-    maxDevices: number | null;
-    activatedDevices: number;
-    lastValidatedAt: number | null;
-    lastServerSyncAt: number | null;
-    lastErrorCode: string | null;
   };
 }
 
@@ -170,7 +155,6 @@ export async function stageDiagnosticInfo({
 export async function collectDiagnosticInfo(generatedAt: Date): Promise<DiagnosticInfo> {
   const envVersion = appEnvInfoService.getEnvVersion();
   const settings = await settingsService.loadConfig();
-  const license = licenseService.getState();
   return {
     schemaVersion: 1,
     generatedAt: generatedAt.toISOString(),
@@ -198,21 +182,7 @@ export async function collectDiagnosticInfo(generatedAt: Date): Promise<Diagnost
       system: app.getSystemLocale(),
     },
     storage: {
-      notePath: settings.noteSavePath,
-    },
-    license: {
-      plan: license.plan,
-      activated: license.activated,
-      valid: license.valid,
-      status: license.status,
-      source: license.source,
-      expiresAt: license.expiresAt,
-      graceExpiresAt: license.graceExpiresAt,
-      maxDevices: license.maxDevices,
-      activatedDevices: license.activatedDevices,
-      lastValidatedAt: license.lastValidatedAt,
-      lastServerSyncAt: license.lastServerSyncAt,
-      lastErrorCode: license.lastErrorCode,
+      notePath: settings.noteStorage.path,
     },
   };
 }

@@ -262,10 +262,8 @@ import { IconX, IconMessage2Bolt, IconSubtitlesAi, IconTrash, IconFileText, Icon
 import { renderMarkdown } from '@renderer/core/markdown/markdownRenderer';
 import { renderMarkdownEnhancements } from '@renderer/core/markdown/markdownEnhancements';
 import { useKnowledgeCopilotConfig, useKnowledgeCopilotChat, useKnowledgeCopilotTask } from '@renderer/features/knowledge-copilot';
-import { useLicenseGate } from '@renderer/features/license';
 import { createLogger } from '@renderer/features/logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
-import { LICENSE_FEATURES } from '@shared/license.constants';
 import { useWorkbenchStore } from '@renderer/features/workbench';
 import { useWorkspace } from '@renderer/features/workspace';
 import { useAppShellStore } from '@renderer/app/store/appShell.store';
@@ -326,7 +324,6 @@ const { searchViewRequest } = useSearch();
 const { isEnabled: knowledgeCopilotEnabled, isConfigured: knowledgeCopilotConfigured } = useKnowledgeCopilotConfig();
 const { askQuestionStream, isGenerating: isAIGenerating, usedSearchFallback } = useKnowledgeCopilotChat();
 const { runTask, resumeTask, isRunning: isAgentRunning } = useKnowledgeCopilotTask();
-const knowledgeCopilotLicenseGate = useLicenseGate(LICENSE_FEATURES.KNOWLEDGE_COPILOT);
 
 const inputModes: InputModeOption[] = [
   {
@@ -420,7 +417,7 @@ function handleDividerPointerDown(event: PointerEvent): void {
   window.addEventListener('pointercancel', handlePaneResizeEnd);
 }
 
-const canUseKnowledgeSearch = computed(() => knowledgeCopilotLicenseGate.allowed.value && knowledgeCopilotEnabled.value && knowledgeCopilotConfigured.value);
+const canUseKnowledgeSearch = computed(() => knowledgeCopilotEnabled.value && knowledgeCopilotConfigured.value);
 const isBusy = computed(() => isSearching.value || isAIGenerating.value || isAgentRunning.value);
 const canAsk = computed(() => canUseKnowledgeSearch.value && Boolean(searchQuery.value.trim()) && !isBusy.value);
 const activeInputMode = computed(() => inputModes.find((mode) => mode.id === inputMode.value) ?? inputModes[0]);
@@ -431,9 +428,6 @@ const composerPlaceholder = computed(() => (
     : t('search.semanticPlaceholder')
 ));
 const knowledgeUnavailableReason = computed(() => {
-  if (!knowledgeCopilotLicenseGate.allowed.value) {
-    return t('license.gate.knowledgeCopilot.title');
-  }
   if (!knowledgeCopilotEnabled.value) {
     return t('search.knowledgeUnavailableDisabled');
   }
@@ -833,7 +827,7 @@ function setAgentTaskMetadata(questionId: string, metadata: AgentTaskMetadata): 
 
 async function toggleAgentWriteMode(): Promise<void> {
   const nextMode: KnowledgeCopilotWriteMode = agentWriteMode.value === 'auto' ? 'confirm' : 'auto';
-  await settingsStore.saveSettings({
+  await settingsStore.persistence.save({
     workbench: {
       ...config.value.workbench,
       agentWriteMode: nextMode,

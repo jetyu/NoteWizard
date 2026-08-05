@@ -1,3 +1,18 @@
+### v2.2.2 - 2026-08-05
+This update includes various feature enhancements, experience optimizations, and bug fixes, further improving AI capabilities and the overall user experience.
+### New
+* Added a free official AI usage allowance; AI features are ready to use right out of the box
+* Added configuration support for Azure OpenAI and Fireworks AI service providers
+### Improvements
+* Optimized the user permission management experience
+* Optimized the preferences configuration experience
+* Optimized the note search experience
+### Fixes
+* Fixed an issue where the "last modified" time for notes in the favorites list did not update in real-time
+* Fixed an issue with abnormal cursor positioning in the note list
+* Fixed an issue where model names for certain AI service providers were displayed incorrectly
+* Fixed inaccuracies in some language translations
+
 ### v2.2.1 - 2026-08-02
 This update optimizes details and the user experience.
 #### New

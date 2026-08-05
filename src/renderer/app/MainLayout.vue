@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia';
 import { useSearch } from '@renderer/features/search';
 import { useWorkspace } from '@renderer/features/workspace';
 import { createLogger } from '@renderer/features/logger';
-import { useSettings } from '@renderer/features/settings/composables/useSettings';
+import { useSettingsPanel } from '@renderer/features/settings/composables/useSettingsPanel';
 import { useTrash } from '@renderer/features/trash';
 import { useAbout } from '@renderer/features/about';
 import { useUpdaterStore } from '@renderer/features/updater';
@@ -46,7 +46,7 @@ const { activeMainView, mainViews, enabledCustomModules } = storeToRefs(appShell
 const { setActiveMainView } = appShellStore;
 const updaterStore = useUpdaterStore();
 
-const { setActiveTab, initMainProcessListeners, onOpenSettingsRequest } = useSettings();
+const { setActiveTab, initMainProcessListeners, onOpenSettingsRequest } = useSettingsPanel();
 const { openTrash } = useTrash();
 const { openAbout } = useAbout();
 const { openSidebarManager } = useSidebarManager();

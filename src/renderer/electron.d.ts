@@ -157,12 +157,6 @@ interface E2eeOperationResult {
   success: true;
 }
 
-interface LicenseErrorResult {
-  success: false;
-  code: string;
-  message: string;
-}
-
 interface AccessControlConfig {
   enabled: boolean;
   lockOnStartup: boolean;
@@ -340,7 +334,6 @@ declare global {
         onOpenFile: (callback: () => void) => () => void;
         onOpenAbout: (callback: () => void) => () => void;
         onCheckForUpdates: (callback: () => void) => () => void;
-        onOpenLicense: (callback: () => void) => () => void;
         onImportMarkdown: (callback: () => void) => () => void;
         onImportEnex: (callback: () => void) => () => void;
         onImportSppx: (callback: () => void) => () => void;
@@ -352,16 +345,6 @@ declare global {
       quickCapture?: {
         markReady: () => void;
         onRequested: (callback: () => void) => () => void;
-      };
-
-      license?: {
-        getState: () => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        activate: (licenseKey: string) => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        validate: (force?: boolean) => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        refreshDevices: (force?: boolean) => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        deactivateDevice: (deviceId: string) => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        clear: () => Promise<{ success: true; data: import('@shared/license.constants').LicenseState } | LicenseErrorResult>;
-        onStateChanged: (callback: (state: import('@shared/license.constants').LicenseState) => void) => () => void;
       };
 
       settings?: {

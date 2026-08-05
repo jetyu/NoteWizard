@@ -10,7 +10,7 @@ import {
 import { useWorkspaceStore } from '../../workspace/store/workspace.store';
 
 const logger = createLogger('Favorites Store');
-let hasFavoritesVfsListener = false;
+let hasFavoritesChangeListeners = false;
 
 function isStarredNote(node: StarredNode): node is StarredNote {
   return node.kind === 'note';
@@ -46,11 +46,13 @@ export const useFavoritesStore = defineStore('favorites', {
 
   actions: {
     async initialize(force = false) {
-      if (!hasFavoritesVfsListener) {
-        window.addEventListener('vfs-changed', () => {
+      if (!hasFavoritesChangeListeners) {
+        const refreshStarredNodes = () => {
           void this.refreshStarredNodes();
-        });
-        hasFavoritesVfsListener = true;
+        };
+        window.addEventListener('vfs-changed', refreshStarredNodes);
+        window.addEventListener('note-updated', refreshStarredNodes);
+        hasFavoritesChangeListeners = true;
       }
 
       if (this.initialized && !force) {

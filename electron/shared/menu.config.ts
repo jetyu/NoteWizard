@@ -19,7 +19,6 @@ export type MenuAction =
   | 'privacy'
   | 'terms'
   | 'update'
-  | 'activateLicense'
   | 'feedback'
   | 'about'
   | 'importMarkdown'
@@ -108,7 +107,6 @@ export const MENU_CONFIG: MenuCategoryConfig[] = [
       { id: 'feedback', labelKey: 'menu.help.feedback' },
       { type: 'separator' },
       { id: 'toggleDevTools', labelKey: 'menu.help.devTools', role: 'toggleDevTools' },
-      { id: 'activateLicense', labelKey: 'menu.help.activateLicense' },
       { id: 'about', labelKey: 'menu.help.about' },
     ],
   },

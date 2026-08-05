@@ -81,12 +81,12 @@ const handleFieldChange = (
   event: Event
 ) => {
   const target = event.target as HTMLInputElement;
-  settingsStore.updateSyncProviderSetting('ossS3', field, target.value);
+  settingsStore.sync.updateProvider('ossS3', field, target.value);
 };
 
 const handleRemotePathChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
-  settingsStore.updateSyncSetting('remotePath', target.value);
+  settingsStore.sync.update('remotePath', target.value);
 };
 </script>
 

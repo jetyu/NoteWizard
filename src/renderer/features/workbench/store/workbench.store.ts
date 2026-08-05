@@ -81,7 +81,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
       ...nextValue,
     });
 
-    await settingsStore.saveSettings({
+    await settingsStore.persistence.save({
       workbench: nextSettings,
     });
   }
@@ -289,7 +289,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
     }
 
     workbenchLogger.info('Cleaning workbench note references after workspace changes.');
-    await settingsStore.saveSettings({ workbench: nextSettings });
+    await settingsStore.persistence.save({ workbench: nextSettings });
   }
 
   return {

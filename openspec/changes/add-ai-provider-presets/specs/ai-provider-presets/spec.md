@@ -2,7 +2,7 @@
 
 ### Requirement: Curated OpenAI-compatible provider presets
 
-The system SHALL offer Qwen (Model Studio), Doubao (Volcengine Ark), Kimi, Zhipu AI (GLM), and Grok (xAI) as selectable AI provider presets without separating them into domestic or international groups.
+The system SHALL offer Alibaba Cloud Model Studio, Volcengine, Kimi, Zhipu AI (GLM), and Grok (xAI) as selectable AI provider presets without separating them into domestic or international groups.
 
 #### Scenario: Selecting a requested provider
 
@@ -25,8 +25,14 @@ The system SHALL infer the curated provider identity when an AI source base URL 
 
 #### Scenario: Loading an existing compatible source
 
-- **WHEN** an existing source uses a recognized Qwen, Doubao, Kimi, Zhipu AI, or Grok endpoint
+- **WHEN** an existing source uses a recognized Alibaba Cloud Model Studio, Volcengine, Kimi, Zhipu AI, or Grok endpoint
 - **THEN** the system identifies it as the corresponding curated provider instead of the generic OpenAI-compatible provider.
+
+#### Scenario: Legacy model-family provider values
+
+- **WHEN** a saved source uses the former `qwen` or `doubao` provider value
+- **THEN** the system does not treat that value as a valid provider identity
+- **AND** determines the provider from the source endpoint using the normal inference rules.
 
 ### Requirement: Chat model construction
 

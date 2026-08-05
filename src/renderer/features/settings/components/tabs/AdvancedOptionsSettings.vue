@@ -6,7 +6,7 @@
       <section class="setting-card">
         <div class="setting-copy">
           <p class="setting-label">{{ t('label.noteStorageLocation') }}</p>
-          <p class="setting-description">{{ t('text.noteStorageLocation') }}{{ settingsStore.config.noteSavePath }}</p>
+          <p class="setting-description">{{ t('text.noteStorageLocation') }}{{ settingsStore.config.noteStorage.path }}</p>
         </div>
         <button type="button" class="action-button" @click="handlePickPath">
           {{ t('button.browse') }}
@@ -51,7 +51,7 @@
           <p class="setting-description">{{ t('text.trashAutoClear') }}</p>
         </div>
         <label class="select-shell">
-          <select class="settings-select small-select" :value="settingsStore.config.trashAutoClearDays"
+          <select class="settings-select small-select" :value="settingsStore.config.noteStorage.trashAutoClearDays"
             @change="handleTrashAutoClearChange">
             <option :value="0">{{ t('option.trashAutoClear.never') }}</option>
             <option :value="7">{{ t('option.trashAutoClear.days7') }}</option>
@@ -142,16 +142,16 @@ const busyAction = ref<BusyAction>(null);
 const isBusy = computed(() => busyAction.value !== null);
 
 const maxHistoryVersions = computed({
-  get: () => settingsStore.config.maxHistoryVersions ?? 50,
+  get: () => settingsStore.config.noteStorage.maxHistoryVersions ?? 50,
   set: (val: number) => {
-    settingsStore.updateSetting('maxHistoryVersions', val);
+    settingsStore.noteStorage.update('maxHistoryVersions', val);
   },
 });
 
 const snapshotInterval = computed({
-  get: () => settingsStore.config.snapshotInterval ?? 15,
+  get: () => settingsStore.config.noteStorage.snapshotInterval ?? 15,
   set: (val: number) => {
-    settingsStore.updateSetting('snapshotInterval', val);
+    settingsStore.noteStorage.update('snapshotInterval', val);
   },
 });
 
@@ -178,14 +178,14 @@ const prepareDataOperation = async (action: BusyAction) => {
 };
 
 const finalizeDataOperation = async () => {
-  await settingsStore.loadSettings();
+  await settingsStore.persistence.load();
   busyAction.value = null;
 };
 
 const handlePickPath = async () => {
   const newPath = await settingsService.pickDirectory();
   if (newPath) {
-    await settingsStore.setNoteSavePath(newPath);
+    await settingsStore.noteStorage.setPath(newPath);
     await workspaceStore.initializeWorkspace(true);
   }
 };
@@ -210,20 +210,20 @@ const handleTrashAutoClearChange = (event: Event) => {
   const target = event.target as HTMLSelectElement;
   const val = parseInt(target.value, 10);
   if (!isNaN(val)) {
-    settingsStore.updateSetting('trashAutoClearDays', val);
+    settingsStore.noteStorage.update('trashAutoClearDays', val);
   }
 };
 
 const handleExportSettings = async () => {
-  await settingsStore.exportSettings();
+  await settingsStore.persistence.exportConfig();
 };
 
 const handleImportSettings = async () => {
-  await settingsStore.importSettings();
+  await settingsStore.persistence.importConfig();
 };
 
 const handleResetSettings = async () => {
-  await settingsStore.resetSettings();
+  await settingsStore.persistence.reset();
 };
 
 const handleExportSppx = async () => {
