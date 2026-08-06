@@ -308,7 +308,7 @@ const handleKnowledgeCopilotUpdate = async <K extends keyof KnowledgeCopilotSett
 
 const handleKnowledgeCopilotNumberUpdate = async (key: keyof KnowledgeCopilotSettings, event: Event) => {
   const previousValue = settingsStore.config.knowledgeCopilot[key];
-  const target = event.target as HTMLInputElement;
+  const target = event.target as HTMLInputElement | HTMLSelectElement;
   const value = key === 'similarityThreshold' ? parseFloat(target.value) : parseInt(target.value);
   await settingsStore.knowledgeCopilot.update(key, value || 0);
 

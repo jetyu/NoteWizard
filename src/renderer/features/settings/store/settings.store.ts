@@ -16,6 +16,7 @@ import {
   type AiProvider,
 } from '@shared/ai-provider.constants';
 import { isBuiltInAiSourceId } from '@shared/built-in-ai.constants';
+import { normalizeKnowledgeCopilotRebuildConcurrency } from '@shared/knowledge-copilot.constants';
 
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
 import { DEFAULT_SYNC_SETTINGS, type SyncProvider } from '@shared/sync.constants';
@@ -52,6 +53,7 @@ function clampInteger(value: unknown, fallback: number, min: number, max: number
 function normalizeKnowledgeCopilotNumber<K extends keyof KnowledgeCopilotSettings>(
   key: K,
   value: KnowledgeCopilotSettings[K],
+  embeddingProvider?: AiProvider,
 ): KnowledgeCopilotSettings[K] {
   if (key === 'chunkSize') {
     return clampInteger(value, 500, 500, 800) as KnowledgeCopilotSettings[K];
@@ -59,6 +61,10 @@ function normalizeKnowledgeCopilotNumber<K extends keyof KnowledgeCopilotSetting
 
   if (key === 'chunkOverlap') {
     return clampInteger(value, 50, 50, 100) as KnowledgeCopilotSettings[K];
+  }
+
+  if (key === 'rebuildConcurrency') {
+    return normalizeKnowledgeCopilotRebuildConcurrency(value, embeddingProvider) as KnowledgeCopilotSettings[K];
   }
 
   if (key === 'topK') {
@@ -108,6 +114,7 @@ export interface KnowledgeCopilotSettings {
   agentExecutionMode: 'confirm' | 'auto';
   chunkSize: number;
   chunkOverlap: number;
+  rebuildConcurrency: number;
   topK: number;
   similarityThreshold: number;
   autoIndex: boolean;
@@ -499,7 +506,14 @@ export const useSettingsStore = defineStore('settings', () => {
     key: K,
     value: KnowledgeCopilotSettings[K]
   ) => {
-    config.value.knowledgeCopilot[key] = normalizeKnowledgeCopilotNumber(key, value);
+    const currentEmbeddingSource = config.value.aiSources.sources.find(
+      source => source.id === config.value.knowledgeCopilot.embeddingSourceId,
+    );
+    config.value.knowledgeCopilot[key] = normalizeKnowledgeCopilotNumber(
+      key,
+      value,
+      currentEmbeddingSource?.provider,
+    );
 
     // Auto-update model if sourceId changes
     if (key === 'embeddingSourceId') {
@@ -507,6 +521,10 @@ export const useSettingsStore = defineStore('settings', () => {
       config.value.knowledgeCopilot.embeddingModel = source
         ? resolveAiSourceModel(source, 'embedding')
         : '';
+      config.value.knowledgeCopilot.rebuildConcurrency = normalizeKnowledgeCopilotRebuildConcurrency(
+        config.value.knowledgeCopilot.rebuildConcurrency,
+        source?.provider,
+      );
     }
     if (key === 'askChatSourceId' || key === 'agentChatSourceId') {
       const source = config.value.aiSources.sources.find(s => s.id === String(value));

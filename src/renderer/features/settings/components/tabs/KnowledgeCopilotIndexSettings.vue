@@ -18,7 +18,8 @@
               <span class="startup-switch-thumb" />
             </span>
             <span class="startup-switch-text">
-              {{ settingsStore.config.knowledgeCopilot.autoIndex ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+              {{ settingsStore.config.knowledgeCopilot.autoIndex ? t('checkbox.status.enabled') :
+                t('checkbox.status.disabled') }}
             </span>
           </button>
         </section>
@@ -37,7 +38,8 @@
               <span class="startup-switch-thumb" />
             </span>
             <span class="startup-switch-text">
-              {{ settingsStore.config.knowledgeCopilot.indexOnSave ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+              {{ settingsStore.config.knowledgeCopilot.indexOnSave ? t('checkbox.status.enabled') :
+                t('checkbox.status.disabled') }}
             </span>
           </button>
         </section>
@@ -46,9 +48,25 @@
 
     <section class="subtitle-settings-section settings-grid">
       <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotIndexTuning') }}</p>
-      <p class="subtitle-settings-description">{{ t('text.knowledgeCopilotIndexTuning') }}</p>
-
       <div class="settings-row-grid">
+        <section class="setting-card">
+          <div class="setting-copy">
+            <p class="setting-label">{{ t('label.knowledgeCopilotRebuildConcurrency') }}</p>
+            <p class="setting-description">
+              {{ t('text.knowledgeCopilotRebuildConcurrency') }}
+            </p>
+          </div>
+          <label class="select-shell">
+            <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
+              @change="emit('number-update', 'rebuildConcurrency', $event)"
+              :disabled="!settingsStore.config.knowledgeCopilot.enabled">
+              <option v-for="value in rebuildConcurrencyOptions" :key="value" :value="value">
+                {{ value }}
+              </option>
+            </select>
+          </label>
+        </section>
+
         <section class="setting-card">
           <div class="setting-copy">
             <p class="setting-label">{{ t('label.knowledgeCopilotChunkSize') }}</p>
@@ -80,11 +98,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import {
+  getKnowledgeCopilotRebuildConcurrencyMax,
+  KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS,
+} from '@shared/knowledge-copilot.constants';
 import { useSettingsStore } from '../../store/settings.store';
 
 type IndexToggleKey = 'autoIndex' | 'indexOnSave';
-type IndexNumberKey = 'chunkSize' | 'chunkOverlap';
+type IndexNumberKey = 'chunkSize' | 'chunkOverlap' | 'rebuildConcurrency';
 
 const emit = defineEmits<{
   toggle: [key: IndexToggleKey];
@@ -93,4 +116,15 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+
+const embeddingSource = computed(() => settingsStore.config.aiSources.sources.find(
+  source => source.id === settingsStore.config.knowledgeCopilot.embeddingSourceId,
+));
+const rebuildConcurrencyOptions = computed(() => {
+  const maximum = getKnowledgeCopilotRebuildConcurrencyMax(embeddingSource.value?.provider);
+  return Array.from(
+    { length: maximum - KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS.MIN + 1 },
+    (_, index) => KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS.MIN + index,
+  );
+});
 </script>

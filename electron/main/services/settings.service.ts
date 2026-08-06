@@ -21,6 +21,7 @@ import {
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
 import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
+import { normalizeKnowledgeCopilotRebuildConcurrency } from '../../shared/knowledge-copilot.constants.js';
 import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.constants.js';
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
 import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
@@ -113,6 +114,7 @@ export interface KnowledgeCopilotConfig {
   agentExecutionMode: 'confirm' | 'auto';
   chunkSize: number;
   chunkOverlap: number;
+  rebuildConcurrency: number;
   topK: number;
   similarityThreshold: number;
   autoIndex: boolean;
@@ -449,6 +451,7 @@ export function normalizeKnowledgeCopilotConfig(
     'reranker',
     !hasOwnSetting(config, 'rerankerSourceId'),
   );
+  const embeddingSource = aiSources.find(source => source.id === embeddingSelection.sourceId);
 
   return {
     enabled: normalizeBoolean(config.enabled, false),
@@ -464,6 +467,10 @@ export function normalizeKnowledgeCopilotConfig(
     agentExecutionMode: config.agentExecutionMode === 'auto' ? 'auto' : 'confirm',
     chunkSize: clampInteger(config.chunkSize, 500, 500, 800),
     chunkOverlap: clampInteger(config.chunkOverlap, 50, 50, 100),
+    rebuildConcurrency: normalizeKnowledgeCopilotRebuildConcurrency(
+      config.rebuildConcurrency,
+      embeddingSource?.provider,
+    ),
     topK: clampInteger(config.topK, 5, 1, 10),
     similarityThreshold: clampNumber(config.similarityThreshold, 0.45, 0, 1),
     autoIndex: normalizeBoolean(config.autoIndex, true),

@@ -10,6 +10,7 @@ import { knowledgeCopilotService } from '../services/knowledge-copilot.service';
 import { createLogger } from '@renderer/features/logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { useSettingsStore } from '../../settings/store/settings.store';
+import { normalizeKnowledgeCopilotRebuildConcurrency } from '@shared/knowledge-copilot.constants';
 
 const knowledgeCopilotLogger = createLogger('KnowledgeCopilotStore');
 
@@ -49,7 +50,6 @@ interface StatusCachePayload {
   error?: string;
 }
 
-const INDEX_CONCURRENCY = 3;
 const STATUS_CACHE_TTL_MS = 12_000;
 
 function hashText(value: string): string {
@@ -76,7 +76,7 @@ async function runWithConcurrency<T>(tasks: Array<() => Promise<T>>, concurrency
     return [];
   }
 
-  const safeConcurrency = Math.max(1, concurrency);
+  const safeConcurrency = Math.min(tasks.length, Math.max(1, Math.trunc(concurrency)));
   const results = new Array<T>(tasks.length);
   let nextIndex = 0;
 
@@ -187,6 +187,13 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     const settingsStore = useSettingsStore();
     const knowledgeCopilotConfig = settingsStore.config.knowledgeCopilot;
     const embeddingModel = String(knowledgeCopilotConfig.embeddingModel || '');
+    const embeddingSource = settingsStore.config.aiSources.sources.find(
+      source => source.id === knowledgeCopilotConfig.embeddingSourceId,
+    );
+    const rebuildConcurrency = normalizeKnowledgeCopilotRebuildConcurrency(
+      knowledgeCopilotConfig.rebuildConcurrency,
+      embeddingSource?.provider,
+    );
     const previousSignatures = { ...(knowledgeCopilotConfig.indexSignatures || {}) };
     const previousChunkCounts = { ...(knowledgeCopilotConfig.indexChunkCounts || {}) };
 
@@ -222,7 +229,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
             await knowledgeCopilotService.deleteNoteIndex(noteId);
             return noteId;
           }),
-          INDEX_CONCURRENCY,
+          rebuildConcurrency,
         );
       }
 
@@ -298,7 +305,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
             updateProgress();
           }
         }),
-        INDEX_CONCURRENCY,
+        rebuildConcurrency,
       );
 
       const failedNoteIds = Object.keys(nextSignatures).filter((noteId) => !nextSignatures[noteId]);
@@ -333,7 +340,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         : (successCounter.value > 0 || indexStatus.value.skippedNotes > 0 ? 'partial-failure' : 'failure');
 
       knowledgeCopilotLogger.info(
-        `${fullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}`,
+        `${fullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}, concurrency=${rebuildConcurrency}`,
       );
     } catch (error) {
       indexStatus.value.error = getErrorMessage(error);
