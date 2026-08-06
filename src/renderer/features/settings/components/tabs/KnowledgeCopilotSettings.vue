@@ -1,9 +1,9 @@
 <template>
-  <div class="knowledge-copilot-settings">
-    <h3 class="panel-title">{{ t('pref.pane.knowledgeCopilot') }}</h3>
+  <div class="settings-subview">
+    <h3 class="panel-title">{{ pageTitle }}</h3>
 
-    <div class="settings-grid">
-      <section class="subtitle-settings-section settings-section">
+    <div class="settings-subview-content scrollable" :class="{ 'settings-grid': activeView === 'dashboard' }">
+      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
         <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionBasic') }}</p>
 
         <section class="setting-card">
@@ -44,7 +44,7 @@
         </section>
       </section>
 
-      <section class="subtitle-settings-section settings-section">
+      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
         <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionAnswering') }}</p>
 
         <section class="setting-card">
@@ -109,77 +109,7 @@
         </section>
       </section>
 
-      <section class="subtitle-settings-section settings-section">
-        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionIndex') }}</p>
-        <div class="settings-row-grid">
-          <section class="setting-card">
-            <div class="setting-copy">
-              <p class="setting-label">{{ t('label.knowledgeCopilotAutoIndex') }}</p>
-              <p class="setting-description">{{ t('text.knowledgeCopilotAutoIndex') }}</p>
-            </div>
-
-            <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.knowledgeCopilot.autoIndex }"
-              :aria-pressed="settingsStore.config.knowledgeCopilot.autoIndex" @click="handleToggle('autoIndex')"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled">
-              <span class="startup-switch-track">
-                <span class="startup-switch-thumb" />
-              </span>
-              <span class="startup-switch-text">
-                {{ settingsStore.config.knowledgeCopilot.autoIndex ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
-              </span>
-            </button>
-          </section>
-
-          <section class="setting-card">
-            <div class="setting-copy">
-              <p class="setting-label">{{ t('label.knowledgeCopilotIndexOnSave') }}</p>
-              <p class="setting-description">{{ t('text.knowledgeCopilotIndexOnSave') }}</p>
-            </div>
-
-            <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.knowledgeCopilot.indexOnSave }"
-              :aria-pressed="settingsStore.config.knowledgeCopilot.indexOnSave" @click="handleToggle('indexOnSave')"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled">
-              <span class="startup-switch-track">
-                <span class="startup-switch-thumb" />
-              </span>
-              <span class="startup-switch-text">
-                {{ settingsStore.config.knowledgeCopilot.indexOnSave ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
-              </span>
-            </button>
-          </section>
-        </div>
-
-        <section v-if="settingsStore.config.knowledgeCopilot.enabled" class="setting-card index-status-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotIndexStatus') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotIndexStatus') }}</p>
-          </div>
-          <div class="index-status-container">
-            <div class="status-info">
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotIndexCurrentState') }}</span>
-                <span class="status-value status-pill" :class="{ active: isIndexing }">{{ indexStateText }}</span>
-              </div>
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotTotalChunks') }}</span>
-                <span class="status-value">{{ indexStatus.totalChunks || 0 }}</span>
-              </div>
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotLastIndexed') }}</span>
-                <span class="status-value">{{ lastIndexedText }}</span>
-              </div>
-            </div>
-
-            <button type="button" class="action-button" :disabled="isIndexing || !isConfigured"
-              @click="handleRebuildIndex">
-              <span v-if="isIndexing" class="spinner"></span>
-              <span>{{ rebuildButtonText }}</span>
-            </button>
-          </div>
-        </section>
-      </section>
-
-      <section class="subtitle-settings-section settings-section">
+      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
         <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionRetrieval') }}</p>
         <div class="settings-row-grid">
           <section class="setting-card">
@@ -207,47 +137,59 @@
             </div>
           </section>
         </div>
-
-        <details class="index-tuning-details">
-          <summary class="index-tuning-summary">
-            <IconChevronRight class="summary-chevron" :size="15" aria-hidden="true" />
-            <span>{{ t('label.knowledgeCopilotIndexTuning') }}</span>
-            <span class="summary-hint">{{ t('text.knowledgeCopilotIndexTuning') }}</span>
-          </summary>
-
-          <div class="settings-row-grid index-tuning-grid">
-            <section class="setting-card">
-              <div class="setting-copy">
-                <p class="setting-label">{{ t('label.knowledgeCopilotChunkSize') }}</p>
-                <p class="setting-description">{{ t('text.knowledgeCopilotChunkSize') }}</p>
-              </div>
-              <div class="number-input-container">
-                <input type="number" class="settings-input number-input" :value="settingsStore.config.knowledgeCopilot.chunkSize"
-                  @change="handleKnowledgeCopilotNumberUpdate('chunkSize', $event)" step="100" min="500" max="800"
-                  :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-              </div>
-            </section>
-
-            <section class="setting-card">
-              <div class="setting-copy">
-                <p class="setting-label">{{ t('label.knowledgeCopilotChunkOverlap') }}</p>
-                <p class="setting-description">{{ t('text.knowledgeCopilotChunkOverlap') }}</p>
-              </div>
-              <div class="number-input-container">
-                <input type="number" class="settings-input number-input" :value="settingsStore.config.knowledgeCopilot.chunkOverlap"
-                  @change="handleKnowledgeCopilotNumberUpdate('chunkOverlap', $event)" step="10" min="50" max="100"
-                  :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-              </div>
-            </section>
-          </div>
-        </details>
       </section>
+
+      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
+        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionIndex') }}</p>
+
+        <section class="setting-card"
+          :aria-label="`${t('label.knowledgeCopilotIndexStatus')}: ${t('text.knowledgeCopilotIndexStatus')}`">
+          <div class="index-status-container">
+            <div class="status-info">
+              <div class="status-item">
+                <span class="status-label">{{ t('label.knowledgeCopilotIndexCurrentState') }}</span>
+                <span class="status-value status-pill" :class="indexStateToneClass">{{ indexStateText }}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">{{ t('label.knowledgeCopilotTotalChunks') }}</span>
+                <span class="status-value">{{ indexStatus.totalChunks || 0 }}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">{{ t('label.knowledgeCopilotLastIndexed') }}</span>
+                <span class="status-value">{{ lastIndexedText }}</span>
+              </div>
+            </div>
+
+            <div class="settings-card-actions">
+              <button type="button" class="action-button"
+                :disabled="!settingsStore.config.knowledgeCopilot.enabled || isIndexing || !isConfigured"
+                @click="handleRebuildIndex">
+                <span v-if="isIndexing" class="spinner"></span>
+                <span>{{ rebuildButtonText }}</span>
+              </button>
+              <button type="button" class="action-button secondary" @click="openKnowledgeCopilotIndexSettings">
+                {{ t('label.knowledgeCopilotIndexSettings') }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <KnowledgeCopilotIndexSettings v-else @toggle="handleToggle" @number-update="handleKnowledgeCopilotNumberUpdate" />
+    </div>
+
+    <div v-if="activeView === 'knowledgeCopilot-index-settings'" class="settings-subview-footer with-divider">
+      <div class="settings-subview-footer-buttons">
+        <button type="button" class="action-button secondary" @click="handleBack">
+          {{ t('button.back') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore, type KnowledgeCopilotSettings } from '../../store/settings.store';
 import { settingsService } from '../../services/settings.service';
@@ -256,7 +198,7 @@ import { useWorkspaceStore } from '@renderer/features/workspace/store/workspace.
 import { createLogger } from '@renderer/features/logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { knowledgeCopilotService } from '@renderer/features/knowledge-copilot/services/knowledge-copilot.service';
-import { IconChevronRight } from '@tabler/icons-vue';
+import KnowledgeCopilotIndexSettings from './KnowledgeCopilotIndexSettings.vue';
 
 
 const { t } = useI18n();
@@ -265,6 +207,14 @@ const workspaceStore = useWorkspaceStore();
 const { indexStatus, isIndexing, rebuildIndex, refreshStatus, clearIndex } = useKnowledgeCopilotIndex();
 const { isConfigured } = useKnowledgeCopilotConfig();
 const KnowledgeCopilotSettingsLogger = createLogger('KnowledgeCopilotSettings');
+
+type KnowledgeCopilotSettingsView = 'dashboard' | 'knowledgeCopilot-index-settings';
+
+const activeView = ref<KnowledgeCopilotSettingsView>('dashboard');
+
+const pageTitle = computed(() => activeView.value === 'knowledgeCopilot-index-settings'
+  ? t('label.knowledgeCopilotIndexSettings')
+  : t('pref.pane.knowledgeCopilot'));
 
 const sourceSupportsCapability = (capabilities: string[], capability: string): boolean => {
   return capabilities.length === 0 || capabilities.includes(capability);
@@ -287,6 +237,17 @@ onMounted(() => {
     refreshStatus();
   }
 });
+
+const openKnowledgeCopilotIndexSettings = (): void => {
+  activeView.value = 'knowledgeCopilot-index-settings';
+};
+
+const handleBack = (): void => {
+  activeView.value = 'dashboard';
+  if (settingsStore.config.knowledgeCopilot.enabled) {
+    void refreshStatus();
+  }
+};
 
 const handleToggle = async (key: keyof KnowledgeCopilotSettings) => {
   await settingsStore.knowledgeCopilot.update(key, !settingsStore.config.knowledgeCopilot[key]);
@@ -412,8 +373,24 @@ const indexStateText = computed(() => {
     return t('label.knowledgeCopilotIndexStateIndexing');
   }
 
+  if (!settingsStore.config.knowledgeCopilot.enabled) {
+    return t('label.knowledgeCopilotIndexStateDisabled');
+  }
+
   if (!isConfigured.value) {
     return t('label.knowledgeCopilotIndexStateNeedsConfig');
+  }
+
+  if (indexStatus.value.lastRebuildResult === 'failure') {
+    return t('label.knowledgeCopilotIndexStateFailed');
+  }
+
+  if (indexStatus.value.lastRebuildResult === 'partial-failure') {
+    return t('label.knowledgeCopilotIndexStatePartialFailure');
+  }
+
+  if (indexStatus.value.lastRebuildResult === 'success') {
+    return t('label.knowledgeCopilotIndexStateSucceeded');
   }
 
   if (!settingsStore.config.knowledgeCopilot.lastIndexedAt || Number(indexStatus.value.totalChunks || 0) === 0) {
@@ -421,6 +398,27 @@ const indexStateText = computed(() => {
   }
 
   return t('label.knowledgeCopilotIndexStateIdle');
+});
+
+const indexStateToneClass = computed(() => {
+  if (isIndexing.value) {
+    return 'active';
+  }
+
+  if (!settingsStore.config.knowledgeCopilot.enabled || !isConfigured.value) {
+    return '';
+  }
+
+  switch (indexStatus.value.lastRebuildResult) {
+    case 'success':
+      return 'success';
+    case 'partial-failure':
+      return 'warning';
+    case 'failure':
+      return 'error';
+    default:
+      return '';
+  }
 });
 
 const lastIndexedText = computed(() => {
@@ -437,17 +435,12 @@ const formatDate = (timestamp: number) => {
 </script>
 
 <style scoped>
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .index-status-container {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 16px;
+  width: 100%;
   min-width: 0;
 }
 
@@ -486,53 +479,32 @@ const formatDate = (timestamp: number) => {
   align-items: center;
   min-height: 22px;
   padding: 2px 8px;
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--bg-secondary);
+  background: var(--surface-soft);
   color: var(--text-muted);
 }
 
 .status-pill.active {
-  color: var(--accent-color);
+  color: var(--accent);
 }
 
-.index-tuning-details {
-  margin-top: 12px;
+.status-pill.success {
+  border-color: var(--status-success-border);
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
 }
 
-.index-tuning-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  list-style: none;
-  user-select: none;
+.status-pill.warning {
+  border-color: var(--status-warning-border);
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
 }
 
-.index-tuning-summary::-webkit-details-marker {
-  display: none;
-}
-
-.summary-chevron {
-  color: var(--text-muted);
-  flex: 0 0 auto;
-  transition: transform 0.16s ease;
-}
-
-.index-tuning-details[open] .summary-chevron {
-  transform: rotate(90deg);
-}
-
-.summary-hint {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.index-tuning-grid {
-  margin-top: 10px;
+.status-pill.error {
+  border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+  color: var(--status-danger-text);
 }
 
 @media (max-width: 760px) {

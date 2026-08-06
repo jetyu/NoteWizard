@@ -30,6 +30,7 @@ export interface IndexStatus {
   progress: number;
   lastIndexedAt: number | null;
   error: string | null;
+  lastRebuildResult: 'success' | 'partial-failure' | 'failure' | null;
   rebuildReason: 'manual' | 'auto-index' | null;
   skippedNotes: number;
 }
@@ -103,6 +104,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     progress: 0,
     lastIndexedAt: null,
     error: null,
+    lastRebuildResult: null,
     rebuildReason: null,
     skippedNotes: 0,
   });
@@ -194,6 +196,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     indexStatus.value.indexedNotes = 0;
     indexStatus.value.totalChunks = Number(knowledgeCopilotConfig.cachedTotalChunks || 0);
     indexStatus.value.progress = 0;
+    indexStatus.value.lastRebuildResult = null;
     indexStatus.value.rebuildReason = reason;
     indexStatus.value.skippedNotes = 0;
 
@@ -325,11 +328,16 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         totalChunks: cachedTotalChunks,
       };
 
+      indexStatus.value.lastRebuildResult = failCounter.value === 0
+        ? 'success'
+        : (successCounter.value > 0 || indexStatus.value.skippedNotes > 0 ? 'partial-failure' : 'failure');
+
       knowledgeCopilotLogger.info(
         `${fullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}`,
       );
     } catch (error) {
       indexStatus.value.error = getErrorMessage(error);
+      indexStatus.value.lastRebuildResult = 'failure';
       knowledgeCopilotLogger.error(`Failed to rebuild index: ${getErrorMessage(error)}`);
       throw error;
     } finally {
@@ -437,6 +445,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       indexStatus.value.indexedNotes = 0;
       indexStatus.value.lastIndexedAt = null;
       indexStatus.value.progress = 0;
+      indexStatus.value.lastRebuildResult = null;
       indexStatus.value.skippedNotes = 0;
 
       const settingsStore = useSettingsStore();
