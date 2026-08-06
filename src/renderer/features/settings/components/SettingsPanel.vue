@@ -203,7 +203,7 @@ const currentComponent = computed(() => {
 
 .settings-panel__group-label {
   margin: 10px 10px 4px;
-  color: var(--text-tertiary);
+  color: color-mix(in srgb, var(--accent) 72%, var(--text-primary));
   font-size: 0.72rem;
   font-weight: 650;
   line-height: 1.2;
