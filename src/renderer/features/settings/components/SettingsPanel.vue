@@ -8,7 +8,9 @@
       <nav class="settings-panel__nav" :aria-label="t('pref.pane.title')">
         <ul>
           <template v-for="tab in tabs" :key="tab.id">
-            <li v-if="tab.type === 'separator'" class="settings-panel__separator" role="separator" />
+            <li v-if="tab.type === 'group'" class="settings-panel__group-label">
+              {{ t(tab.labelKey) }}
+            </li>
             <li v-else>
               <button type="button" class="settings-panel__tab" :class="{ 'is-active': activeTab === tab.id }"
                 @click="setActiveTab(tab.id)">
@@ -78,25 +80,24 @@ const { activeTab, setActiveTab } = useSettingsPanel();
 let hasAutoCheckedUpdates = false;
 
 type TabItem =
-  | { id: string; type: 'separator' }
+  | { id: string; type: 'group'; labelKey: string }
   | { id: string; type?: never; labelKey?: string; label?: string; icon: Component; component: unknown };
 
 const baseTabs: TabItem[] = [
+  { id: 'group-basic', type: 'group', labelKey: 'pref.pane.group.basic' },
   { id: 'general', labelKey: 'pref.pane.general', icon: IconAdjustments, component: GeneralSettings },
-
   { id: 'preview', labelKey: 'pref.pane.preview', icon: IconBrowser, component: PreviewSettings },
   { id: 'editor', labelKey: 'pref.pane.editor', icon: IconEdit, component: EditorSettings },
-  { id: 'sep-1', type: 'separator' },
+  { id: 'noteStorage', labelKey: 'pref.pane.noteStorage', icon: IconSettings2, component: AdvancedOptionsSettings },
+  { id: 'group-security-sync', type: 'group', labelKey: 'pref.pane.group.securitySync' },
   { id: 'security', labelKey: 'pref.pane.security', icon: IconShield, component: SecuritySettings },
   { id: 'access-control', labelKey: 'pref.pane.accessControl', icon: IconUserKey, component: AccessControlSettings },
   { id: 'sync', labelKey: 'pref.pane.sync', icon: IconRefresh, component: SyncSettings },
-  { id: 'sep-2', type: 'separator' },
+  { id: 'group-ai', type: 'group', labelKey: 'pref.pane.group.ai' },
   { id: 'ai-sources', labelKey: 'pref.pane.aiSources', icon: IconAdjustmentsSpark, component: AISourceSettings },
   { id: 'ai-assistant', labelKey: 'pref.pane.aiAssistant', icon: IconImageGeneration, component: AIAssistantSettings },
   { id: 'knowledge-copilot', labelKey: 'pref.pane.knowledgeCopilot', icon: IconSubtitlesAi, component: KnowledgeCopilotSettings },
-  { id: 'sep-3', type: 'separator' },
-  { id: 'noteStorage', labelKey: 'pref.pane.noteStorage', icon: IconSettings2, component: AdvancedOptionsSettings },
-  { id: 'sep-4', type: 'separator' },
+  { id: 'group-advanced', type: 'group', labelKey: 'pref.pane.group.advanced' },
   { id: 'shortcuts', labelKey: 'pref.pane.shortcuts', icon: IconKeyboard, component: ShortcutSettings },
   { id: 'privacyLog', labelKey: 'pref.pane.privacyLog', icon: IconFileAnalytics, component: LogSettings },
   { id: 'software-update', labelKey: 'label.softwareAutoUpdate', icon: IconRefreshDot, component: SoftwareUpdateSettings }
@@ -141,7 +142,7 @@ watch(
 
 const currentComponent = computed(() => {
   const tab = tabs.value.find((item) => item.id === activeTab.value);
-  return tab && tab.type !== 'separator' ? tab.component : null;
+  return tab && tab.type !== 'group' ? tab.component : null;
 });
 </script>
 
@@ -200,10 +201,17 @@ const currentComponent = computed(() => {
   list-style: none;
 }
 
-.settings-panel__separator {
-  height: 1px;
-  margin: 6px 6px;
-  background-color: var(--border-color);
+.settings-panel__group-label {
+  margin: 10px 10px 4px;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.settings-panel__group-label:first-child {
+  margin-top: 4px;
 }
 
 .settings-panel__tab {
