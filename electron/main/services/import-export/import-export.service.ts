@@ -40,6 +40,7 @@ export const importExportService = {
       knowledgeCopilot: {
         ...config.knowledgeCopilot,
         lastIndexedAt: null,
+        lastRebuildDurationMs: null,
         indexSignatures: {},
         indexChunkCounts: {},
         cachedTotalChunks: 0,

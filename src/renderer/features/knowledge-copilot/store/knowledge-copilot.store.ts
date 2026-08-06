@@ -30,6 +30,8 @@ export interface IndexStatus {
   totalChunks: number;
   progress: number;
   lastIndexedAt: number | null;
+  rebuildStartedAt: number | null;
+  lastRebuildDurationMs: number | null;
   error: string | null;
   lastRebuildResult: 'success' | 'partial-failure' | 'failure' | null;
   rebuildReason: 'manual' | 'auto-index' | null;
@@ -103,6 +105,8 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     totalChunks: 0,
     progress: 0,
     lastIndexedAt: null,
+    rebuildStartedAt: null,
+    lastRebuildDurationMs: null,
     error: null,
     lastRebuildResult: null,
     rebuildReason: null,
@@ -196,6 +200,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     );
     const previousSignatures = { ...(knowledgeCopilotConfig.indexSignatures || {}) };
     const previousChunkCounts = { ...(knowledgeCopilotConfig.indexChunkCounts || {}) };
+    const rebuildStartedAt = Date.now();
 
     indexStatus.value.isIndexing = true;
     indexStatus.value.error = null;
@@ -203,6 +208,8 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     indexStatus.value.indexedNotes = 0;
     indexStatus.value.totalChunks = Number(knowledgeCopilotConfig.cachedTotalChunks || 0);
     indexStatus.value.progress = 0;
+    indexStatus.value.rebuildStartedAt = rebuildStartedAt;
+    indexStatus.value.lastRebuildDurationMs = null;
     indexStatus.value.lastRebuildResult = null;
     indexStatus.value.rebuildReason = reason;
     indexStatus.value.skippedNotes = 0;
@@ -315,7 +322,9 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       }
 
       const lastIndexedDate = Date.now();
+      const rebuildDurationMs = Math.max(0, lastIndexedDate - rebuildStartedAt);
       indexStatus.value.lastIndexedAt = lastIndexedDate;
+      indexStatus.value.lastRebuildDurationMs = rebuildDurationMs;
       indexStatus.value.totalChunks = cachedTotalChunks;
       indexStatus.value.progress = 100;
 
@@ -323,6 +332,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         knowledgeCopilot: {
           ...settingsStore.config.knowledgeCopilot,
           lastIndexedAt: lastIndexedDate,
+          lastRebuildDurationMs: rebuildDurationMs,
           indexSignatures: nextSignatures,
           indexChunkCounts: nextChunkCounts,
           cachedTotalChunks,
@@ -343,12 +353,27 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         `${fullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}, concurrency=${rebuildConcurrency}`,
       );
     } catch (error) {
+      const rebuildDurationMs = Math.max(0, Date.now() - rebuildStartedAt);
       indexStatus.value.error = getErrorMessage(error);
+      indexStatus.value.lastRebuildDurationMs = rebuildDurationMs;
       indexStatus.value.lastRebuildResult = 'failure';
+      try {
+        await settingsStore.persistence.save({
+          knowledgeCopilot: {
+            ...settingsStore.config.knowledgeCopilot,
+            lastRebuildDurationMs: rebuildDurationMs,
+          },
+        });
+      } catch (durationPersistenceError) {
+        knowledgeCopilotLogger.error(
+          `Failed to persist rebuild duration: ${getErrorMessage(durationPersistenceError)}`,
+        );
+      }
       knowledgeCopilotLogger.error(`Failed to rebuild index: ${getErrorMessage(error)}`);
       throw error;
     } finally {
       indexStatus.value.isIndexing = false;
+      indexStatus.value.rebuildStartedAt = null;
       if (indexStatus.value.error) {
         indexStatus.value.rebuildReason = null;
       }
@@ -451,6 +476,8 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
       indexStatus.value.totalChunks = 0;
       indexStatus.value.indexedNotes = 0;
       indexStatus.value.lastIndexedAt = null;
+      indexStatus.value.rebuildStartedAt = null;
+      indexStatus.value.lastRebuildDurationMs = null;
       indexStatus.value.progress = 0;
       indexStatus.value.lastRebuildResult = null;
       indexStatus.value.skippedNotes = 0;
@@ -460,6 +487,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         knowledgeCopilot: {
           ...settingsStore.config.knowledgeCopilot,
           lastIndexedAt: indexStatus.value.lastIndexedAt,
+          lastRebuildDurationMs: null,
           indexSignatures: {},
           indexChunkCounts: {},
           cachedTotalChunks: 0,

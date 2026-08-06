@@ -20,6 +20,7 @@ export const DEFAULT_KNOWLEDGE_COPILOT_CONFIG = {
   autoIndex: true,
   indexOnSave: true,
   lastIndexedAt: null,
+  lastRebuildDurationMs: null,
   indexSignatures: {} as Record<string, string>,
   indexChunkCounts: {} as Record<string, number>,
   cachedTotalChunks: 0,

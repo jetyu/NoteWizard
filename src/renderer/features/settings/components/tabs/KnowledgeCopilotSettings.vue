@@ -158,6 +158,10 @@
                 <span class="status-label">{{ t('label.knowledgeCopilotLastIndexed') }}</span>
                 <span class="status-value">{{ lastIndexedText }}</span>
               </div>
+              <div class="status-item">
+                <span class="status-label">{{ t('label.knowledgeCopilotLastRebuildDuration') }}</span>
+                <span class="status-value">{{ rebuildDurationText }}</span>
+              </div>
             </div>
 
             <div class="settings-card-actions">
@@ -189,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore, type KnowledgeCopilotSettings } from '../../store/settings.store';
 import { settingsService } from '../../services/settings.service';
@@ -201,7 +205,7 @@ import { knowledgeCopilotService } from '@renderer/features/knowledge-copilot/se
 import KnowledgeCopilotIndexSettings from './KnowledgeCopilotIndexSettings.vue';
 
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
 const workspaceStore = useWorkspaceStore();
 const { indexStatus, isIndexing, rebuildIndex, refreshStatus, clearIndex } = useKnowledgeCopilotIndex();
@@ -237,6 +241,28 @@ onMounted(() => {
     refreshStatus();
   }
 });
+
+const rebuildTimerNow = ref(Date.now());
+let rebuildTimerId: number | null = null;
+
+const stopRebuildTimer = (): void => {
+  if (rebuildTimerId !== null) {
+    window.clearInterval(rebuildTimerId);
+    rebuildTimerId = null;
+  }
+};
+
+watch(isIndexing, (indexing) => {
+  stopRebuildTimer();
+  rebuildTimerNow.value = Date.now();
+  if (indexing) {
+    rebuildTimerId = window.setInterval(() => {
+      rebuildTimerNow.value = Date.now();
+    }, 1000);
+  }
+}, { immediate: true });
+
+onUnmounted(stopRebuildTimer);
 
 const openKnowledgeCopilotIndexSettings = (): void => {
   activeView.value = 'knowledgeCopilot-index-settings';
@@ -426,6 +452,51 @@ const lastIndexedText = computed(() => {
   return timestamp ? formatDate(timestamp) : t('label.knowledgeCopilotNeverIndexed');
 });
 
+const formatDurationUnit = (value: number, unit: 'hour' | 'minute' | 'second'): string => {
+  return new Intl.NumberFormat(locale.value, {
+    style: 'unit',
+    unit,
+    unitDisplay: 'short',
+  }).format(value);
+};
+
+const formatDuration = (durationMs: number): string => {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return [
+      formatDurationUnit(hours, 'hour'),
+      formatDurationUnit(minutes, 'minute'),
+      formatDurationUnit(seconds, 'second'),
+    ].join(' ');
+  }
+
+  if (minutes > 0) {
+    return [
+      formatDurationUnit(minutes, 'minute'),
+      formatDurationUnit(seconds, 'second'),
+    ].join(' ');
+  }
+
+  return formatDurationUnit(seconds, 'second');
+};
+
+const rebuildDurationText = computed(() => {
+  const rebuildStartedAt = indexStatus.value.rebuildStartedAt;
+  if (isIndexing.value && rebuildStartedAt !== null) {
+    return formatDuration(rebuildTimerNow.value - rebuildStartedAt);
+  }
+
+  const duration = indexStatus.value.lastRebuildDurationMs
+    ?? settingsStore.config.knowledgeCopilot.lastRebuildDurationMs;
+  return duration === null
+    ? t('label.knowledgeCopilotNoRebuildDuration')
+    : formatDuration(duration);
+});
+
 const formatDate = (timestamp: number) => {
   const date = new Date(timestamp);
   return date.toLocaleString();
@@ -446,7 +517,7 @@ const formatDate = (timestamp: number) => {
 
 .status-info {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   flex: 1;
   min-width: 0;

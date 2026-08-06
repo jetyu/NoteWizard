@@ -120,6 +120,7 @@ export interface KnowledgeCopilotConfig {
   autoIndex: boolean;
   indexOnSave: boolean;
   lastIndexedAt: number | null;
+  lastRebuildDurationMs: number | null;
   indexSignatures: Record<string, string>;
   indexChunkCounts: Record<string, number>;
   cachedTotalChunks: number;
@@ -477,6 +478,10 @@ export function normalizeKnowledgeCopilotConfig(
     indexOnSave: normalizeBoolean(config.indexOnSave, true),
     lastIndexedAt: typeof config.lastIndexedAt === 'number' && Number.isFinite(config.lastIndexedAt)
       ? config.lastIndexedAt
+      : null,
+    lastRebuildDurationMs: typeof config.lastRebuildDurationMs === 'number'
+      && Number.isFinite(config.lastRebuildDurationMs)
+      ? Math.max(0, Math.trunc(config.lastRebuildDurationMs))
       : null,
     indexSignatures: normalizeStringRecord(config.indexSignatures),
     indexChunkCounts: normalizeNumberRecord(config.indexChunkCounts),

@@ -120,6 +120,7 @@ export interface KnowledgeCopilotSettings {
   autoIndex: boolean;
   indexOnSave: boolean;
   lastIndexedAt: number | null;
+  lastRebuildDurationMs: number | null;
   indexSignatures: Record<string, string>;
   indexChunkCounts: Record<string, number>;
   cachedTotalChunks: number;
