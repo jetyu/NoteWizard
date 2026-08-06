@@ -3,7 +3,7 @@ import { AI_PROVIDERS, type AiProvider } from './ai-provider.constants.js';
 export const KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS = {
   MIN: 1,
   DEFAULT: 3,
-  MAX: 10,
+  MAX: 8,
   SNAPTIUM_MAX: 3,
 } as const;
 
