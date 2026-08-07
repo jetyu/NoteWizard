@@ -202,12 +202,12 @@ const currentComponent = computed(() => {
 }
 
 .settings-panel__group-label {
-  margin: 10px 10px 4px;
-  color: color-mix(in srgb, var(--accent) 72%, var(--text-primary));
-  font-size: 0.72rem;
-  font-weight: 650;
+  margin: 14px 6px 5px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
   line-height: 1.2;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .settings-panel__group-label:first-child {
@@ -217,7 +217,7 @@ const currentComponent = computed(() => {
 .settings-panel__tab {
   width: 100%;
   min-height: 36px;
-  padding: 7px 10px;
+  padding: 7px 10px 7px 16px;
   display: flex;
   align-items: center;
   gap: 9px;
