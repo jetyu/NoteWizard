@@ -5,7 +5,11 @@ import { aiConfigService } from '../../services/ai-config.service.js';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
-import { isValidAiPromptPreset } from '../../../shared/ai.constants.js';
+import {
+  AI_PROMPT_PRESETS,
+  isValidAiPromptPreset,
+  isValidAiTranslationTargetLanguage,
+} from '../../../shared/ai.constants.js';
 import { buildAssistantSystemPrompt, buildEditorSystemPrompt } from '../../prompts/index.js';
 
 const logger = loggerService.createLogger('Electron:AI Chat IPC');
@@ -17,6 +21,7 @@ const AiChatGenerateSchema = z.object({
   })),
   systemPrompt: z.string().optional(),
   promptPreset: z.string().optional(),
+  targetLanguage: z.string().optional(),
 });
 
 const AiCompletionSchema = z.object({
@@ -68,6 +73,15 @@ export function registerAIChatHandlers(): void {
       const promptPreset = isValidAiPromptPreset(validatedPayload.promptPreset)
         ? validatedPayload.promptPreset
         : null;
+      const targetLanguage = isValidAiTranslationTargetLanguage(validatedPayload.targetLanguage)
+        ? validatedPayload.targetLanguage
+        : null;
+      if (validatedPayload.targetLanguage !== undefined && !targetLanguage) {
+        throw new Error('Unsupported editor translation target language.');
+      }
+      if (promptPreset === AI_PROMPT_PRESETS.EDITOR_TRANSLATE && !targetLanguage) {
+        throw new Error('A supported target language is required for editor translation.');
+      }
       const userInput = messages
         .filter((message) => message.role === 'user')
         .map((message) => message.content)
@@ -77,7 +91,12 @@ export function registerAIChatHandlers(): void {
         if (promptPreset) {
           messages.unshift({
             role: 'system',
-            content: buildEditorSystemPrompt(assistantConfig.uiLanguage, userInput, promptPreset),
+            content: buildEditorSystemPrompt(
+              assistantConfig.uiLanguage,
+              userInput,
+              promptPreset,
+              targetLanguage ?? undefined,
+            ),
           });
         } else if (validatedPayload.systemPrompt?.trim()) {
           messages.unshift({ role: 'system', content: validatedPayload.systemPrompt.trim() });

@@ -1,6 +1,11 @@
 import type { EditorView } from '@codemirror/view';
 import { computed, ref } from 'vue';
-import { AI_PROMPT_PRESETS, type AiPromptPreset } from '@shared/ai.constants';
+import {
+  AI_PROMPT_PRESETS,
+  AI_TRANSLATION_TARGETS,
+  type AiPromptPreset,
+  type AiTranslationTargetLanguage,
+} from '@shared/ai.constants';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import {
   clearEditorAiOperationAnchor,
@@ -16,7 +21,12 @@ import {
   hasSelection as checkHasSelection,
   type EditorContextAction,
 } from '../services/editorContextMenu.service';
-import { EDITOR_CONSTANTS } from '../constants/editor.constants';
+import {
+  createEditorTranslationAction,
+  EDITOR_CONSTANTS,
+  parseEditorTranslationAction,
+  type EditorTranslationAction,
+} from '../constants/editor.constants';
 
 const logger = createLogger('Editor Context Menu');
 
@@ -27,10 +37,17 @@ const AI_ACTIONS = [
   EDITOR_CONSTANTS.ACTIONS.AI_SUMMARIZE,
 ] as const;
 
-type EditorAiAction = (typeof AI_ACTIONS)[number];
+type EditorWritingAction = (typeof AI_ACTIONS)[number];
+type EditorAiAction = EditorWritingAction | EditorTranslationAction;
 export type EditorAiOperationStatus = 'pending' | 'preview' | 'error';
 
 interface EditorAiOperationConfig {
+  operationLabel: string;
+  promptPreset: AiPromptPreset;
+  targetLanguage?: AiTranslationTargetLanguage;
+}
+
+interface EditorWritingOperationConfig {
   labelKey: string;
   promptPreset: AiPromptPreset;
 }
@@ -39,8 +56,9 @@ export interface EditorAiOperationState {
   id: number;
   status: EditorAiOperationStatus;
   action: EditorAiAction;
-  actionLabelKey: string;
+  operationLabel: string;
   promptPreset: AiPromptPreset;
+  targetLanguage?: AiTranslationTargetLanguage;
   noteId: string;
   sourceText: string;
   result?: string;
@@ -53,9 +71,11 @@ interface UseEditorContextMenuOptions {
   editorView: () => EditorView | null;
   activeNoteId: () => string | null;
   aiAssistantEnabled: () => boolean;
+  uiLanguage: () => string;
+  quickTranslationTarget: () => AiTranslationTargetLanguage;
 }
 
-const AI_OPERATION_CONFIG: Record<EditorAiAction, EditorAiOperationConfig> = {
+const AI_OPERATION_CONFIG: Record<EditorWritingAction, EditorWritingOperationConfig> = {
   [EDITOR_CONSTANTS.ACTIONS.AI_REWRITE]: {
     labelKey: EDITOR_CONSTANTS.MENU.AI_REWRITE,
     promptPreset: AI_PROMPT_PRESETS.EDITOR_REWRITE,
@@ -74,7 +94,7 @@ const AI_OPERATION_CONFIG: Record<EditorAiAction, EditorAiOperationConfig> = {
   },
 };
 
-function isEditorAiAction(action: EditorContextAction): action is EditorAiAction {
+function isEditorWritingAction(action: EditorContextAction): action is EditorWritingAction {
   return AI_ACTIONS.some((aiAction) => aiAction === action);
 }
 
@@ -133,6 +153,7 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
     try {
       const result = await aiService.generate({
         promptPreset: operation.promptPreset,
+        targetLanguage: operation.targetLanguage,
         messages: [
           { role: 'user', content: operation.sourceText },
         ],
@@ -198,7 +219,10 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
     }
   }
 
-  function startAiOperation(action: EditorAiAction): void {
+  function startAiOperation(
+    action: EditorAiAction,
+    config: EditorAiOperationConfig,
+  ): void {
     if (aiOperation.value) {
       return;
     }
@@ -216,7 +240,6 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
     }
 
     const operationId = nextOperationId++;
-    const config = AI_OPERATION_CONFIG[action];
     setEditorAiOperationAnchor(view, {
       operationId,
       from: selection.from,
@@ -229,8 +252,9 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
       id: operationId,
       status: 'pending',
       action,
-      actionLabelKey: config.labelKey,
+      operationLabel: config.operationLabel,
       promptPreset: config.promptPreset,
+      targetLanguage: config.targetLanguage,
       noteId,
       sourceText,
       canRetry: false,
@@ -325,8 +349,24 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
       return;
     }
 
-    if (isEditorAiAction(action)) {
-      startAiOperation(action);
+    if (isEditorWritingAction(action)) {
+      const config = AI_OPERATION_CONFIG[action];
+      startAiOperation(action, {
+        operationLabel: options.t(config.labelKey),
+        promptPreset: config.promptPreset,
+      });
+      return;
+    }
+
+    const targetLanguage = parseEditorTranslationAction(action);
+    if (targetLanguage) {
+      startAiOperation(createEditorTranslationAction(targetLanguage), {
+        operationLabel: options.t(EDITOR_CONSTANTS.MENU.AI_TRANSLATE_TO, {
+          language: AI_TRANSLATION_TARGETS[targetLanguage].nativeLabel,
+        }),
+        promptPreset: AI_PROMPT_PRESETS.EDITOR_TRANSLATE,
+        targetLanguage,
+      });
     }
   }
 
@@ -338,6 +378,8 @@ export function useEditorContextMenu(options: UseEditorContextMenuOptions) {
         options.aiAssistantEnabled(),
         checkHasSelection(view),
         hasActiveAiOperation.value,
+        options.uiLanguage(),
+        options.quickTranslationTarget(),
       ),
     );
 

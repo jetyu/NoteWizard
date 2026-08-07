@@ -64,6 +64,8 @@ const editorContextMenu = useEditorContextMenu({
   editorView: () => editorApi?.view ?? null,
   activeNoteId: () => activeNote.value?.id ?? null,
   aiAssistantEnabled: () => config.value.aiAssistant?.enabled ?? false,
+  uiLanguage: () => config.value.general.language,
+  quickTranslationTarget: () => config.value.aiAssistant.quickTranslationTarget,
 });
 const { aiOperation, hasActiveAiOperation } = editorContextMenu;
 

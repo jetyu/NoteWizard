@@ -76,7 +76,7 @@ defineEmits<{
 const { t } = useI18n();
 
 const title = computed(() => {
-  const action = t(props.operation.actionLabelKey);
+  const action = props.operation.operationLabel;
   if (props.operation.status === 'pending') {
     return t('editor.aiOperation.processing', { action });
   }

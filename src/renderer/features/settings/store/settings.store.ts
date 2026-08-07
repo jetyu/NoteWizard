@@ -3,7 +3,9 @@ import { ref } from 'vue';
 import { createLogger } from '@renderer/features/logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import {
+  AI_TRANSLATION_DEFAULT_TARGET,
   AI_WRITING_DEFAULTS,
+  type AiTranslationTargetLanguage,
   type AiWritingScenario,
   type AiWritingStyle,
   type AiWritingMode,
@@ -97,6 +99,7 @@ export interface AIAssistantSettings {
   autoContinue: boolean;
   writingStyle: AiWritingStyle;
   writingScenario: AiWritingScenario;
+  quickTranslationTarget: AiTranslationTargetLanguage;
   systemPrompt: string;
 }
 
@@ -284,6 +287,7 @@ function createDefaultAiAssistantConfig(): AIAssistantSettings {
     autoContinue: AI_WRITING_DEFAULTS.AUTO_CONTINUE,
     writingStyle: AI_WRITING_DEFAULTS.STYLE,
     writingScenario: AI_WRITING_DEFAULTS.SCENARIO,
+    quickTranslationTarget: AI_TRANSLATION_DEFAULT_TARGET,
     systemPrompt: '',
   };
 }

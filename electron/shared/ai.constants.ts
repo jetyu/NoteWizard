@@ -41,9 +41,30 @@ export const AI_PROMPT_PRESETS = {
   EDITOR_EXPAND: 'editor-expand',
   EDITOR_SIMPLIFY: 'editor-simplify',
   EDITOR_SUMMARIZE: 'editor-summarize',
+  EDITOR_TRANSLATE: 'editor-translate',
 } as const;
 
 export type AiPromptPreset = (typeof AI_PROMPT_PRESETS)[keyof typeof AI_PROMPT_PRESETS];
+
+export const AI_TRANSLATION_TARGETS = {
+  'zh-CN': { nativeLabel: '简体中文', promptLabelZhCn: '简体中文', promptLabelEnUs: 'Simplified Chinese' },
+  'en-US': { nativeLabel: 'English', promptLabelZhCn: '英语', promptLabelEnUs: 'English' },
+  'zh-TW': { nativeLabel: '繁體中文 (台灣)', promptLabelZhCn: '繁体中文（台湾）', promptLabelEnUs: 'Traditional Chinese (Taiwan)' },
+  'ja-JP': { nativeLabel: '日本語', promptLabelZhCn: '日语', promptLabelEnUs: 'Japanese' },
+  'ko-KR': { nativeLabel: '한국어', promptLabelZhCn: '韩语', promptLabelEnUs: 'Korean' },
+} as const;
+
+export type AiTranslationTargetLanguage = keyof typeof AI_TRANSLATION_TARGETS;
+
+export const AI_TRANSLATION_DEFAULT_TARGET = 'zh-CN' as const satisfies AiTranslationTargetLanguage;
+
+export const AI_TRANSLATION_TARGET_ORDER = [
+  'zh-CN',
+  'en-US',
+  'zh-TW',
+  'ja-JP',
+  'ko-KR',
+] as const satisfies readonly AiTranslationTargetLanguage[];
 
 const AI_WRITING_STYLE_VALUES = new Set<AiWritingStyle>(Object.values(AI_WRITING_STYLE));
 const AI_WRITING_SCENARIO_VALUES = new Set<AiWritingScenario>(Object.values(AI_WRITING_SCENARIO));
@@ -64,4 +85,18 @@ export function isValidAiWritingMode(value: unknown): value is AiWritingMode {
 
 export function isValidAiPromptPreset(value: unknown): value is AiPromptPreset {
   return AI_PROMPT_PRESET_VALUES.has(value as AiPromptPreset);
+}
+
+export function isValidAiTranslationTargetLanguage(
+  value: unknown,
+): value is AiTranslationTargetLanguage {
+  return typeof value === 'string' && Object.hasOwn(AI_TRANSLATION_TARGETS, value);
+}
+
+export function normalizeAiTranslationTargetLanguage(
+  value: unknown,
+): AiTranslationTargetLanguage {
+  return isValidAiTranslationTargetLanguage(value)
+    ? value
+    : AI_TRANSLATION_DEFAULT_TARGET;
 }

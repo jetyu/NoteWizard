@@ -1,6 +1,6 @@
 import { electronApi } from '@renderer/core/bridge/electronApi';
 import { createLogger } from '@renderer/features/logger';
-import type { AiPromptPreset } from '@shared/ai.constants';
+import type { AiPromptPreset, AiTranslationTargetLanguage } from '@shared/ai.constants';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { AI_ERROR_MESSAGES } from '../constants/ai.constants';
 
@@ -16,6 +16,7 @@ export interface AiGenerateRequest {
   // Optional explicit override. Built-in prompts are always resolved in main.
   systemPrompt?: string;
   promptPreset?: AiPromptPreset;
+  targetLanguage?: AiTranslationTargetLanguage;
 }
 
 /**
@@ -32,6 +33,7 @@ export const aiService = {
         messages: [...request.messages],
         systemPrompt: request.systemPrompt,
         promptPreset: request.promptPreset,
+        targetLanguage: request.targetLanguage,
       });
 
       return response;

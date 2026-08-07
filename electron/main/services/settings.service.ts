@@ -7,6 +7,8 @@ import {
   isValidAiWritingMode,
   isValidAiWritingScenario,
   isValidAiWritingStyle,
+  normalizeAiTranslationTargetLanguage,
+  type AiTranslationTargetLanguage,
   type AiWritingMode,
   type AiWritingScenario,
   type AiWritingStyle,
@@ -97,6 +99,7 @@ export interface AiAssistantConfig {
   autoContinue: boolean;
   writingStyle: AiWritingStyle;
   writingScenario: AiWritingScenario;
+  quickTranslationTarget: AiTranslationTargetLanguage;
   systemPrompt: string;
 }
 
@@ -415,6 +418,9 @@ export function normalizeAiAssistantConfig(
     writingScenario: isValidAiWritingScenario(config.writingScenario)
       ? config.writingScenario
       : AI_WRITING_DEFAULTS.SCENARIO,
+    quickTranslationTarget: normalizeAiTranslationTargetLanguage(
+      config.quickTranslationTarget,
+    ),
     systemPrompt: normalizeString(config.systemPrompt),
   };
 }
