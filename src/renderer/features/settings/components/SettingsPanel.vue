@@ -8,7 +8,7 @@
       <nav class="settings-panel__nav" :aria-label="t('pref.pane.title')">
         <ul>
           <template v-for="tab in tabs" :key="tab.id">
-            <li v-if="tab.type === 'group'" class="settings-panel__group-label">
+            <li v-if="tab.type === 'group'" class="settings-panel__group-header">
               {{ t(tab.labelKey) }}
             </li>
             <li v-else>
@@ -68,7 +68,7 @@ import AIAssistantSettings from './tabs/AIAssistantSettings.vue';
 import KnowledgeCopilotSettings from './tabs/KnowledgeCopilotSettings.vue';
 import LogSettings from './tabs/LogSettings.vue';
 import ShortcutSettings from './tabs/ShortcutSettings.vue';
-import AdvancedOptionsSettings from './tabs/AdvancedOptionsSettings.vue';
+import NoteStorageSettings from './tabs/NoteStorageSettings.vue';
 import SyncSettings from './tabs/SyncSettings.vue';
 import SecuritySettings from './tabs/SecuritySettings.vue';
 import AccessControlSettings from './tabs/AccessControlSettings.vue';
@@ -88,7 +88,7 @@ const baseTabs: TabItem[] = [
   { id: 'general', labelKey: 'pref.pane.general', icon: IconAdjustments, component: GeneralSettings },
   { id: 'preview', labelKey: 'pref.pane.preview', icon: IconBrowser, component: PreviewSettings },
   { id: 'editor', labelKey: 'pref.pane.editor', icon: IconEdit, component: EditorSettings },
-  { id: 'noteStorage', labelKey: 'pref.pane.noteStorage', icon: IconSettings2, component: AdvancedOptionsSettings },
+  { id: 'noteStorage', labelKey: 'pref.pane.noteStorage', icon: IconSettings2, component: NoteStorageSettings },
   { id: 'group-security-sync', type: 'group', labelKey: 'pref.pane.group.securitySync' },
   { id: 'security', labelKey: 'pref.pane.security', icon: IconShield, component: SecuritySettings },
   { id: 'access-control', labelKey: 'pref.pane.accessControl', icon: IconUserKey, component: AccessControlSettings },
@@ -153,7 +153,7 @@ const currentComponent = computed(() => {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   overflow: hidden;
   color: var(--text-primary);
   background: var(--surface-raised);
@@ -201,17 +201,20 @@ const currentComponent = computed(() => {
   list-style: none;
 }
 
-.settings-panel__group-label {
-  margin: 14px 6px 5px;
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
+.settings-panel__group-header {
+  min-height: 28px;
+  margin-top: 10px;
+  padding: 8px 16px 4px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: 0.01em;
+  cursor: default;
+  user-select: none;
 }
 
-.settings-panel__group-label:first-child {
-  margin-top: 4px;
+.settings-panel__group-header:first-child {
+  margin-top: 0;
 }
 
 .settings-panel__tab {

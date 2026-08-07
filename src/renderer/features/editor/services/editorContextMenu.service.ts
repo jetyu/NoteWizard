@@ -9,6 +9,7 @@ export interface EditorMenuItem {
   action?: EditorContextAction;
   labelKey?: string;
   type?: 'normal' | 'separator' | 'submenu';
+  enabled?: boolean;
   submenu?: EditorMenuItem[];
 }
 
@@ -27,10 +28,12 @@ export async function showNativeEditorContextMenu(
       action: item.action ?? null,
       labelKey: item.labelKey,
       type: item.type ?? EDITOR_CONSTANTS.MENU_ITEM_TYPE.NORMAL,
+      enabled: item.enabled,
       submenu: item.submenu?.map((subItem) => ({
         action: subItem.action ?? null,
         labelKey: subItem.labelKey,
         type: subItem.type ?? EDITOR_CONSTANTS.MENU_ITEM_TYPE.NORMAL,
+        enabled: subItem.enabled,
       })),
     })),
   });
@@ -63,7 +66,11 @@ export function createEditorContextMenuLabels(t: Translate) {
 /**
  * 获取编辑器右键菜单项
  */
-export function getEditorContextMenu(aiAssistantEnabled: boolean, hasSelection: boolean): EditorMenuItem[] {
+export function getEditorContextMenu(
+  aiAssistantEnabled: boolean,
+  hasSelection: boolean,
+  hasActiveAiOperation = false,
+): EditorMenuItem[] {
   const items: EditorMenuItem[] = [
     { action: EDITOR_CONSTANTS.ACTIONS.CUT, labelKey: EDITOR_CONSTANTS.MENU.CUT },
     { action: EDITOR_CONSTANTS.ACTIONS.COPY, labelKey: EDITOR_CONSTANTS.MENU.COPY },
@@ -73,17 +80,18 @@ export function getEditorContextMenu(aiAssistantEnabled: boolean, hasSelection: 
     { action: EDITOR_CONSTANTS.ACTIONS.SELECT_ALL, labelKey: EDITOR_CONSTANTS.MENU.SELECT_ALL },
   ];
 
-  if (aiAssistantEnabled && hasSelection) {
+  if (aiAssistantEnabled && (hasSelection || hasActiveAiOperation)) {
+    const aiActionsEnabled = hasSelection && !hasActiveAiOperation;
     items.push(
       { type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SEPARATOR },
       {
         type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SUBMENU,
         labelKey: EDITOR_CONSTANTS.MENU.AI_OPERATIONS,
         submenu: [
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_REWRITE, labelKey: EDITOR_CONSTANTS.MENU.AI_REWRITE },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_EXPAND, labelKey: EDITOR_CONSTANTS.MENU.AI_EXPAND },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_SIMPLIFY, labelKey: EDITOR_CONSTANTS.MENU.AI_SIMPLIFY },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_SUMMARIZE, labelKey: EDITOR_CONSTANTS.MENU.AI_SUMMARIZE },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_REWRITE, labelKey: EDITOR_CONSTANTS.MENU.AI_REWRITE, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_EXPAND, labelKey: EDITOR_CONSTANTS.MENU.AI_EXPAND, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_SIMPLIFY, labelKey: EDITOR_CONSTANTS.MENU.AI_SIMPLIFY, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_SUMMARIZE, labelKey: EDITOR_CONSTANTS.MENU.AI_SUMMARIZE, enabled: aiActionsEnabled },
         ],
       }
     );

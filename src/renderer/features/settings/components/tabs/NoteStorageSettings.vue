@@ -1,5 +1,5 @@
 <template>
-  <div class="advanced-options-settings">
+  <div class="note-storage-settings">
     <h3 class="panel-title">{{ t('pref.pane.noteStorage') }}</h3>
 
     <div class="settings-grid">
