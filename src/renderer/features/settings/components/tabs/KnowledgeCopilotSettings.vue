@@ -1,186 +1,169 @@
 <template>
-  <div class="settings-subview">
+  <div class="knowledge-copilot-settings">
     <h3 class="panel-title">{{ pageTitle }}</h3>
 
-    <div class="settings-subview-content scrollable" :class="{ 'settings-grid': activeView === 'dashboard' }">
-      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
-        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionBasic') }}</p>
+    <div v-if="activeView === 'dashboard'" class="settings-grid">
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilot') }}</p>
+          <p class="setting-description">{{ t('text.knowledgeCopilot') }}</p>
+        </div>
 
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilot') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilot') }}</p>
-          </div>
-
-          <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.knowledgeCopilot.enabled }"
-            :aria-pressed="settingsStore.config.knowledgeCopilot.enabled" @click="handleToggle('enabled')">
-            <span class="startup-switch-track">
-              <span class="startup-switch-thumb" />
-            </span>
-            <span class="startup-switch-text">
-              {{ settingsStore.config.knowledgeCopilot.enabled ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
-            </span>
-          </button>
-        </section>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotEmbeddingModel') }}</p>
-            <p class="setting-description">{{ embeddingSources.length === 0
-              ? t('text.aiModelUnavailable')
-              : t('text.knowledgeCopilotEmbeddingModel') }}</p>
-          </div>
-          <label class="select-shell" :class="{ disabled: embeddingSources.length === 0 }">
-            <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.embeddingSourceId"
-              @change="handleKnowledgeCopilotUpdate('embeddingSourceId', ($event.target as HTMLSelectElement).value, $event)"
-              :disabled="embeddingSources.length === 0">
-              <option v-if="embeddingSources.length === 0" value="">{{
-                t('option.default.selectOption') }}</option>
-              <option v-for="source in embeddingSources" :key="source.id" :value="source.id">
-                {{ source.name }}
-              </option>
-            </select>
-          </label>
-        </section>
+        <button type="button" class="startup-switch" :class="{ enabled: settingsStore.config.knowledgeCopilot.enabled }"
+          :aria-pressed="settingsStore.config.knowledgeCopilot.enabled" @click="handleToggle('enabled')">
+          <span class="startup-switch-track">
+            <span class="startup-switch-thumb" />
+          </span>
+          <span class="startup-switch-text">
+            {{ settingsStore.config.knowledgeCopilot.enabled ? t('checkbox.status.enabled') : t('checkbox.status.disabled') }}
+          </span>
+        </button>
       </section>
 
-      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
-        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionAnswering') }}</p>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotChatModel') }}</p>
-            <p class="setting-description">{{ chatSources.length === 0
-              ? t('text.aiModelUnavailable')
-              : t('text.knowledgeCopilotChatModel') }}</p>
-          </div>
-          <label class="select-shell"
-            :class="{ disabled: chatSources.length === 0 }">
-            <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.askChatSourceId"
-              @change="handleKnowledgeCopilotUpdate('askChatSourceId', ($event.target as HTMLSelectElement).value)"
-              :disabled="chatSources.length === 0">
-              <option value="">{{
-                t('option.knowledgeCopilot.disabled') }}</option>
-              <option v-for="source in chatSources" :key="source.id" :value="source.id">
-                {{ source.name }}
-              </option>
-
-            </select>
-          </label>
-        </section>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotAgentChatModel') }}</p>
-            <p class="setting-description">{{ chatSources.length === 0
-              ? t('text.aiModelUnavailable')
-              : t('text.knowledgeCopilotAgentChatModel') }}</p>
-          </div>
-          <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
-              <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
-                @change="handleKnowledgeCopilotUpdate('agentChatSourceId', ($event.target as HTMLSelectElement).value)"
-                :disabled="chatSources.length === 0">
-                <option value="">{{ t('option.knowledgeCopilot.disabled') }}</option>
-                <option v-for="source in chatSources" :key="source.id" :value="source.id">{{ source.name }}</option>
-              </select>
-          </label>
-        </section>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotRerankerSource') }}</p>
-            <p class="setting-description">{{ rerankerSources.length === 0
-              ? t('text.aiModelUnavailable')
-              : t('text.knowledgeCopilotRerankerSource') }}</p>
-          </div>
-          <label class="select-shell"
-            :class="{ disabled: rerankerSources.length === 0 }">
-            <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rerankerSourceId"
-              @change="handleKnowledgeCopilotUpdate('rerankerSourceId', ($event.target as HTMLSelectElement).value)"
-              :disabled="rerankerSources.length === 0">
-              <option value="">{{
-                t('option.knowledgeCopilot.disabled') }}</option>
-              <option v-for="source in rerankerSources" :key="source.id" :value="source.id">
-                {{ source.name }}
-              </option>
-
-            </select>
-          </label>
-        </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotEmbeddingModel') }}</p>
+          <p class="setting-description">{{ embeddingSources.length === 0
+            ? t('text.aiModelUnavailable')
+            : t('text.knowledgeCopilotEmbeddingModel') }}</p>
+        </div>
+        <label class="select-shell" :class="{ disabled: embeddingSources.length === 0 }">
+          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.embeddingSourceId"
+            @change="handleKnowledgeCopilotUpdate('embeddingSourceId', ($event.target as HTMLSelectElement).value, $event)"
+            :disabled="embeddingSources.length === 0">
+            <option v-if="embeddingSources.length === 0" value="">{{
+              t('option.default.selectOption') }}</option>
+            <option v-for="source in embeddingSources" :key="source.id" :value="source.id">
+              {{ source.name }}
+            </option>
+          </select>
+        </label>
       </section>
 
-      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
-        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionRetrieval') }}</p>
-        <div class="settings-row-grid">
-          <section class="setting-card">
-            <div class="setting-copy">
-              <p class="setting-label">{{ t('label.knowledgeCopilotTopK') }}</p>
-              <p class="setting-description">{{ t('text.knowledgeCopilotTopK') }}</p>
-            </div>
-            <div class="number-input-container">
-              <input type="number" class="settings-input number-input" :value="settingsStore.config.knowledgeCopilot.topK"
-                @change="handleKnowledgeCopilotNumberUpdate('topK', $event)" step="1" min="1" max="10"
-                :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-            </div>
-          </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotChatModel') }}</p>
+          <p class="setting-description">{{ chatSources.length === 0
+            ? t('text.aiModelUnavailable')
+            : t('text.knowledgeCopilotChatModel') }}</p>
+        </div>
+        <label class="select-shell"
+          :class="{ disabled: chatSources.length === 0 }">
+          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.askChatSourceId"
+            @change="handleKnowledgeCopilotUpdate('askChatSourceId', ($event.target as HTMLSelectElement).value)"
+            :disabled="chatSources.length === 0">
+            <option value="">{{
+              t('option.knowledgeCopilot.disabled') }}</option>
+            <option v-for="source in chatSources" :key="source.id" :value="source.id">
+              {{ source.name }}
+            </option>
 
-          <section class="setting-card">
-            <div class="setting-copy">
-              <p class="setting-label">{{ t('label.knowledgeCopilotSimilarityThreshold') }}</p>
-              <p class="setting-description">{{ t('text.knowledgeCopilotSimilarityThreshold') }}</p>
-            </div>
-            <div class="number-input-container">
-              <input type="number" class="settings-input number-input"
-                :value="settingsStore.config.knowledgeCopilot.similarityThreshold"
-                @change="handleKnowledgeCopilotNumberUpdate('similarityThreshold', $event)" step="0.05" min="0" max="1"
-                :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-            </div>
-          </section>
+          </select>
+        </label>
+      </section>
+
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotAgentChatModel') }}</p>
+          <p class="setting-description">{{ chatSources.length === 0
+            ? t('text.aiModelUnavailable')
+            : t('text.knowledgeCopilotAgentChatModel') }}</p>
+        </div>
+        <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
+          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
+            @change="handleKnowledgeCopilotUpdate('agentChatSourceId', ($event.target as HTMLSelectElement).value)"
+            :disabled="chatSources.length === 0">
+            <option value="">{{ t('option.knowledgeCopilot.disabled') }}</option>
+            <option v-for="source in chatSources" :key="source.id" :value="source.id">{{ source.name }}</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotRerankerSource') }}</p>
+          <p class="setting-description">{{ rerankerSources.length === 0
+            ? t('text.aiModelUnavailable')
+            : t('text.knowledgeCopilotRerankerSource') }}</p>
+        </div>
+        <label class="select-shell"
+          :class="{ disabled: rerankerSources.length === 0 }">
+          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rerankerSourceId"
+            @change="handleKnowledgeCopilotUpdate('rerankerSourceId', ($event.target as HTMLSelectElement).value)"
+            :disabled="rerankerSources.length === 0">
+            <option value="">{{
+              t('option.knowledgeCopilot.disabled') }}</option>
+            <option v-for="source in rerankerSources" :key="source.id" :value="source.id">
+              {{ source.name }}
+            </option>
+
+          </select>
+        </label>
+      </section>
+
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotTopK') }}</p>
+          <p class="setting-description">{{ t('text.knowledgeCopilotTopK') }}</p>
+        </div>
+        <div class="number-input-container">
+          <input type="number" class="settings-input number-input" :value="settingsStore.config.knowledgeCopilot.topK"
+            @change="handleKnowledgeCopilotNumberUpdate('topK', $event)" step="1" min="1" max="10"
+            :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
         </div>
       </section>
 
-      <section v-if="activeView === 'dashboard'" class="subtitle-settings-section settings-grid">
-        <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotSectionIndex') }}</p>
-
-        <section class="setting-card"
-          :aria-label="`${t('label.knowledgeCopilotIndexStatus')}: ${t('text.knowledgeCopilotIndexStatus')}`">
-          <div class="index-status-container">
-            <div class="status-info">
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotIndexCurrentState') }}</span>
-                <span class="status-value status-pill" :class="indexStateToneClass">{{ indexStateText }}</span>
-              </div>
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotTotalChunks') }}</span>
-                <span class="status-value">{{ indexStatus.totalChunks || 0 }}</span>
-              </div>
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotLastIndexed') }}</span>
-                <span class="status-value">{{ lastIndexedText }}</span>
-              </div>
-              <div class="status-item">
-                <span class="status-label">{{ t('label.knowledgeCopilotLastRebuildDuration') }}</span>
-                <span class="status-value">{{ rebuildDurationText }}</span>
-              </div>
-            </div>
-
-            <div class="settings-card-actions">
-              <button type="button" class="action-button"
-                :disabled="!settingsStore.config.knowledgeCopilot.enabled || isIndexing || !isConfigured"
-                @click="handleRebuildIndex">
-                <span v-if="isIndexing" class="spinner"></span>
-                <span>{{ rebuildButtonText }}</span>
-              </button>
-              <button type="button" class="action-button secondary" @click="openKnowledgeCopilotIndexSettings">
-                {{ t('label.knowledgeCopilotIndexSettings') }}
-              </button>
-            </div>
-          </div>
-        </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.knowledgeCopilotSimilarityThreshold') }}</p>
+          <p class="setting-description">{{ t('text.knowledgeCopilotSimilarityThreshold') }}</p>
+        </div>
+        <div class="number-input-container">
+          <input type="number" class="settings-input number-input"
+            :value="settingsStore.config.knowledgeCopilot.similarityThreshold"
+            @change="handleKnowledgeCopilotNumberUpdate('similarityThreshold', $event)" step="0.05" min="0" max="1"
+            :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
+        </div>
       </section>
 
-      <KnowledgeCopilotIndexSettings v-else @toggle="handleToggle" @number-update="handleKnowledgeCopilotNumberUpdate" />
+      <section class="setting-card"
+        :aria-label="`${t('label.knowledgeCopilotIndexStatus')}: ${t('text.knowledgeCopilotIndexStatus')}`">
+        <div class="index-status-container">
+          <div class="status-info">
+            <div class="status-item">
+              <span class="status-label">{{ t('label.knowledgeCopilotIndexCurrentState') }}</span>
+              <span class="status-value status-pill" :class="indexStateToneClass">{{ indexStateText }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">{{ t('label.knowledgeCopilotTotalChunks') }}</span>
+              <span class="status-value">{{ indexStatus.totalChunks || 0 }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">{{ t('label.knowledgeCopilotLastIndexed') }}</span>
+              <span class="status-value">{{ lastIndexedText }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">{{ t('label.knowledgeCopilotLastRebuildDuration') }}</span>
+              <span class="status-value">{{ rebuildDurationText }}</span>
+            </div>
+          </div>
+
+          <div class="settings-card-actions">
+            <button type="button" class="action-button"
+              :disabled="!settingsStore.config.knowledgeCopilot.enabled || isIndexing || !isConfigured"
+              @click="handleRebuildIndex">
+              <span v-if="isIndexing" class="spinner"></span>
+              <span>{{ rebuildButtonText }}</span>
+            </button>
+            <button type="button" class="action-button secondary" @click="openKnowledgeCopilotIndexSettings">
+              {{ t('label.knowledgeCopilotIndexSettings') }}
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
+
+    <KnowledgeCopilotIndexSettings v-else @toggle="handleToggle" @number-update="handleKnowledgeCopilotNumberUpdate" />
 
     <div v-if="activeView === 'knowledgeCopilot-index-settings'" class="settings-subview-footer with-divider">
       <div class="settings-subview-footer-buttons">

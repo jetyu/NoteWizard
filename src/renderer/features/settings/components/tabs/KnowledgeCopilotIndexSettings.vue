@@ -1,97 +1,86 @@
 <template>
   <div class="settings-grid">
-    <section class="subtitle-settings-section settings-grid">
-      <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotIndexAutomation') }}</p>
+    <section class="setting-card">
+      <div class="setting-copy">
+        <p class="setting-label">{{ t('label.knowledgeCopilotAutoIndex') }}</p>
+        <p class="setting-description">{{ t('text.knowledgeCopilotAutoIndex') }}</p>
+      </div>
 
-      <div class="settings-row-grid">
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotAutoIndex') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotAutoIndex') }}</p>
-          </div>
+      <button type="button" class="startup-switch"
+        :class="{ enabled: settingsStore.config.knowledgeCopilot.autoIndex }"
+        :aria-pressed="settingsStore.config.knowledgeCopilot.autoIndex" @click="emit('toggle', 'autoIndex')"
+        :disabled="!settingsStore.config.knowledgeCopilot.enabled">
+        <span class="startup-switch-track">
+          <span class="startup-switch-thumb" />
+        </span>
+        <span class="startup-switch-text">
+          {{ settingsStore.config.knowledgeCopilot.autoIndex ? t('checkbox.status.enabled') :
+            t('checkbox.status.disabled') }}
+        </span>
+      </button>
+    </section>
 
-          <button type="button" class="startup-switch"
-            :class="{ enabled: settingsStore.config.knowledgeCopilot.autoIndex }"
-            :aria-pressed="settingsStore.config.knowledgeCopilot.autoIndex" @click="emit('toggle', 'autoIndex')"
-            :disabled="!settingsStore.config.knowledgeCopilot.enabled">
-            <span class="startup-switch-track">
-              <span class="startup-switch-thumb" />
-            </span>
-            <span class="startup-switch-text">
-              {{ settingsStore.config.knowledgeCopilot.autoIndex ? t('checkbox.status.enabled') :
-                t('checkbox.status.disabled') }}
-            </span>
-          </button>
-        </section>
+    <section class="setting-card">
+      <div class="setting-copy">
+        <p class="setting-label">{{ t('label.knowledgeCopilotIndexOnSave') }}</p>
+        <p class="setting-description">{{ t('text.knowledgeCopilotIndexOnSave') }}</p>
+      </div>
 
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotIndexOnSave') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotIndexOnSave') }}</p>
-          </div>
+      <button type="button" class="startup-switch"
+        :class="{ enabled: settingsStore.config.knowledgeCopilot.indexOnSave }"
+        :aria-pressed="settingsStore.config.knowledgeCopilot.indexOnSave" @click="emit('toggle', 'indexOnSave')"
+        :disabled="!settingsStore.config.knowledgeCopilot.enabled">
+        <span class="startup-switch-track">
+          <span class="startup-switch-thumb" />
+        </span>
+        <span class="startup-switch-text">
+          {{ settingsStore.config.knowledgeCopilot.indexOnSave ? t('checkbox.status.enabled') :
+            t('checkbox.status.disabled') }}
+        </span>
+      </button>
+    </section>
 
-          <button type="button" class="startup-switch"
-            :class="{ enabled: settingsStore.config.knowledgeCopilot.indexOnSave }"
-            :aria-pressed="settingsStore.config.knowledgeCopilot.indexOnSave" @click="emit('toggle', 'indexOnSave')"
-            :disabled="!settingsStore.config.knowledgeCopilot.enabled">
-            <span class="startup-switch-track">
-              <span class="startup-switch-thumb" />
-            </span>
-            <span class="startup-switch-text">
-              {{ settingsStore.config.knowledgeCopilot.indexOnSave ? t('checkbox.status.enabled') :
-                t('checkbox.status.disabled') }}
-            </span>
-          </button>
-        </section>
+    <section class="setting-card">
+      <div class="setting-copy">
+        <p class="setting-label">{{ t('label.knowledgeCopilotRebuildConcurrency') }}</p>
+        <p class="setting-description">
+          {{ t('text.knowledgeCopilotRebuildConcurrency') }}
+        </p>
+      </div>
+      <label class="select-shell">
+        <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
+          @change="emit('number-update', 'rebuildConcurrency', $event)"
+          :disabled="!settingsStore.config.knowledgeCopilot.enabled">
+          <option v-for="value in rebuildConcurrencyOptions" :key="value" :value="value">
+            {{ value }}
+          </option>
+        </select>
+      </label>
+    </section>
+
+    <section class="setting-card">
+      <div class="setting-copy">
+        <p class="setting-label">{{ t('label.knowledgeCopilotChunkSize') }}</p>
+        <p class="setting-description">{{ t('text.knowledgeCopilotChunkSize') }}</p>
+      </div>
+      <div class="number-input-container">
+        <input type="number" class="settings-input number-input"
+          :value="settingsStore.config.knowledgeCopilot.chunkSize"
+          @change="emit('number-update', 'chunkSize', $event)" step="100" min="500" max="800"
+          :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
       </div>
     </section>
 
-    <section class="subtitle-settings-section settings-grid">
-      <p class="subtitle-settings-label">{{ t('label.knowledgeCopilotIndexTuning') }}</p>
-      <div class="settings-row-grid">
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotRebuildConcurrency') }}</p>
-            <p class="setting-description">
-              {{ t('text.knowledgeCopilotRebuildConcurrency') }}
-            </p>
-          </div>
-          <label class="select-shell">
-            <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
-              @change="emit('number-update', 'rebuildConcurrency', $event)"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled">
-              <option v-for="value in rebuildConcurrencyOptions" :key="value" :value="value">
-                {{ value }}
-              </option>
-            </select>
-          </label>
-        </section>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotChunkSize') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotChunkSize') }}</p>
-          </div>
-          <div class="number-input-container">
-            <input type="number" class="settings-input number-input"
-              :value="settingsStore.config.knowledgeCopilot.chunkSize"
-              @change="emit('number-update', 'chunkSize', $event)" step="100" min="500" max="800"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-          </div>
-        </section>
-
-        <section class="setting-card">
-          <div class="setting-copy">
-            <p class="setting-label">{{ t('label.knowledgeCopilotChunkOverlap') }}</p>
-            <p class="setting-description">{{ t('text.knowledgeCopilotChunkOverlap') }}</p>
-          </div>
-          <div class="number-input-container">
-            <input type="number" class="settings-input number-input"
-              :value="settingsStore.config.knowledgeCopilot.chunkOverlap"
-              @change="emit('number-update', 'chunkOverlap', $event)" step="10" min="50" max="100"
-              :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
-          </div>
-        </section>
+    <section class="setting-card">
+      <div class="setting-copy">
+        <p class="setting-label">{{ t('label.knowledgeCopilotChunkOverlap') }}</p>
+        <p class="setting-description">{{ t('text.knowledgeCopilotChunkOverlap') }}</p>
+      </div>
+      <div class="number-input-container">
+        <input type="number" class="settings-input number-input"
+          :value="settingsStore.config.knowledgeCopilot.chunkOverlap"
+          @change="emit('number-update', 'chunkOverlap', $event)" step="10" min="50" max="100"
+          :disabled="!settingsStore.config.knowledgeCopilot.enabled" />
       </div>
     </section>
   </div>
