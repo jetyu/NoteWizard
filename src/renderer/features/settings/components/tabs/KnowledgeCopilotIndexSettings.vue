@@ -47,7 +47,7 @@
           {{ t('text.knowledgeCopilotRebuildConcurrency') }}
         </p>
       </div>
-      <label class="select-shell">
+      <label class="select-shell" :class="{ disabled: !settingsStore.config.knowledgeCopilot.enabled }">
         <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
           @change="emit('number-update', 'rebuildConcurrency', $event)"
           :disabled="!settingsStore.config.knowledgeCopilot.enabled">

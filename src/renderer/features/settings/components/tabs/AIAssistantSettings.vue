@@ -27,10 +27,11 @@
             ? t('text.aiModelUnavailable')
             : t('text.selectAIAssistantSourceName') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
+        <label class="select-shell"
+          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.aiAssistant.enabled }">
           <select class="settings-select" :value="settingsStore.config.aiAssistant.sourceId"
             @change="handleSourceIdChange"
-            :disabled="chatSources.length === 0">
+            :disabled="chatSources.length === 0 || !settingsStore.config.aiAssistant.enabled">
             <option v-if="chatSources.length === 0" value="" disabled>{{
               t('option.default.selectOption') }}</option>
             <option v-for="source in chatSources" :key="source.id" :value="source.id">

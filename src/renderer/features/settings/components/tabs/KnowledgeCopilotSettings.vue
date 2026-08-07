@@ -27,10 +27,11 @@
             ? t('text.aiModelUnavailable')
             : t('text.knowledgeCopilotEmbeddingModel') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: embeddingSources.length === 0 }">
+        <label class="select-shell"
+          :class="{ disabled: embeddingSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
           <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.embeddingSourceId"
             @change="handleKnowledgeCopilotUpdate('embeddingSourceId', ($event.target as HTMLSelectElement).value, $event)"
-            :disabled="embeddingSources.length === 0">
+            :disabled="embeddingSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
             <option v-if="embeddingSources.length === 0" value="">{{
               t('option.default.selectOption') }}</option>
             <option v-for="source in embeddingSources" :key="source.id" :value="source.id">
@@ -48,10 +49,10 @@
             : t('text.knowledgeCopilotChatModel') }}</p>
         </div>
         <label class="select-shell"
-          :class="{ disabled: chatSources.length === 0 }">
+          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
           <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.askChatSourceId"
             @change="handleKnowledgeCopilotUpdate('askChatSourceId', ($event.target as HTMLSelectElement).value)"
-            :disabled="chatSources.length === 0">
+            :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
             <option value="">{{
               t('option.knowledgeCopilot.disabled') }}</option>
             <option v-for="source in chatSources" :key="source.id" :value="source.id">
@@ -69,10 +70,11 @@
             ? t('text.aiModelUnavailable')
             : t('text.knowledgeCopilotAgentChatModel') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
+        <label class="select-shell"
+          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
           <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
             @change="handleKnowledgeCopilotUpdate('agentChatSourceId', ($event.target as HTMLSelectElement).value)"
-            :disabled="chatSources.length === 0">
+            :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
             <option value="">{{ t('option.knowledgeCopilot.disabled') }}</option>
             <option v-for="source in chatSources" :key="source.id" :value="source.id">{{ source.name }}</option>
           </select>
@@ -87,10 +89,10 @@
             : t('text.knowledgeCopilotRerankerSource') }}</p>
         </div>
         <label class="select-shell"
-          :class="{ disabled: rerankerSources.length === 0 }">
+          :class="{ disabled: rerankerSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
           <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rerankerSourceId"
             @change="handleKnowledgeCopilotUpdate('rerankerSourceId', ($event.target as HTMLSelectElement).value)"
-            :disabled="rerankerSources.length === 0">
+            :disabled="rerankerSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
             <option value="">{{
               t('option.knowledgeCopilot.disabled') }}</option>
             <option v-for="source in rerankerSources" :key="source.id" :value="source.id">
