@@ -53,7 +53,7 @@
             <span class="update-version-value">v{{ currentVersion }}</span>
           </div>
         </div>
-        <button type="button" class="action-button" :disabled="isChecking || isDownloading || isDownloadRequestPending"
+        <button type="button" class="action-button secondary" :disabled="isChecking || isDownloading || isDownloadRequestPending"
           @click="handleCheckForUpdates">
           {{ isChecking ? t('button.checkingForUpdates') : t('menu.help.update') }}
         </button>
@@ -70,7 +70,7 @@
         </div>
         <div v-if="showAvailableUpdateActions || isDownloadingState || showInstallActions || showRetryAction"
           class="update-actions" :class="{ 'is-downloading': isDownloadingState }">
-          <button v-if="showAvailableUpdateActions" type="button" class="action-button" @click="handleDownloadUpdate">
+          <button v-if="showAvailableUpdateActions" type="button" class="action-button primary" @click="handleDownloadUpdate">
             {{ manualDownloadButtonLabel }}
           </button>
           <button v-if="showAvailableUpdateActions" type="button" class="action-button secondary"
@@ -81,13 +81,13 @@
             @click="handleCancelDownload">
             {{ t('updater.cancel') }}
           </button>
-          <button v-if="showInstallActions" type="button" class="action-button" @click="handleInstallUpdate">
+          <button v-if="showInstallActions" type="button" class="action-button primary" @click="handleInstallUpdate">
             {{ t('updater.installNow') }}
           </button>
           <button v-if="showInstallActions" type="button" class="action-button secondary" @click="handleDismissInstall">
             {{ t('updater.installLater') }}
           </button>
-          <button v-if="showRetryAction" type="button" class="action-button secondary" @click="handleRetryUpdate">
+          <button v-if="showRetryAction" type="button" class="action-button primary" @click="handleRetryUpdate">
             {{ t('updater.retry') }}
           </button>
         </div>

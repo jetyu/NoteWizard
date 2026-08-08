@@ -27,10 +27,10 @@
                 </div>
               </div>
               <div v-if="!isBuiltInAiSource(source)" class="settings-card-actions">
-                <button class="action-btn" @click="handleEditSource(source)" :title="t('common.editor')">
+                <button class="action-btn icon-action-button" @click="handleEditSource(source)" :title="t('common.editor')">
                   <IconPencil :size="14" />
                 </button>
-                <button class="action-btn delete" @click="removeSource(source)" :title="t('title.clearConfiguration')">
+                <button class="action-btn icon-action-button delete" @click="removeSource(source)" :title="t('title.clearConfiguration')">
                   <IconTrash :size="14" />
                 </button>
               </div>
@@ -860,28 +860,15 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .action-btn {
-  background: transparent;
-  border: none;
   font-size: 1.2rem;
-  color: #94a3b8;
-  cursor: pointer;
   line-height: 1;
   padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  color: var(--accent);
-  background: var(--status-info-bg);
 }
 
 .action-btn.delete:hover {
-  color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-text);
+  background: var(--status-danger-bg);
 }
 
 .source-details {

@@ -7,7 +7,7 @@
           <input v-model="newHost" class="inline-input" :placeholder="t('placeholder.hostName')"
             @keyup.enter="handleAddHost" />
         </div>
-        <button class="add-btn" :disabled="!newHost.trim()" @click="handleAddHost">
+        <button class="action-button primary add-btn" :disabled="!newHost.trim()" @click="handleAddHost">
           {{ t('button.addHost') }}
         </button>
       </div>
@@ -24,7 +24,7 @@
               </div>
               <span class="host-text">{{ host }}</span>
             </div>
-            <button class="row-action-btn delete" @click="handleDeleteHost(index)" :title="t('button.delete')">
+            <button class="row-action-btn icon-action-button delete" @click="handleDeleteHost(index)" :title="t('button.delete')">
               <IconTrash :size="14" />
             </button>
           </div>
@@ -174,17 +174,11 @@ const handleDeleteHost = async (index: number) => {
 .row-action-btn {
   width: 28px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
   border-radius: 6px;
-  color: var(--text-disabled);
-  cursor: pointer;
 }
 
 .row-action-btn:hover {
+  border-color: var(--status-danger-border);
   background: var(--status-danger-bg);
   color: var(--status-danger-text);
 }
@@ -243,18 +237,7 @@ const handleDeleteHost = async (index: number) => {
 
 .add-btn {
   padding: 0 16px;
+  min-height: 36px;
   height: 36px;
-  background: var(--accent-solid);
-  color: var(--accent-solid-text);
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.add-btn:disabled {
-  background: var(--input-bg-disabled);
-  color: var(--text-disabled);
-  cursor: not-allowed;
 }
 </style>

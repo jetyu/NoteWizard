@@ -1,3 +1,8 @@
+import {
+  isValidAiTranslationTargetLanguage,
+  type AiTranslationTargetLanguage,
+} from '@shared/ai.constants';
+
 /**
  * Editor module constants
  * Includes context menu, statusbar, and toolbar related constants
@@ -33,6 +38,8 @@ export const EDITOR_CONSTANTS = {
     AI_EXPAND: 'contextMenu.aiExpand',
     AI_SIMPLIFY: 'contextMenu.aiSimplify',
     AI_SUMMARIZE: 'contextMenu.aiSummarize',
+    AI_TRANSLATE: 'contextMenu.aiTranslate',
+    AI_TRANSLATE_TO: 'contextMenu.aiTranslateTo',
   },
 
   // Menu item types
@@ -73,6 +80,30 @@ export const EDITOR_CONSTANTS = {
     },
   },
 } as const;
+
+export const EDITOR_TRANSLATION_ACTION_PREFIX = 'aiTranslate:' as const;
+
+export type EditorTranslationAction =
+  `${typeof EDITOR_TRANSLATION_ACTION_PREFIX}${AiTranslationTargetLanguage}`;
+
+export function createEditorTranslationAction(
+  targetLanguage: AiTranslationTargetLanguage,
+): EditorTranslationAction {
+  return `${EDITOR_TRANSLATION_ACTION_PREFIX}${targetLanguage}`;
+}
+
+export function parseEditorTranslationAction(
+  action: string,
+): AiTranslationTargetLanguage | null {
+  if (!action.startsWith(EDITOR_TRANSLATION_ACTION_PREFIX)) {
+    return null;
+  }
+
+  const targetLanguage = action.slice(EDITOR_TRANSLATION_ACTION_PREFIX.length);
+  return isValidAiTranslationTargetLanguage(targetLanguage)
+    ? targetLanguage
+    : null;
+}
 
 // ============================================================================
 // Toolbar Types and Actions

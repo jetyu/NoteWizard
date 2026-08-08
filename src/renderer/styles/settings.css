@@ -305,75 +305,6 @@
   resize: vertical;
 }
 
-/* Buttons */
-.action-button {
-  min-width: 80px;
-  min-height: var(--settings-control-height, 32px);
-  padding: 0.35rem 0.85rem;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  background: var(--button-bg);
-  color: var(--text-primary);
-  font-size: 0.86rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  box-shadow: var(--shadow-soft);
-}
-
-.action-button:hover:not(:disabled) {
-  background: var(--button-bg-hover);
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--input-border));
-  color: var(--accent-hover);
-}
-
-.action-button:active:not(:disabled) {
-  background: var(--button-bg-active);
-}
-
-.action-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.action-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus-ring);
-}
-
-.action-button.primary {
-  background: var(--accent-solid);
-  border-color: color-mix(in srgb, var(--accent-solid) 88%, var(--border-strong));
-  color: var(--accent-solid-text);
-}
-
-.action-button.primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent-solid) 88%, var(--accent-hover));
-  border-color: color-mix(in srgb, var(--accent-solid) 78%, var(--accent-hover));
-  color: var(--accent-solid-text);
-}
-
-.action-button.primary:active:not(:disabled) {
-  background: color-mix(in srgb, var(--accent-solid) 82%, var(--text-primary));
-}
-
-.action-button.secondary {
-  background: var(--button-bg);
-  color: var(--text-primary);
-  border-color: var(--input-border);
-}
-
-.action-button.secondary:hover:not(:disabled) {
-  background: var(--button-bg-hover);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--input-border));
-  color: var(--text-primary);
-}
-
 .startup-switch-text {
   margin-left: 0.6rem;
   font-size: 0.82rem;
@@ -505,7 +436,7 @@
   }
 
   .input-container,
-  .action-button,
+  .settings-panel .action-button,
   .select-shell {
     min-width: auto;
   }

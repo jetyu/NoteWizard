@@ -68,7 +68,7 @@
               <td class="col-modified">{{ formatDate(item.updatedAt) }}</td>
               <td class="col-time">{{ formatDate(item.timeStarredAt) }}</td>
               <td class="col-actions">
-                <button class="action-btn is-active" :title="t('contextMenu.unstar')"
+                <button class="action-btn icon-action-button is-active" :title="t('contextMenu.unstar')"
                   @click.stop="favoritesStore.toggleStar(item.id, item.kind, false)">
                   <IconStar fill="currentColor" :size="16" />
                 </button>
@@ -374,22 +374,12 @@ async function jumpToWorkspace(id: string, type: 'note' | 'notebook') {
 .action-btn {
   width: 34px;
   height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--panel-hover) 92%, white);
-  color: var(--text-muted);
-  cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
 .action-btn:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
-  color: var(--accent);
 }
 
 .action-btn.is-active {

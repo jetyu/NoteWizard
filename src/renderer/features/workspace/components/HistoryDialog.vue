@@ -42,8 +42,8 @@
           </div>
 
           <div class="history-footer">
-            <button class="btn-cancel" @click="closeDialog">{{ $t('button.cancel') }}</button>
-            <button class="btn-restore" :disabled="!selectedVersion || isRestoring" @click="handleRestore">
+            <button class="action-button secondary btn-cancel" @click="closeDialog">{{ $t('button.cancel') }}</button>
+            <button class="action-button primary btn-restore" :disabled="!selectedVersion || isRestoring" @click="handleRestore">
               {{ isRestoring ? $t('history.restoring') : $t('history.restore') }}
             </button>
           </div>
@@ -320,36 +320,7 @@ watch(() => workspaceStore.isHistoryDialogOpen, async (newVal) => {
 .btn-cancel,
 .btn-restore {
   padding: 6px 16px;
-  border-radius: 6px;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--panel-border, #e5e7eb);
-  color: var(--text, #374151);
-}
-
-.btn-cancel:hover {
-  background: var(--panel-hover, #f3f4f6);
-}
-
-.btn-restore {
-  background: var(--accent-solid);
-  border: 1px solid var(--accent-solid);
-  color: var(--accent-solid-text);
-}
-
-.btn-restore:hover:not(:disabled) {
-  filter: brightness(0.9);
-}
-
-.btn-restore:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Transitions */

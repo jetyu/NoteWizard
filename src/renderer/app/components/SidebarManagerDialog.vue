@@ -84,12 +84,12 @@
                         <strong>{{ t(module.labelKey) }}</strong>
                       </div>
                       <button v-if="!isModuleEnabled(module.id)" type="button"
-                        class="sidebar-manager-dialog__module-action" :disabled="hasReachedCustomModuleLimit"
+                        class="sidebar-manager-dialog__module-action icon-action-button" :disabled="hasReachedCustomModuleLimit"
                         :aria-label="t('appShell.sidebarManager.addModule', { module: t(module.labelKey) })"
                         @click="addToPreview(module.id)">
                         <IconPlus :size="16" />
                       </button>
-                      <button v-else type="button" class="sidebar-manager-dialog__module-action is-remove"
+                      <button v-else type="button" class="sidebar-manager-dialog__module-action icon-action-button is-remove"
                         :aria-label="t('appShell.sidebarManager.removeModule', { module: t(module.labelKey) })"
                         @click="removeFromPreview(module.id)">
                         <IconMinus :size="16" />
@@ -498,35 +498,20 @@ watch(isSidebarManagerOpen, async (open) => {
 .sidebar-manager-dialog__module-action {
   width: 24px;
   height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
-  color: var(--accent-hover);
-  cursor: pointer;
-  transition: opacity 0.18s ease, background-color 0.18s ease;
   align-self: center;
   flex-shrink: 0;
 }
 
-.sidebar-manager-dialog__module-action:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
-}
-
 .sidebar-manager-dialog__module-action.is-remove {
-  background: rgba(244, 63, 94, 0.08);
-  color: #e11d48;
+  background: var(--button-danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--panel-border));
+  color: var(--danger);
 }
 
 .sidebar-manager-dialog__module-action.is-remove:hover:not(:disabled) {
-  background: rgba(244, 63, 94, 0.14);
-}
-
-.sidebar-manager-dialog__module-action:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  background: var(--button-danger-soft-hover);
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--panel-border));
+  color: var(--danger);
 }
 
 @media (max-width: 760px) {

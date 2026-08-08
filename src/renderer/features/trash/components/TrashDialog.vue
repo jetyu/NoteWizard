@@ -9,7 +9,7 @@
               <h2>{{ $t('label.trash') }}</h2>
             </div>
             <div class="header-right">
-              <button v-if="trashedNodes.length > 0" class="btn-empty" @click="onEmptyTrash" :title="$t('trash.empty')"
+              <button v-if="trashedNodes.length > 0" class="action-button danger btn-empty" @click="onEmptyTrash" :title="$t('trash.empty')"
                 :disabled="isEmptying || Boolean(activeNodeId)">
                 <IconEraser :size="16" />
                 <span>{{ $t('trash.empty') }}</span>
@@ -58,11 +58,11 @@
                     <td>{{ formatTime(node.updatedAt) }}</td>
                     <td class="actions-col">
                       <div class="action-buttons">
-                        <button class="btn-inline-action restore" @click="onRestoreNode(node.id)"
+                        <button class="btn-inline-action icon-action-button restore" @click="onRestoreNode(node.id)"
                           :title="$t('trash.restore') || 'Restore'" :disabled="Boolean(activeNodeId) || isEmptying">
                           <IconRefresh :size="14" />
                         </button>
-                        <button class="btn-inline-action delete" @click="onDeleteNode(node.id)"
+                        <button class="btn-inline-action icon-action-button delete" @click="onDeleteNode(node.id)"
                           :title="$t('trash.deletePermanently') || 'Delete Permanently'"
                           :disabled="Boolean(activeNodeId) || isEmptying">
                           <IconTrash :size="14" />
@@ -198,23 +198,10 @@ watch(isOpen, async (newVal) => {
 }
 
 .btn-empty {
-  display: flex;
-  align-items: center;
+  min-width: auto;
   gap: 6px;
   padding: 6px 12px;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--danger);
   font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-empty:hover {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 .btn-close {
@@ -353,28 +340,23 @@ watch(isOpen, async (newVal) => {
 }
 
 .btn-inline-action {
-  background: transparent;
-  border: 1px solid transparent;
   padding: 4px;
   border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-disabled);
-  transition: all 0.2s;
-  display: flex;
 }
 
-.btn-empty:disabled,
 .btn-inline-action:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn-inline-action.restore:hover {
+  border-color: var(--status-success-border);
   background: var(--status-success-bg);
   color: var(--status-success-text);
 }
 
 .btn-inline-action.delete:hover {
+  border-color: var(--status-danger-border);
   background: var(--status-danger-bg);
   color: var(--status-danger-text);
 }

@@ -7,6 +7,8 @@ import {
   isValidAiWritingMode,
   isValidAiWritingScenario,
   isValidAiWritingStyle,
+  normalizeAiTranslationTargetLanguage,
+  type AiTranslationTargetLanguage,
   type AiWritingMode,
   type AiWritingScenario,
   type AiWritingStyle,
@@ -21,6 +23,7 @@ import {
   type AiProvider,
 } from '../../shared/ai-provider.constants.js';
 import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
+import { normalizeKnowledgeCopilotRebuildConcurrency } from '../../shared/knowledge-copilot.constants.js';
 import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.constants.js';
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
 import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
@@ -96,6 +99,7 @@ export interface AiAssistantConfig {
   autoContinue: boolean;
   writingStyle: AiWritingStyle;
   writingScenario: AiWritingScenario;
+  quickTranslationTarget: AiTranslationTargetLanguage;
   systemPrompt: string;
 }
 
@@ -113,11 +117,13 @@ export interface KnowledgeCopilotConfig {
   agentExecutionMode: 'confirm' | 'auto';
   chunkSize: number;
   chunkOverlap: number;
+  rebuildConcurrency: number;
   topK: number;
   similarityThreshold: number;
   autoIndex: boolean;
   indexOnSave: boolean;
   lastIndexedAt: number | null;
+  lastRebuildDurationMs: number | null;
   indexSignatures: Record<string, string>;
   indexChunkCounts: Record<string, number>;
   cachedTotalChunks: number;
@@ -412,6 +418,9 @@ export function normalizeAiAssistantConfig(
     writingScenario: isValidAiWritingScenario(config.writingScenario)
       ? config.writingScenario
       : AI_WRITING_DEFAULTS.SCENARIO,
+    quickTranslationTarget: normalizeAiTranslationTargetLanguage(
+      config.quickTranslationTarget,
+    ),
     systemPrompt: normalizeString(config.systemPrompt),
   };
 }
@@ -449,6 +458,7 @@ export function normalizeKnowledgeCopilotConfig(
     'reranker',
     !hasOwnSetting(config, 'rerankerSourceId'),
   );
+  const embeddingSource = aiSources.find(source => source.id === embeddingSelection.sourceId);
 
   return {
     enabled: normalizeBoolean(config.enabled, false),
@@ -464,12 +474,20 @@ export function normalizeKnowledgeCopilotConfig(
     agentExecutionMode: config.agentExecutionMode === 'auto' ? 'auto' : 'confirm',
     chunkSize: clampInteger(config.chunkSize, 500, 500, 800),
     chunkOverlap: clampInteger(config.chunkOverlap, 50, 50, 100),
+    rebuildConcurrency: normalizeKnowledgeCopilotRebuildConcurrency(
+      config.rebuildConcurrency,
+      embeddingSource?.provider,
+    ),
     topK: clampInteger(config.topK, 5, 1, 10),
     similarityThreshold: clampNumber(config.similarityThreshold, 0.45, 0, 1),
     autoIndex: normalizeBoolean(config.autoIndex, true),
     indexOnSave: normalizeBoolean(config.indexOnSave, true),
     lastIndexedAt: typeof config.lastIndexedAt === 'number' && Number.isFinite(config.lastIndexedAt)
       ? config.lastIndexedAt
+      : null,
+    lastRebuildDurationMs: typeof config.lastRebuildDurationMs === 'number'
+      && Number.isFinite(config.lastRebuildDurationMs)
+      ? Math.max(0, Math.trunc(config.lastRebuildDurationMs))
       : null,
     indexSignatures: normalizeStringRecord(config.indexSignatures),
     indexChunkCounts: normalizeNumberRecord(config.indexChunkCounts),

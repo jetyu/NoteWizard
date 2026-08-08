@@ -1,4 +1,9 @@
-import type { AiPromptPreset, AiWritingScenario, AiWritingStyle } from '../../shared/ai.constants.js';
+import type {
+  AiPromptPreset,
+  AiTranslationTargetLanguage,
+  AiWritingScenario,
+  AiWritingStyle,
+} from '../../shared/ai.constants.js';
 import type { PromptLanguageContext, PromptTemplateLanguage } from './language.js';
 import { buildAgentPromptEnUs } from './agent/en-US.js';
 import { buildAgentPromptZhCn } from './agent/zh-CN.js';
@@ -25,6 +30,7 @@ export interface AssistantPromptContext extends PromptLanguageContext {
 
 export interface EditorPromptContext extends PromptLanguageContext {
   preset: AiPromptPreset;
+  targetLanguage?: AiTranslationTargetLanguage;
 }
 
 function chooseBuilder<TContext>(
@@ -108,6 +114,7 @@ export function buildEditorSystemPrompt(
   uiLanguage: string,
   inputText: string,
   preset: EditorPromptContext['preset'],
+  targetLanguage?: EditorPromptContext['targetLanguage'],
 ): string {
   const language = resolvePromptLanguage(uiLanguage, inputText);
   const builder = chooseBuilder(language.effectiveLanguage, buildEditorPromptZhCn, buildEditorPromptEnUs);
@@ -116,6 +123,7 @@ export function buildEditorSystemPrompt(
     inputLanguage: language.inputLanguage,
     fallbackLanguage: language.fallbackLanguage,
     preset,
+    targetLanguage,
   };
 
   return builder(context);

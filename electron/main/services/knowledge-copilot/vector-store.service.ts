@@ -51,12 +51,23 @@ class VectorStoreService {
   private table: LanceDbTable | null;
   private tableName: string;
   private isInitialized: boolean;
+  private mutationQueue: Promise<void>;
 
   constructor() {
     this.db = null;
     this.table = null;
     this.tableName = 'knowledge_copilot_chunks';
     this.isInitialized = false;
+    this.mutationQueue = Promise.resolve();
+  }
+
+  private async enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.mutationQueue.then(operation);
+    this.mutationQueue = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return await result;
   }
 
   /**
@@ -95,33 +106,35 @@ class VectorStoreService {
    * @returns {Promise<void>}
    */
   async addChunks(chunks: VectorChunk[]): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('Vector store not initialized');
-    }
-
     if (!chunks || chunks.length === 0) {
       return;
     }
 
-    try {
-      logger.debug(`Adding ${chunks.length} chunks`);
-
-      if (!this.db) {
-        throw new Error('Vector store database is not available');
+    await this.enqueueMutation(async () => {
+      if (!this.isInitialized) {
+        throw new Error('Vector store not initialized');
       }
 
-      if (!this.table) {
-        this.table = await this.db.createTable(this.tableName, chunks, { mode: 'overwrite' });
-        logger.debug(`Created new table: ${this.tableName}`);
-      } else {
-        await this.table.add(chunks);
-      }
+      try {
+        logger.debug(`Adding ${chunks.length} chunks`);
 
-      logger.debug(`Successfully added ${chunks.length} chunks`);
-    } catch (error) {
-      logger.error(`Error adding chunks: ${getErrorMessage(error)}`);
-      throw error;
-    }
+        if (!this.db) {
+          throw new Error('Vector store database is not available');
+        }
+
+        if (!this.table) {
+          this.table = await this.db.createTable(this.tableName, chunks, { mode: 'overwrite' });
+          logger.debug(`Created new table: ${this.tableName}`);
+        } else {
+          await this.table.add(chunks);
+        }
+
+        logger.debug(`Successfully added ${chunks.length} chunks`);
+      } catch (error) {
+        logger.error(`Error adding chunks: ${getErrorMessage(error)}`);
+        throw error;
+      }
+    });
   }
 
   /**
@@ -209,18 +222,20 @@ class VectorStoreService {
    * @returns {Promise<void>}
    */
   async deleteByNoteId(noteId: string): Promise<void> {
-    if (!this.isInitialized || !this.table) {
-      logger.warn('No table available for deletion');
-      return;
-    }
+    await this.enqueueMutation(async () => {
+      if (!this.isInitialized || !this.table) {
+        logger.warn('No table available for deletion');
+        return;
+      }
 
-    try {
-      await this.table.delete(`noteId = '${noteId}'`);
-      logger.debug(`Deleted chunks for note ${noteId}`);
-    } catch (error) {
-      logger.error(`Error deleting chunks: ${getErrorMessage(error)}`);
-      throw error;
-    }
+      try {
+        await this.table.delete(`noteId = '${noteId}'`);
+        logger.debug(`Deleted chunks for note ${noteId}`);
+      } catch (error) {
+        logger.error(`Error deleting chunks: ${getErrorMessage(error)}`);
+        throw error;
+      }
+    });
   }
 
   /**
@@ -258,21 +273,23 @@ class VectorStoreService {
    * @returns {Promise<void>}
    */
   async clear(): Promise<void> {
-    if (!this.isInitialized || !this.db) {
-      return;
-    }
-
-    try {
-      const tableNames = await this.db.tableNames();
-      if (tableNames.includes(this.tableName)) {
-        await this.db.dropTable(this.tableName);
+    await this.enqueueMutation(async () => {
+      if (!this.isInitialized || !this.db) {
+        return;
       }
-      this.table = null;
-      logger.debug('Data cleared');
-    } catch (error) {
-      logger.error(`Error clearing data: ${getErrorMessage(error)}`);
-      throw error;
-    }
+
+      try {
+        const tableNames = await this.db.tableNames();
+        if (tableNames.includes(this.tableName)) {
+          await this.db.dropTable(this.tableName);
+        }
+        this.table = null;
+        logger.debug('Data cleared');
+      } catch (error) {
+        logger.error(`Error clearing data: ${getErrorMessage(error)}`);
+        throw error;
+      }
+    });
   }
 
    /**

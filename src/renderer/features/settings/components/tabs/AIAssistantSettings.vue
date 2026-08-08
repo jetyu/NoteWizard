@@ -27,10 +27,11 @@
             ? t('text.aiModelUnavailable')
             : t('text.selectAIAssistantSourceName') }}</p>
         </div>
-        <label class="select-shell" :class="{ disabled: chatSources.length === 0 }">
+        <label class="select-shell"
+          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.aiAssistant.enabled }">
           <select class="settings-select" :value="settingsStore.config.aiAssistant.sourceId"
             @change="handleSourceIdChange"
-            :disabled="chatSources.length === 0">
+            :disabled="chatSources.length === 0 || !settingsStore.config.aiAssistant.enabled">
             <option v-if="chatSources.length === 0" value="" disabled>{{
               t('option.default.selectOption') }}</option>
             <option v-for="source in chatSources" :key="source.id" :value="source.id">
@@ -86,6 +87,21 @@
           </select>
         </label>
       </section>
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.aiQuickTranslation') }}</p>
+          <p class="setting-description">{{ t('text.aiQuickTranslation') }}</p>
+        </div>
+        <label class="select-shell" :class="{ disabled: !settingsStore.config.aiAssistant.enabled }">
+          <select class="settings-select" :value="settingsStore.config.aiAssistant.quickTranslationTarget"
+            @change="handleQuickTranslationTargetChange"
+            :disabled="!settingsStore.config.aiAssistant.enabled">
+            <option v-for="option in translationTargetOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+      </section>
       <!-- Auto Continue -->
       <section class="setting-card">
         <div class="setting-copy">
@@ -113,6 +129,9 @@ import {
   AI_WRITING_MODE_OPTIONS,
 } from '@renderer/features/ai/constants/ai.constants';
 import {
+  AI_TRANSLATION_TARGET_ORDER,
+  AI_TRANSLATION_TARGETS,
+  isValidAiTranslationTargetLanguage,
   isValidAiWritingMode,
   isValidAiWritingScenario,
   isValidAiWritingStyle,
@@ -124,6 +143,10 @@ const settingsStore = useSettingsStore();
 const writingStyleOptions = AI_WRITING_STYLE_OPTIONS;
 const writingScenarioOptions = AI_WRITING_SCENARIO_OPTIONS;
 const writingModeOptions = AI_WRITING_MODE_OPTIONS;
+const translationTargetOptions = AI_TRANSLATION_TARGET_ORDER.map((value) => ({
+  value,
+  label: AI_TRANSLATION_TARGETS[value].nativeLabel,
+}));
 const chatSources = computed(() => {
   return settingsStore.config.aiSources.sources.filter((source) => (
     source.capabilities.length === 0 || source.capabilities.includes('chat')
@@ -171,6 +194,15 @@ const handleWritingScenarioChange = async (event: Event) => {
   }
 
   await handleAssistantUpdate('writingScenario', value);
+};
+
+const handleQuickTranslationTargetChange = async (event: Event) => {
+  const value = getSelectValue(event);
+  if (!isValidAiTranslationTargetLanguage(value)) {
+    return;
+  }
+
+  await handleAssistantUpdate('quickTranslationTarget', value);
 };
 
 </script>
