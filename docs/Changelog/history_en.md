@@ -1,3 +1,15 @@
+### v2.2.3 - 2026-08-08
+This update optimizes details and the user experience.
+### New
+* Added support for adjusting the concurrency level of index rebuilding to improve efficiency
+* Added translation capabilities to Smart Writing (Simplified Chinese, English, Japanese, Korean, Traditional Chinese)
+#### Improvements
+* Improved interaction experience for the Preferences interface
+* Improved interaction experience for the Knowledge Assistant settings interface
+* Improved interaction experience for Smart Writing
+#### Fixes
+* Fixed known issues
+
 ### v2.2.2 - 2026-08-05
 This update includes various feature enhancements, experience optimizations, and bug fixes, further improving AI capabilities and the overall user experience.
 ### New
