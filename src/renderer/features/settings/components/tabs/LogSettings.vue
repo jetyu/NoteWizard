@@ -58,7 +58,7 @@
           <p class="setting-label">{{ t('label.logFilePath') }}</p>
           <p class="setting-description">{{ t('label.logFilePathDescription') }}</p>
         </div>
-        <button class="action-button" @click="handleOpenLogDir">
+        <button class="action-button secondary" @click="handleOpenLogDir">
           {{ t('button.openLogFolder') }}
         </button>
       </section>
@@ -68,7 +68,7 @@
           <p class="setting-description">{{ t('diagnosticLog.exportDescription') }}</p>
         </div>
 
-        <button type="button" class="action-button" :disabled="settingsStore.privacyLog.isExportingDiagnostics"
+        <button type="button" class="action-button secondary" :disabled="settingsStore.privacyLog.isExportingDiagnostics"
           @click="handleExportDiagnosticLogs">
           {{ settingsStore.privacyLog.isExportingDiagnostics
             ? t('diagnosticLog.exporting')

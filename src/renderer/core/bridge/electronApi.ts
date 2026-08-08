@@ -155,6 +155,7 @@ export interface AiChatGeneratePayload {
   // Optional explicit override for advanced callers. Default system prompts are built in main.
   systemPrompt?: string;
   promptPreset?: import('@shared/ai.constants').AiPromptPreset;
+  targetLanguage?: import('@shared/ai.constants').AiTranslationTargetLanguage;
 }
 
 export interface AiChatGenerateCompletionPayload {

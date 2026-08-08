@@ -37,6 +37,33 @@ function resolveLabel(item: EditorContextMenuItemPayload, labels: Record<string,
   return '';
 }
 
+function buildMenuItem(
+  item: EditorContextMenuItemPayload,
+  labels: Record<string, string>,
+  resolve: (action: MenuAction) => void,
+): MenuItemConstructorOptions {
+  if (item.type === 'separator') {
+    return { type: 'separator' };
+  }
+
+  if (item.type === 'submenu' && Array.isArray(item.submenu)) {
+    return {
+      id: typeof item.action === 'string' ? item.action : undefined,
+      label: resolveLabel(item, labels),
+      enabled: item.enabled !== false,
+      submenu: item.submenu.map((subItem) => buildMenuItem(subItem, labels, resolve)),
+    };
+  }
+
+  const action = typeof item.action === 'string' ? item.action : null;
+  return {
+    id: action ?? undefined,
+    label: resolveLabel(item, labels),
+    enabled: item.enabled !== false && action !== null,
+    click: action ? () => resolve(action) : undefined,
+  };
+}
+
 function buildTemplate(
   payload: EditorContextMenuPayload = {},
   resolve: (action: MenuAction) => void,
@@ -44,39 +71,7 @@ function buildTemplate(
   const labels = payload.labels ?? {};
   const items = payload.items ?? [];
 
-  return items.map((item): MenuItemConstructorOptions => {
-    if (item.type === 'separator') {
-      return { type: 'separator' };
-    }
-
-    if (item.type === 'submenu' && Array.isArray(item.submenu)) {
-      return {
-        id: typeof item.action === 'string' ? item.action : undefined,
-        label: resolveLabel(item, labels),
-        submenu: item.submenu.map((subItem): MenuItemConstructorOptions => {
-          if (subItem.type === 'separator') {
-            return { type: 'separator' };
-          }
-
-          const action = typeof subItem.action === 'string' ? subItem.action : null;
-          return {
-            id: action ?? undefined,
-            label: resolveLabel(subItem, labels),
-            enabled: subItem.enabled !== false && action !== null,
-            click: action ? () => resolve(action) : undefined,
-          };
-        }),
-      };
-    }
-
-    const action = typeof item.action === 'string' ? item.action : null;
-    return {
-      id: action ?? undefined,
-      label: resolveLabel(item, labels),
-      enabled: item.enabled !== false && action !== null,
-      click: action ? () => resolve(action) : undefined,
-    };
-  });
+  return items.map((item) => buildMenuItem(item, labels, resolve));
 }
 
 export function registerEditorMenuIpcHandlers(mainWindow: BrowserWindow): void {

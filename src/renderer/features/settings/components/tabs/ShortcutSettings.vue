@@ -34,7 +34,7 @@
     </div>
 
     <div class="shortcuts-footer">
-      <button class="action-button" @click="handleReset">
+      <button class="action-button secondary" @click="handleReset">
         {{ t('shortcuts.resetToDefaults') }}
       </button>
     </div>

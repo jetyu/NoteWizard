@@ -47,7 +47,7 @@
           </div>
 
           <footer class="appearance-dialog__footer">
-            <button class="btn-reset" @click="resetToDefault">{{ $t('workspace.iconPicker.reset') }}</button>
+            <button class="action-button secondary btn-reset" @click="resetToDefault">{{ $t('workspace.iconPicker.reset') }}</button>
           </footer>
         </section>
       </div>
@@ -276,18 +276,9 @@ function resetToDefault() {
 }
 
 .btn-reset {
-  border: 1px solid var(--panel-border);
-  background: transparent;
-  color: var(--text-muted);
+  min-height: 30px;
   height: 30px;
-  border-radius: 8px;
   padding: 0 12px;
-  cursor: pointer;
-}
-
-.btn-reset:hover {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--panel-border));
 }
 
 .fade-enter-active,
