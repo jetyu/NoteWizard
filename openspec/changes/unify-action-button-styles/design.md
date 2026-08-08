@@ -7,7 +7,7 @@ Renderer features currently style standard action buttons locally, while setting
 **Goals:**
 
 - Make semantic button hierarchy consistent across renderer features.
-- Ensure primary buttons follow the active accent and light/dark themes.
+- Keep primary and secondary standard buttons visually neutral across accent themes while adapting to light and dark themes.
 - Centralize shared visual and interaction states in `base.css`.
 - Preserve component-specific layout without introducing a Vue wrapper component.
 
@@ -22,6 +22,7 @@ Renderer features currently style standard action buttons locally, while setting
 - Keep native `<button>` elements and apply shared CSS classes. This is the smallest change and avoids a cross-feature component dependency.
 - Use `.action-button` as the structural base and neutral fallback, with explicit `.primary`, `.secondary`, and `.danger` modifiers for semantic intent.
 - Use one primary button per action group; final commit/forward actions are primary, supporting actions are secondary, and destructive actions are danger.
+- Give primary and secondary actions the same ordinary neutral button presentation. The primary modifier communicates semantic intent in templates but does not add a persistent accent fill.
 - Render danger actions with danger-colored text and a soft danger background. Hover and active states retain danger semantics instead of switching to the accent color.
 - Keep `.icon-action-button` and `.dialog-close-button` as specialized global classes. Icon actions are neutral at rest and use the accent on interaction; close buttons remain neutral.
 - Remove only component-local visual declarations replaced by the shared classes. Width, placement, spacing, and other feature-specific layout remain local.
@@ -30,7 +31,7 @@ Renderer features currently style standard action buttons locally, while setting
 
 - Scoped component styles can override global classes → Remove overlapping visual declarations from each migrated standard action.
 - A broad migration can accidentally restyle button-shaped navigation or cards → Limit migration to standard commands and retain the documented exclusions.
-- Theme combinations can expose contrast issues → Use theme tokens, including `--accent-solid-text`, and manually verify every configured accent in light and dark modes.
+- Theme combinations can expose contrast issues → Use neutral theme tokens and manually verify the standard button states in light and dark modes.
 
 ## Migration Plan
 

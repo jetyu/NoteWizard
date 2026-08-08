@@ -368,28 +368,14 @@ button.icon-text svg,
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-.action-button.primary {
-  background: var(--accent-solid);
-  border-color: color-mix(in srgb, var(--accent-solid) 88%, var(--border-strong));
-  color: var(--accent-solid-text);
-}
-
-.action-button.primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent-solid) 88%, var(--accent-hover));
-  border-color: color-mix(in srgb, var(--accent-solid) 78%, var(--accent-hover));
-  color: var(--accent-solid-text);
-}
-
-.action-button.primary:active:not(:disabled) {
-  background: color-mix(in srgb, var(--accent-solid) 82%, var(--text-primary));
-}
-
+.action-button.primary,
 .action-button.secondary {
   background: var(--button-bg);
   color: var(--text-primary);
   border-color: var(--input-border);
 }
 
+.action-button.primary:hover:not(:disabled),
 .action-button.secondary:hover:not(:disabled) {
   background: var(--button-bg-hover);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--input-border));

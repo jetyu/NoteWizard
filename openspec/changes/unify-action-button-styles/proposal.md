@@ -1,10 +1,11 @@
 ## Why
 
-Standard action buttons currently duplicate visual rules across renderer features, which makes equivalent actions use inconsistent colors, borders, and interaction states. Centralizing their semantic styles will make button hierarchy predictable and ensure primary actions follow the selected accent theme.
+Standard action buttons currently duplicate visual rules across renderer features, which makes equivalent actions use inconsistent colors, borders, and interaction states. Centralizing their semantic styles will make button behavior predictable while keeping standard actions visually consistent.
 
 ## What Changes
 
 - Define shared primary, secondary, danger, icon-action, and dialog-close button styles in the global renderer base stylesheet.
+- Keep primary and secondary standard actions on the same neutral button presentation; primary remains a semantic marker rather than a persistent accent-colored treatment.
 - Migrate standard action buttons across renderer features to the shared semantic classes in one pass.
 - Remove duplicated component-local visual rules while retaining feature-specific layout and sizing rules.
 - Keep navigation items, menus, switches, window controls, color selectors, and clickable cards on their specialized styles.
