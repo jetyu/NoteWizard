@@ -1,3 +1,5 @@
+import { KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS } from '@shared/knowledge-copilot.constants';
+
 export const DEFAULT_KNOWLEDGE_COPILOT_CONFIG = {
   enabled: false,
   embeddingSourceId: '',
@@ -12,11 +14,13 @@ export const DEFAULT_KNOWLEDGE_COPILOT_CONFIG = {
   agentExecutionMode: 'confirm' as const,
   chunkSize: 500,
   chunkOverlap: 50,
+  rebuildConcurrency: KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS.DEFAULT,
   topK: 5,
   similarityThreshold: 0.45,
   autoIndex: true,
   indexOnSave: true,
   lastIndexedAt: null,
+  lastRebuildDurationMs: null,
   indexSignatures: {} as Record<string, string>,
   indexChunkCounts: {} as Record<string, number>,
   cachedTotalChunks: 0,

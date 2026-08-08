@@ -14,6 +14,7 @@ import { foldGutter, bracketMatching, indentOnInput } from '@codemirror/language
 import { closeBrackets } from '@codemirror/autocomplete';
 import { search, searchKeymap } from '@codemirror/search';
 import { aiCompletionPlugin, acceptedSuggestionAnnotation } from '../ai/wordsAutoCompletion';
+import { editorAiOperationExtension } from '../ai/writingBuddyOperation';
 
 export interface CreateCodeEditorOptions {
   target: HTMLElement;
@@ -99,6 +100,7 @@ export function createCodeEditor({
         EditorState.readOnly.of(readOnly),
       ]),
       aiCompletionPlugin,
+      editorAiOperationExtension,
     ],
   });
 

@@ -11,6 +11,7 @@ import { KNOWLEDGE_COPILOT_CONVERSATION_LIMITS } from '../../../shared/knowledge
 import { builtInAiService } from '../../services/built-in-ai.service.js';
 
 const logger = loggerService.createLogger('Main:KnowledgeCopilotIPC');
+let knowledgeCopilotInitializationPromise: Promise<void> | null = null;
 
 const InitializeSchema = z.object({}).optional();
 
@@ -63,12 +64,30 @@ const RunTaskSchema = z.object({
   message: 'A task or resumable conversation decision is required',
 });
 
+async function initializeKnowledgeCopilotIndex(force = false): Promise<void> {
+  if (knowledgeCopilotInitializationPromise) {
+    return knowledgeCopilotInitializationPromise;
+  }
+
+  if (!force && knowledgeCopilotIndexService.isReady()) {
+    return;
+  }
+
+  knowledgeCopilotInitializationPromise = (async () => {
+    const config = await aiConfigService.resolveKnowledgeCopilotConfig();
+    await knowledgeCopilotIndexService.initialize(config.workspaceRoot, config.embeddingConfig);
+  })().finally(() => {
+    knowledgeCopilotInitializationPromise = null;
+  });
+
+  return knowledgeCopilotInitializationPromise;
+}
+
 export function registerKnowledgeCopilotHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_INITIALIZE, async (_event, request) => {
     try {
       InitializeSchema.parse(request);
-      const config = await aiConfigService.resolveKnowledgeCopilotConfig();
-      await knowledgeCopilotIndexService.initialize(config.workspaceRoot, config.embeddingConfig);
+      await initializeKnowledgeCopilotIndex(true);
       return { success: true };
     } catch (error) {
       const message = getErrorMessage(builtInAiService.toUserFacingError(error));
@@ -80,6 +99,7 @@ export function registerKnowledgeCopilotHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_INDEX_NOTE, async (_event, request) => {
     try {
       const validated = IndexNoteSchema.parse(request);
+      await initializeKnowledgeCopilotIndex();
       return await knowledgeCopilotIndexService.indexNote(validated);
     } catch (error) {
       const message = getErrorMessage(builtInAiService.toUserFacingError(error));
@@ -179,6 +199,7 @@ export function registerKnowledgeCopilotHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_DELETE_NOTE_INDEX, async (_event, noteId) => {
     try {
       const validatedNoteId = z.string().min(1).parse(noteId);
+      await initializeKnowledgeCopilotIndex();
       return await knowledgeCopilotIndexService.deleteNoteIndex(validatedNoteId);
     } catch (error) {
       const message = getErrorMessage(error);
@@ -200,6 +221,7 @@ export function registerKnowledgeCopilotHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.KNOWLEDGE_COPILOT_REBUILD_INDEX, async () => {
     try {
+      await initializeKnowledgeCopilotIndex();
       await knowledgeCopilotIndexService.clear();
       return { success: true };
     } catch (error) {

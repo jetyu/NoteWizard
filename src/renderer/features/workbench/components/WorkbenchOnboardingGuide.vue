@@ -65,12 +65,12 @@
                 <span>{{ t('workbench.onboarding.startPanel.description') }}</span>
               </div>
               <div class="workbench-onboarding__start-actions">
-                <button type="button" class="workbench-onboarding__primary-action"
+                <button type="button" class="action-button primary workbench-onboarding__primary-action"
                   @click="emit('create-template', selectedTemplate)">
                   <IconFilePlus :size="16" />
                   <span>{{ t('workbench.onboarding.createSelected') }}</span>
                 </button>
-                <button type="button" class="workbench-onboarding__secondary-action" @click="emit('import-markdown')">
+                <button type="button" class="action-button secondary workbench-onboarding__secondary-action" @click="emit('import-markdown')">
                   <IconFileImport :size="16" />
                   <span>{{ t('workbench.onboarding.importCta') }}</span>
                 </button>
@@ -102,7 +102,7 @@
                 <strong>{{ t('workbench.onboarding.syncPanel.title') }}</strong>
                 <span>{{ t('workbench.onboarding.syncPanel.description') }}</span>
               </div>
-              <button type="button" class="workbench-onboarding__secondary-action" @click="emit('open-sync')">
+              <button type="button" class="action-button secondary workbench-onboarding__secondary-action" @click="emit('open-sync')">
                 <IconDatabase :size="16" />
                 <span>{{ t('workbench.onboarding.syncPanel.action') }}</span>
               </button>
@@ -114,18 +114,18 @@
               {{ t('workbench.onboarding.dismiss') }}
             </button>
             <div class="workbench-onboarding__nav">
-              <button type="button" class="workbench-onboarding__nav-button" :disabled="currentStep === 0"
+              <button type="button" class="action-button secondary workbench-onboarding__nav-button" :disabled="currentStep === 0"
                 @click="goPrevious">
                 <IconArrowLeft :size="15" />
                 <span>{{ t('workbench.onboarding.back') }}</span>
               </button>
               <button v-if="currentStep < lastStepIndex" type="button"
-                class="workbench-onboarding__nav-button workbench-onboarding__nav-button--primary" @click="goNext">
+                class="action-button primary workbench-onboarding__nav-button" @click="goNext">
                 <span>{{ t('workbench.onboarding.next') }}</span>
                 <IconArrowRight :size="15" />
               </button>
               <button v-else type="button"
-                class="workbench-onboarding__nav-button workbench-onboarding__nav-button--primary"
+                class="action-button primary workbench-onboarding__nav-button"
                 @click="emit('dismiss')">
                 <IconCheck :size="15" />
                 <span>{{ t('workbench.onboarding.finish') }}</span>
@@ -680,19 +680,9 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border-radius: 8px;
   font-size: 0.82rem;
-  font-weight: 680;
   line-height: 1;
-  cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
-}
-
-.workbench-onboarding__nav-button--primary {
-  border: 1px solid color-mix(in srgb, var(--accent) 78%, var(--accent-hover));
-  background: color-mix(in srgb, var(--accent) 92%, var(--accent-hover));
-  color: #ffffff;
 }
 
 .workbench-onboarding__primary-action {
@@ -703,28 +693,6 @@ onMounted(async () => {
 .workbench-onboarding__secondary-action,
 .workbench-onboarding__nav-button {
   padding: 0 12px;
-  border: 1px solid var(--panel-border, #dbe3ef);
-  background: var(--panel, #ffffff);
-  color: var(--text, #111827);
-}
-
-.workbench-onboarding__primary-action:hover,
-.workbench-onboarding__secondary-action:hover,
-.workbench-onboarding__nav-button:hover:not(:disabled) {
-  border-color: var(--panel-border, #dbe3ef);
-  background: var(--panel-hover, #f5f7fa);
-  color: var(--text, #111827);
-}
-
-.workbench-onboarding__nav-button--primary:hover:not(:disabled) {
-  border-color: var(--panel-border, #dbe3ef);
-  background: var(--panel-hover, #f5f7fa);
-  color: var(--text, #111827);
-}
-
-.workbench-onboarding__nav-button:disabled {
-  cursor: default;
-  opacity: 0.48;
 }
 
 .workbench-onboarding__map-card,
@@ -752,8 +720,12 @@ onMounted(async () => {
 .workbench-onboarding__text-action {
   padding: 0 8px;
   border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-secondary, #64748b);
+  font-weight: 680;
+  cursor: pointer;
+  transition: color 0.16s ease;
 }
 
 .workbench-onboarding__text-action:hover {
@@ -801,8 +773,6 @@ onMounted(async () => {
 :global([data-theme='dark']) .workbench-onboarding__choice-card,
 :global([data-theme='dark']) .workbench-onboarding__map-card,
 :global([data-theme='dark']) .workbench-onboarding__finish-card,
-:global([data-theme='dark']) .workbench-onboarding__secondary-action,
-:global([data-theme='dark']) .workbench-onboarding__nav-button,
 :global([data-theme='dark']) .workbench-onboarding__choice-card.is-selected {
   background: color-mix(in srgb, var(--accent) 13%, transparent);
 }

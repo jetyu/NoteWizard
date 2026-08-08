@@ -6,8 +6,12 @@ import type { Embeddings } from '@langchain/core/embeddings';
 import { BaseDocumentCompressor } from '@langchain/core/retrievers/document_compressors';
 import type { DocumentInterface } from '@langchain/core/documents';
 import { AI_PROVIDERS, type AiProvider } from '../../shared/ai-provider.constants.js';
+import { getKnowledgeCopilotRebuildConcurrencyMax } from '../../shared/knowledge-copilot.constants.js';
 import { remoteAiService } from './remote-ai.service.js';
 import { builtInAiService } from './built-in-ai.service.js';
+import { loggerService } from './log/logger.service.js';
+
+const logger = loggerService.createLogger('Main:AiProviderService');
 
 export interface AiProviderModelConfig {
   provider: AiProvider;
@@ -101,10 +105,17 @@ export function createProviderChatModel(config: AiProviderModelConfig): BaseChat
 
 export function createProviderEmbeddings(config: AiProviderModelConfig): Embeddings {
   const apiKey = requireApiKey(config);
+  const maxConcurrency = getKnowledgeCopilotRebuildConcurrencyMax(config.provider);
+  logger.debug('Creating embeddings client', {
+    provider: config.provider,
+    maxConcurrency,
+  });
+
   if (isOpenAiCompatibleProvider(config.provider)) {
     return new OpenAIEmbeddings({
       apiKey,
       model: config.model,
+      maxConcurrency,
       configuration: {
         baseURL: config.baseUrl,
         ...(config.provider === AI_PROVIDERS.SNAPTIUM ? { fetch: fetchBuiltInAi } : {}),
@@ -113,11 +124,20 @@ export function createProviderEmbeddings(config: AiProviderModelConfig): Embeddi
   }
 
   if (config.provider === AI_PROVIDERS.GOOGLE_GEMINI) {
-    return new GoogleGenerativeAIEmbeddings({ apiKey, model: config.model, baseUrl: config.baseUrl });
+    return new GoogleGenerativeAIEmbeddings({
+      apiKey,
+      model: config.model,
+      baseUrl: config.baseUrl,
+      maxConcurrency,
+    });
   }
 
   if (config.provider === AI_PROVIDERS.OLLAMA) {
-    return new OllamaEmbeddings({ model: config.model, baseUrl: config.baseUrl });
+    return new OllamaEmbeddings({
+      model: config.model,
+      baseUrl: config.baseUrl,
+      maxConcurrency,
+    });
   }
 
   throw new Error(`Provider ${config.provider} does not support embeddings`);

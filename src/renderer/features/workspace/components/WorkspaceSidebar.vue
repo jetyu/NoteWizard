@@ -84,10 +84,10 @@
     <div v-else class="sidebar-empty">
       <p>{{ $t("workspace.nodesList.emptyState") }}</p>
       <div class="empty-actions">
-        <button class="btn-create-first" @click="createNote()">
+        <button class="action-button primary" @click="createNote()">
           {{ $t("contextMenu.newNote") }}
         </button>
-        <button class="btn-create-first secondary" @click="createNotebook()">
+        <button class="action-button secondary" @click="createNotebook()">
           {{ $t("contextMenu.newNotebook") }}
         </button>
       </div>
@@ -1468,17 +1468,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.secondary {
-  background: transparent;
-  border: 1px solid var(--panel-border);
-}
-
-.btn-create-first.secondary:hover {
-  background: var(--panel-hover);
-  border-color: var(--panel-border);
-  color: var(--text);
 }
 
 .header-actions {

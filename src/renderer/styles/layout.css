@@ -128,23 +128,6 @@
   margin: 0;
 }
 
-.btn-create-first {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.btn-create-first:hover {
-  background: var(--panel-hover);
-  border-color: var(--panel-border);
-  color: var(--text);
-}
-
 /* ===== Common Column Header & Empty State ===== */
 .editor-col,
 .preview-col {

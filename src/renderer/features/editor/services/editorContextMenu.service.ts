@@ -1,18 +1,55 @@
-import { electronApi } from '@renderer/core/bridge/electronApi';
+import {
+  electronApi,
+  type EditorContextMenuItemPayload,
+} from '@renderer/core/bridge/electronApi';
 import { logger } from '@renderer/features/logger';
 import type { EditorView } from '@codemirror/view';
-import { EDITOR_CONSTANTS } from '../constants/editor.constants';
+import {
+  AI_TRANSLATION_DEFAULT_TARGET,
+  AI_TRANSLATION_TARGET_ORDER,
+  AI_TRANSLATION_TARGETS,
+  isValidAiTranslationTargetLanguage,
+  normalizeAiTranslationTargetLanguage,
+  type AiTranslationTargetLanguage,
+} from '@shared/ai.constants';
+import {
+  createEditorTranslationAction,
+  EDITOR_CONSTANTS,
+  type EditorTranslationAction,
+} from '../constants/editor.constants';
 
-export type EditorContextAction = typeof EDITOR_CONSTANTS.ACTIONS[keyof typeof EDITOR_CONSTANTS.ACTIONS];
+export type EditorContextAction =
+  | typeof EDITOR_CONSTANTS.ACTIONS[keyof typeof EDITOR_CONSTANTS.ACTIONS]
+  | EditorTranslationAction;
 
 export interface EditorMenuItem {
   action?: EditorContextAction;
   labelKey?: string;
+  label?: string;
+  labelParams?: Record<string, unknown>;
   type?: 'normal' | 'separator' | 'submenu';
+  enabled?: boolean;
   submenu?: EditorMenuItem[];
 }
 
 type Translate = (key: string, named?: Record<string, unknown>) => string;
+
+function toEditorContextMenuItemPayload(
+  item: EditorMenuItem,
+  t: Translate,
+): EditorContextMenuItemPayload {
+  const hasLabelParams = item.labelKey !== undefined && item.labelParams !== undefined;
+  return {
+    action: item.action ?? null,
+    labelKey: hasLabelParams ? undefined : item.labelKey,
+    label: hasLabelParams && item.labelKey
+      ? t(item.labelKey, item.labelParams)
+      : item.label,
+    type: item.type ?? EDITOR_CONSTANTS.MENU_ITEM_TYPE.NORMAL,
+    enabled: item.enabled,
+    submenu: item.submenu?.map((subItem) => toEditorContextMenuItemPayload(subItem, t)),
+  };
+}
 
 /**
  * 显示原生编辑器右键菜单
@@ -23,16 +60,7 @@ export async function showNativeEditorContextMenu(
 ): Promise<EditorContextAction | null> {
   const result = await electronApi.editor.showContextMenu({
     labels: createEditorContextMenuLabels(t),
-    items: items.map((item) => ({
-      action: item.action ?? null,
-      labelKey: item.labelKey,
-      type: item.type ?? EDITOR_CONSTANTS.MENU_ITEM_TYPE.NORMAL,
-      submenu: item.submenu?.map((subItem) => ({
-        action: subItem.action ?? null,
-        labelKey: subItem.labelKey,
-        type: subItem.type ?? EDITOR_CONSTANTS.MENU_ITEM_TYPE.NORMAL,
-      })),
-    })),
+    items: items.map((item) => toEditorContextMenuItemPayload(item, t)),
   });
 
   if (result === null) {
@@ -57,13 +85,33 @@ export function createEditorContextMenuLabels(t: Translate) {
     [EDITOR_CONSTANTS.MENU.AI_EXPAND]: t(EDITOR_CONSTANTS.MENU.AI_EXPAND),
     [EDITOR_CONSTANTS.MENU.AI_SIMPLIFY]: t(EDITOR_CONSTANTS.MENU.AI_SIMPLIFY),
     [EDITOR_CONSTANTS.MENU.AI_SUMMARIZE]: t(EDITOR_CONSTANTS.MENU.AI_SUMMARIZE),
+    [EDITOR_CONSTANTS.MENU.AI_TRANSLATE]: t(EDITOR_CONSTANTS.MENU.AI_TRANSLATE),
   };
+}
+
+export function getOrderedTranslationTargets(
+  currentLanguage?: string,
+): AiTranslationTargetLanguage[] {
+  if (!isValidAiTranslationTargetLanguage(currentLanguage)) {
+    return [...AI_TRANSLATION_TARGET_ORDER];
+  }
+
+  return [
+    currentLanguage,
+    ...AI_TRANSLATION_TARGET_ORDER.filter((language) => language !== currentLanguage),
+  ];
 }
 
 /**
  * 获取编辑器右键菜单项
  */
-export function getEditorContextMenu(aiAssistantEnabled: boolean, hasSelection: boolean): EditorMenuItem[] {
+export function getEditorContextMenu(
+  aiAssistantEnabled: boolean,
+  hasSelection: boolean,
+  hasActiveAiOperation = false,
+  currentLanguage?: string,
+  quickTranslationTarget: AiTranslationTargetLanguage = AI_TRANSLATION_DEFAULT_TARGET,
+): EditorMenuItem[] {
   const items: EditorMenuItem[] = [
     { action: EDITOR_CONSTANTS.ACTIONS.CUT, labelKey: EDITOR_CONSTANTS.MENU.CUT },
     { action: EDITOR_CONSTANTS.ACTIONS.COPY, labelKey: EDITOR_CONSTANTS.MENU.COPY },
@@ -73,19 +121,42 @@ export function getEditorContextMenu(aiAssistantEnabled: boolean, hasSelection: 
     { action: EDITOR_CONSTANTS.ACTIONS.SELECT_ALL, labelKey: EDITOR_CONSTANTS.MENU.SELECT_ALL },
   ];
 
-  if (aiAssistantEnabled && hasSelection) {
+  if (aiAssistantEnabled && (hasSelection || hasActiveAiOperation)) {
+    const aiActionsEnabled = hasSelection && !hasActiveAiOperation;
+    const normalizedQuickTranslationTarget = normalizeAiTranslationTargetLanguage(
+      quickTranslationTarget,
+    );
     items.push(
       { type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SEPARATOR },
       {
         type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SUBMENU,
         labelKey: EDITOR_CONSTANTS.MENU.AI_OPERATIONS,
         submenu: [
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_REWRITE, labelKey: EDITOR_CONSTANTS.MENU.AI_REWRITE },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_EXPAND, labelKey: EDITOR_CONSTANTS.MENU.AI_EXPAND },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_SIMPLIFY, labelKey: EDITOR_CONSTANTS.MENU.AI_SIMPLIFY },
-          { action: EDITOR_CONSTANTS.ACTIONS.AI_SUMMARIZE, labelKey: EDITOR_CONSTANTS.MENU.AI_SUMMARIZE },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_REWRITE, labelKey: EDITOR_CONSTANTS.MENU.AI_REWRITE, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_EXPAND, labelKey: EDITOR_CONSTANTS.MENU.AI_EXPAND, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_SIMPLIFY, labelKey: EDITOR_CONSTANTS.MENU.AI_SIMPLIFY, enabled: aiActionsEnabled },
+          { action: EDITOR_CONSTANTS.ACTIONS.AI_SUMMARIZE, labelKey: EDITOR_CONSTANTS.MENU.AI_SUMMARIZE, enabled: aiActionsEnabled },
+          { type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SEPARATOR },
+          {
+            type: EDITOR_CONSTANTS.MENU_ITEM_TYPE.SUBMENU,
+            labelKey: EDITOR_CONSTANTS.MENU.AI_TRANSLATE,
+            enabled: aiActionsEnabled,
+            submenu: getOrderedTranslationTargets(currentLanguage).map((targetLanguage) => ({
+              action: createEditorTranslationAction(targetLanguage),
+              label: AI_TRANSLATION_TARGETS[targetLanguage].nativeLabel,
+              enabled: aiActionsEnabled,
+            })),
+          },
         ],
-      }
+      },
+      {
+        action: createEditorTranslationAction(normalizedQuickTranslationTarget),
+        labelKey: EDITOR_CONSTANTS.MENU.AI_TRANSLATE_TO,
+        labelParams: {
+          language: AI_TRANSLATION_TARGETS[normalizedQuickTranslationTarget].nativeLabel,
+        },
+        enabled: aiActionsEnabled,
+      },
     );
   }
 

@@ -140,13 +140,13 @@
                           <pre>{{ JSON.stringify(action.args, null, 2) }}</pre>
                         </div>
                         <div class="search-view__agent-write-actions">
-                          <button type="button" class="search-view__agent-write-apply icon-action-button" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'approve')">
+                          <button type="button" class="search-view__agent-write-apply action-button primary" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'approve')">
                             <IconCheck :size="14" />{{ $t('button.approve') }}
                           </button>
-                          <button v-if="action.allowedDecisions.includes('edit')" type="button" class="search-view__agent-write-dismiss" :disabled="isAgentRunning" @click="editAndResumeAgentAction(question, action, index)">
+                          <button v-if="action.allowedDecisions.includes('edit')" type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isAgentRunning" @click="editAndResumeAgentAction(question, action, index)">
                             {{ $t('button.edit') }}
                           </button>
-                          <button type="button" class="search-view__agent-write-dismiss" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'reject')">
+                          <button type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'reject')">
                             {{ $t('button.reject') }}
                           </button>
                         </div>
@@ -162,14 +162,14 @@
                           <pre>{{ getWriteProposalPreview(proposal) }}</pre>
                         </div>
                         <div class="search-view__agent-write-actions">
-                          <button type="button" class="search-view__agent-write-apply icon-action-button"
+                          <button type="button" class="search-view__agent-write-apply action-button primary"
                             :disabled="Boolean(applyingWriteProposalId)"
                             @click="applyWriteProposal(question, proposal)">
                             <IconCheck :size="14" />
                             <span>{{ applyingWriteProposalId === proposal.id ? $t('search.agentTaskApplying') :
                               getWriteProposalActionLabel(proposal) }}</span>
                           </button>
-                          <button type="button" class="search-view__agent-write-dismiss"
+                          <button type="button" class="search-view__agent-write-dismiss action-button secondary"
                             :disabled="Boolean(applyingWriteProposalId)"
                             @click="dismissWriteProposal(question, proposal.id)">
                             {{ $t('search.agentTaskDismissWrite') }}
@@ -187,7 +187,7 @@
                           <pre>{{ getExecutedWritePreview(write) }}</pre>
                         </div>
                         <div class="search-view__agent-write-actions">
-                          <button type="button" class="search-view__agent-write-apply icon-action-button"
+                          <button type="button" class="search-view__agent-write-apply action-button primary"
                             @click="openExecutedWrite(write)">
                             <IconFileText :size="14" />
                             <span>{{ $t('search.agentTaskOpenExecutedWrite') }}</span>
@@ -232,7 +232,7 @@
                     </button>
                   </div>
                 </div>
-                <button v-if="inputMode === 'agent-task'" type="button" class="search-view__execution-button"
+                <button v-if="inputMode === 'agent-task'" type="button" class="search-view__execution-button action-button secondary"
                   :disabled="isBusy"
                   :title="$t(agentWriteMode === 'auto' ? 'search.agentWriteModeAutoDescription' : 'search.agentWriteModeConfirmDescription')"
                   @click="toggleAgentWriteMode">
@@ -1823,27 +1823,12 @@ onBeforeUnmount(() => {
 
 .search-view__execution-button {
   flex: 0 0 auto;
+  min-width: auto;
+  min-height: 28px;
   height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--search-chat-border);
-  border-radius: var(--radius-sm);
-  background: var(--panel);
-  color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
-}
-
-.search-view__execution-button:hover {
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--search-chat-border));
-  color: var(--text);
-  background: var(--panel-hover);
-}
-
-.search-view__execution-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .search-view__ask-button {
@@ -2396,6 +2381,8 @@ onBeforeUnmount(() => {
 }
 
 .search-view__agent-write-apply {
+  min-width: auto;
+  min-height: 30px;
   height: 30px;
   padding: 0 10px;
   gap: 5px;
@@ -2404,19 +2391,11 @@ onBeforeUnmount(() => {
 }
 
 .search-view__agent-write-dismiss {
+  min-width: auto;
+  min-height: 28px;
   height: 28px;
   padding: 0 9px;
-  border: 1px solid var(--search-chat-border);
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
   font-size: 0.74rem;
-  cursor: pointer;
-}
-
-.search-view__agent-write-dismiss:hover {
-  color: var(--text);
-  background: var(--panel-hover);
 }
 
 .search-view__source-card {

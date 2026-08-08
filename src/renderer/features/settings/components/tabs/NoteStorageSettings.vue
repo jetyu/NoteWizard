@@ -1,5 +1,5 @@
 <template>
-  <div class="advanced-options-settings">
+  <div class="note-storage-settings">
     <h3 class="panel-title">{{ t('pref.pane.noteStorage') }}</h3>
 
     <div class="settings-grid">
@@ -8,7 +8,7 @@
           <p class="setting-label">{{ t('label.noteStorageLocation') }}</p>
           <p class="setting-description">{{ t('text.noteStorageLocation') }}{{ settingsStore.config.noteStorage.path }}</p>
         </div>
-        <button type="button" class="action-button" @click="handlePickPath">
+        <button type="button" class="action-button secondary" @click="handlePickPath">
           {{ t('button.browse') }}
         </button>
       </section>
@@ -66,13 +66,13 @@
           <p class="setting-description">{{ t('text.importExportSettings') }}</p>
         </div>
         <div class="settings-row">
-          <button type="button" class="action-button" @click="handleExportSettings">
+          <button type="button" class="action-button secondary" @click="handleExportSettings">
             {{ t('button.export') }}
           </button>
-          <button type="button" class="action-button" @click="handleImportSettings">
+          <button type="button" class="action-button secondary" @click="handleImportSettings">
             {{ t('button.import') }}
           </button>
-          <button type="button" class="action-button" @click="handleResetSettings">
+          <button type="button" class="action-button secondary" @click="handleResetSettings">
             {{ t('button.reset') }}
           </button>
         </div>
@@ -84,11 +84,11 @@
           <p class="setting-description">{{ t('dataTransfer.sppx.sectionDescription') }}</p>
         </div>
         <div class="settings-row">
-          <button type="button" class="action-button" :disabled="isBusy" @click="handleExportSppx">
+          <button type="button" class="action-button secondary" :disabled="isBusy" @click="handleExportSppx">
             <span v-if="busyAction === 'exportSppx'" class="spinner small" />
             {{ t('button.export') }}
           </button>
-          <button type="button" class="action-button" :disabled="isBusy" @click="handleImportSppx">
+          <button type="button" class="action-button secondary" :disabled="isBusy" @click="handleImportSppx">
             <span v-if="busyAction === 'importSppx'" class="spinner small" />
             {{ t('button.import') }}
           </button>
@@ -102,11 +102,11 @@
         </div>
         <div class="settings-row">
 
-          <button type="button" class="action-button" :disabled="isBusy" @click="handleExportMarkdown">
+          <button type="button" class="action-button secondary" :disabled="isBusy" @click="handleExportMarkdown">
             <span v-if="busyAction === 'exportMarkdown'" class="spinner small" />
             {{ t('button.export') }}
           </button>
-          <button type="button" class="action-button" :disabled="isBusy" @click="handleImportMarkdown">
+          <button type="button" class="action-button secondary" :disabled="isBusy" @click="handleImportMarkdown">
             <span v-if="busyAction === 'importMarkdown'" class="spinner small" />
             {{ t('button.import') }}
           </button>

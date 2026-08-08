@@ -27,6 +27,7 @@ const BLOCKED_SYNTAX_NODES = new Set([
 
 export interface AiAssistantState {
   isEnabled: boolean;
+  isSuspended: boolean;
   isProcessing: boolean;
   lastError: string | null;
 }
@@ -105,6 +106,7 @@ function isStructuredCursorPosition(editorView: EditorView): boolean {
 export function useAiAssistant() {
   const state = ref<AiAssistantState>({
     isEnabled: false,
+    isSuspended: false,
     isProcessing: false,
     lastError: null,
   });
@@ -112,8 +114,10 @@ export function useAiAssistant() {
   const editorViewRef = shallowRef<EditorView | null>(null);
   let typingTimer: ReturnType<typeof setTimeout> | null = null;
   let abortController: AbortController | null = null;
+  let requestSequence = 0;
 
   const cancelRequest = () => {
+    requestSequence += 1;
     if (abortController) {
       abortController.abort();
       abortController = null;
@@ -122,7 +126,7 @@ export function useAiAssistant() {
   };
 
   const requestCompletion = async (editorView: EditorView, config: AiAssistantRuntimeConfig) => {
-    if (!config?.aiAssistant?.enabled || state.value.isProcessing) {
+    if (!config?.aiAssistant?.enabled || state.value.isSuspended || state.value.isProcessing) {
       return;
     }
 
@@ -135,17 +139,21 @@ export function useAiAssistant() {
     }
 
     cancelRequest();
+    const requestId = requestSequence;
     state.value.isProcessing = true;
     state.value.lastError = null;
 
-    abortController = new AbortController();
+    const requestController = new AbortController();
+    abortController = requestController;
     const timeoutId = setTimeout(() => {
-      abortController?.abort();
+      requestController.abort();
     }, AI_ASSISTANT_DEFAULTS.REQUEST_TIMEOUT);
 
     try {
       const result = await aiService.generateCompletion({ context });
-      clearTimeout(timeoutId);
+      if (requestId !== requestSequence || state.value.isSuspended) {
+        return;
+      }
 
       if (result.success && result.answer) {
         const suggestion = result.answer.trim();
@@ -157,7 +165,9 @@ export function useAiAssistant() {
         aiAssistantLogger.warn(`Completion failed: ${result.error || 'Unknown failure'}`);
       }
     } catch (error) {
-      clearTimeout(timeoutId);
+      if (requestId !== requestSequence || state.value.isSuspended) {
+        return;
+      }
 
       if (error instanceof Error && error.name === 'AbortError') {
         aiAssistantLogger.debug('Request cancelled');
@@ -167,13 +177,18 @@ export function useAiAssistant() {
       state.value.lastError = getErrorMessage(error);
       aiAssistantLogger.error(`Error: ${getErrorMessage(error)}`);
     } finally {
-      abortController = null;
-      state.value.isProcessing = false;
+      clearTimeout(timeoutId);
+      if (requestId === requestSequence) {
+        if (abortController === requestController) {
+          abortController = null;
+        }
+        state.value.isProcessing = false;
+      }
     }
   };
 
   const handleTyping = (editorView: EditorView, config: AiAssistantRuntimeConfig, isAutoContinue = false) => {
-    if (!config?.aiAssistant?.enabled) {
+    if (!config?.aiAssistant?.enabled || state.value.isSuspended) {
       return;
     }
 
@@ -184,6 +199,7 @@ export function useAiAssistant() {
     const modeConfig = AI_WRITING_MODE_CONFIG[mode] || AI_WRITING_MODE_CONFIG.standard;
 
     const checkForbidden = (): boolean => {
+      if (state.value.isSuspended) return false;
       if (hasSuggestion(editorState)) return false;
       if (!editorState.selection.main.empty) return false;
       if (editorState.readOnly) return false;
@@ -242,6 +258,17 @@ export function useAiAssistant() {
     }
   };
 
+  const setSuspended = (suspended: boolean) => {
+    if (state.value.isSuspended === suspended) {
+      return;
+    }
+
+    state.value.isSuspended = suspended;
+    if (suspended) {
+      cleanup();
+    }
+  };
+
   const setEditorView = (view: EditorView | null) => {
     editorViewRef.value = view;
   };
@@ -252,6 +279,7 @@ export function useAiAssistant() {
     handleTyping,
     cleanup,
     setEnabled,
+    setSuspended,
     setEditorView,
     cancelRequest,
   };

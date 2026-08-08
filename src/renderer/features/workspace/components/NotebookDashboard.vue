@@ -7,7 +7,7 @@
           <h1>{{ notebookName }}</h1>
         </div>
         <div class="actions">
-          <button class="action-button icon-text" @click="createNote(activeNotebookId)">
+          <button class="action-button primary icon-text" @click="createNote(activeNotebookId)">
             <IconPlus :size="15" />
             {{ $t("workspace.dashboard.newNoteInThisNotebook") }}
           </button>
@@ -139,12 +139,6 @@ const notebookNotes = computed(() =>
   padding: 8px 16px;
   font-size: 0.7rem;
   min-height: 34px;
-}
-
-.actions .action-button:hover:not(:disabled) {
-  background: var(--panel-hover);
-  border-color: var(--panel-border);
-  color: var(--text);
 }
 
 .stats-grid {

@@ -1,19 +1,20 @@
 <template>
   <div class="editor-pane">
-    <div
-      ref="editorHost"
-      class="editor-host"
-      @contextmenu.prevent="handleContextMenu"
-      @paste="handlePaste"
-      @dragover="handleDragOver"
-      @drop="handleDrop"
-    />
+    <div ref="editorHost" class="editor-host" @contextmenu.prevent="handleContextMenu" @paste="handlePaste"
+      @dragover="handleDragOver" @drop="handleDrop" />
+    <div v-if="aiOperation" ref="editorAiOperationPopover" class="editor-ai-operation-popover"
+      :style="editorAiOperationPopoverStyle">
+      <EditorAiOperationCard :operation="aiOperation" @apply="editorContextMenu.applyAiOperation"
+        @discard="editorContextMenu.discardAiOperation" @retry="editorContextMenu.retryAiOperation"
+        @close="editorContextMenu.discardAiOperation" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue';
 import { createCodeEditor } from '@renderer/core/editor/createCodeEditor';
+import { getEditorAiOperationAnchor } from '@renderer/core/ai/writingBuddyOperation';
 import { createLogger } from '@renderer/features/logger';
 import { useWorkspaceStore, workspaceService } from '@renderer/features/workspace';
 import { useSettingsStore } from '@renderer/features/settings';
@@ -21,6 +22,7 @@ import { useEditor } from '@renderer/features/editor';
 import { useAiAssistant } from '@renderer/features/ai/composables/useAiAssistant';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { useEditorContextMenu } from '../composables/useEditorContextMenu';
+import EditorAiOperationCard from './EditorAiOperationCard.vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
@@ -44,19 +46,111 @@ const { config } = storeToRefs(settingsStore);
 const isActiveNoteReadMode = computed(() => Boolean(activeNote.value?.locked));
 
 const editorHost = ref<HTMLElement | null>(null);
+const editorAiOperationPopover = ref<HTMLElement | null>(null);
+const editorAiOperationPopoverStyle = ref<CSSProperties>({
+  left: '0px',
+  top: '0px',
+  visibility: 'hidden',
+  width: '420px',
+});
 let editorApi: ReturnType<typeof createCodeEditor> | undefined;
 let syncingFromEditor = false;
+let editorResizeObserver: ResizeObserver | null = null;
+let cardPositionFrame: number | null = null;
 const logger = createLogger('Editor Pane');
 
 const editorContextMenu = useEditorContextMenu({
   t,
   editorView: () => editorApi?.view ?? null,
+  activeNoteId: () => activeNote.value?.id ?? null,
   aiAssistantEnabled: () => config.value.aiAssistant?.enabled ?? false,
+  uiLanguage: () => config.value.general.language,
+  quickTranslationTarget: () => config.value.aiAssistant.quickTranslationTarget,
 });
+const { aiOperation, hasActiveAiOperation } = editorContextMenu;
 
 const handleContextMenu = () => {
-  editorContextMenu.openContextMenu();
+  void editorContextMenu.openContextMenu();
 };
+
+const CARD_GAP = 8;
+const EDITOR_INSET = 12;
+const MAX_CARD_WIDTH = 420;
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
+}
+
+function updateAiOperationCardPosition(): void {
+  const view = editorApi?.view;
+  const host = editorHost.value;
+  const popover = editorAiOperationPopover.value;
+  if (!view || !host || !popover || !aiOperation.value) {
+    return;
+  }
+
+  const anchor = getEditorAiOperationAnchor(view.state);
+  if (!anchor || anchor.operationId !== aiOperation.value.id) {
+    editorAiOperationPopoverStyle.value = {
+      ...editorAiOperationPopoverStyle.value,
+      visibility: 'hidden',
+    };
+    return;
+  }
+
+  const editorRect = host.getBoundingClientRect();
+  const desiredWidth = Math.min(MAX_CARD_WIDTH, Math.max(0, editorRect.width - EDITOR_INSET * 2));
+  if (Math.abs(popover.getBoundingClientRect().width - desiredWidth) > 1) {
+    editorAiOperationPopoverStyle.value = {
+      ...editorAiOperationPopoverStyle.value,
+      visibility: 'hidden',
+      width: `${desiredWidth}px`,
+    };
+    scheduleAiOperationCardPosition();
+    return;
+  }
+
+  const cardRect = popover.getBoundingClientRect();
+  const minimumLeft = editorRect.left + EDITOR_INSET;
+  const maximumLeft = editorRect.right - EDITOR_INSET - cardRect.width;
+  const minimumTop = editorRect.top + EDITOR_INSET;
+  const maximumTop = editorRect.bottom - EDITOR_INSET - cardRect.height;
+  const anchorIsAboveViewport = anchor.to < view.viewport.from;
+  const anchorIsBelowViewport = anchor.from > view.viewport.to;
+
+  let left = maximumLeft;
+  let top = anchorIsAboveViewport ? minimumTop : maximumTop;
+
+  if (!anchorIsAboveViewport && !anchorIsBelowViewport) {
+    const visiblePosition = Math.min(anchor.to, view.viewport.to);
+    const coordinates = view.coordsAtPos(visiblePosition, -1);
+    if (coordinates) {
+      left = coordinates.left;
+      top = coordinates.bottom + CARD_GAP;
+      if (top + cardRect.height > editorRect.bottom - EDITOR_INSET) {
+        top = coordinates.top - CARD_GAP - cardRect.height;
+      }
+    }
+  }
+
+  editorAiOperationPopoverStyle.value = {
+    left: `${clamp(left, minimumLeft, maximumLeft)}px`,
+    top: `${clamp(top, minimumTop, maximumTop)}px`,
+    visibility: 'visible',
+    width: `${desiredWidth}px`,
+  };
+}
+
+function scheduleAiOperationCardPosition(): void {
+  if (cardPositionFrame !== null) {
+    cancelAnimationFrame(cardPositionFrame);
+  }
+
+  cardPositionFrame = requestAnimationFrame(() => {
+    cardPositionFrame = null;
+    void nextTick(updateAiOperationCardPosition);
+  });
+}
 
 function isImageFile(file: File) {
   return file.type.startsWith('image/');
@@ -252,13 +346,20 @@ onMounted(() => {
       });
 
       // 触发AI助手
-      if (editorApi?.view && config.value.aiAssistant?.enabled) {
+      if (
+        editorApi?.view
+        && config.value.aiAssistant?.enabled
+        && !hasActiveAiOperation.value
+      ) {
         if (!isAiCompletion) {
           aiAssistant.handleTyping(editorApi.view, config.value);
         } else if (config.value.aiAssistant.autoContinue) {
           aiAssistant.handleTyping(editorApi.view, config.value, true);
         }
       }
+
+      editorContextMenu.syncAiOperationState();
+      scheduleAiOperationCardPosition();
     },
     onSelectionChange: (selection) => {
       emit('selection-change', selection);
@@ -269,11 +370,51 @@ onMounted(() => {
   if (editorApi?.view) {
     setEditorView(editorApi.view);
     aiAssistant.setEditorView(editorApi.view);
+    editorApi.view.scrollDOM.addEventListener('scroll', scheduleAiOperationCardPosition, { passive: true });
   }
+
+  window.addEventListener('resize', scheduleAiOperationCardPosition);
+  editorResizeObserver = new ResizeObserver(scheduleAiOperationCardPosition);
+  editorResizeObserver.observe(editorHost.value);
 
   // 设置AI助手状态
   aiAssistant.setEnabled(config.value.aiAssistant?.enabled ?? false);
 });
+
+watch(
+  hasActiveAiOperation,
+  (isActive) => {
+    aiAssistant.setSuspended(isActive);
+  },
+  { flush: 'sync' },
+);
+
+watch(
+  () => {
+    const operation = aiOperation.value;
+    return operation
+      ? [operation.id, operation.status, operation.result, operation.error]
+      : null;
+  },
+  () => {
+    if (!aiOperation.value) {
+      editorAiOperationPopoverStyle.value = {
+        ...editorAiOperationPopoverStyle.value,
+        visibility: 'hidden',
+      };
+      return;
+    }
+
+    scheduleAiOperationCardPosition();
+  },
+);
+
+watch(
+  () => activeNote.value?.id ?? null,
+  () => {
+    editorContextMenu.discardAiOperation();
+  },
+);
 
 watch(
   () => props.modelValue,
@@ -355,6 +496,13 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  editorContextMenu.discardAiOperation();
+  if (cardPositionFrame !== null) {
+    cancelAnimationFrame(cardPositionFrame);
+  }
+  editorResizeObserver?.disconnect();
+  window.removeEventListener('resize', scheduleAiOperationCardPosition);
+  editorApi?.view.scrollDOM.removeEventListener('scroll', scheduleAiOperationCardPosition);
   // 清除全局编辑器引用
   setEditorView(null);
   // 清理AI助手
@@ -362,3 +510,10 @@ onBeforeUnmount(() => {
   editorApi?.destroy();
 });
 </script>
+
+<style scoped>
+.editor-ai-operation-popover {
+  position: fixed;
+  z-index: 80;
+}
+</style>
