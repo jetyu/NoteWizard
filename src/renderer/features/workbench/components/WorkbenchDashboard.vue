@@ -16,7 +16,7 @@
                 <span v-if="hasNotes">{{ t('workbench.label.recentEdited') }} {{ recentEditedTime }}</span>
               </div>
               <div class="hero-actions">
-                <button type="button" class="hero-action hero-action--primary" @click="handlePrimaryAction">
+                <button type="button" class="action-button primary hero-action" @click="handlePrimaryAction">
                   <IconPencil :size="14" />
                   <span>{{ t('workbench.action.continueWriting') }}</span>
                 </button>
@@ -1247,60 +1247,9 @@ watch(
   min-height: 34px;
   padding: 0.42rem 1rem;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 0.48rem;
-  border: 1px solid color-mix(in srgb, var(--workbench-border-strong) 82%, var(--border-strong));
   border-radius: 8px;
-  background: var(--surface-overlay);
-  color: color-mix(in srgb, var(--workbench-ink) 92%, var(--text-primary));
-  cursor: pointer;
-  font: inherit;
   font-size: 0.86rem;
-  font-weight: 500;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.18s ease,
-    color 0.15s ease,
-    box-shadow 0.18s ease;
-}
-
-.hero-action:hover,
-.hero-action:focus-visible {
-  background: var(--surface-scrim);
-  border-color: color-mix(in srgb, var(--accent) 56%, var(--border-strong));
-  color: var(--workbench-ink);
-}
-
-.hero-action:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus-ring);
-}
-
-.hero-action:active {
-  background: color-mix(in srgb, var(--surface-soft) 92%, var(--surface-raised));
-}
-
-.hero-action--primary {
-  box-shadow: var(--shadow-soft);
-}
-
-:global([data-theme='dark']) .hero-action {
-  background: var(--surface-overlay);
-  border-color: color-mix(in srgb, var(--status-neutral-border) 100%, var(--border-strong));
-  color: color-mix(in srgb, var(--workbench-ink) 96%, white);
-  box-shadow: var(--shadow-soft);
-}
-
-:global([data-theme='dark']) .hero-action:hover,
-:global([data-theme='dark']) .hero-action:focus-visible {
-  background: color-mix(in srgb, var(--surface-soft) 88%, var(--surface-raised));
-  border-color: color-mix(in srgb, var(--accent) 52%, var(--border-strong));
-  color: color-mix(in srgb, var(--workbench-ink) 98%, white);
-}
-
-:global([data-theme='dark']) .hero-action:active {
-  background: color-mix(in srgb, var(--surface-soft) 96%, var(--surface-raised));
 }
 
 .hero-art {

@@ -3,7 +3,7 @@
     <div class="panel-header">
       <h2>{{ t('shortcuts.title') }}</h2>
       <div class="header-actions">
-        <button class="action-button" @click="handleReset">
+        <button class="action-button secondary" @click="handleReset">
           {{ t('shortcuts.resetToDefaults') }}
         </button>
       </div>

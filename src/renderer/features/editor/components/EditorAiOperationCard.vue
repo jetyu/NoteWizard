@@ -33,22 +33,22 @@
     </p>
 
     <footer v-if="operation.status === 'preview'" class="operation-actions">
-      <button type="button" class="operation-button" @click="$emit('discard')">
+      <button type="button" class="action-button secondary operation-button" @click="$emit('discard')">
         {{ t('editor.aiOperation.discard') }}
       </button>
-      <button type="button" class="operation-button is-primary" @click="$emit('apply')">
+      <button type="button" class="action-button primary operation-button" @click="$emit('apply')">
         {{ t('editor.aiOperation.apply') }}
       </button>
     </footer>
 
     <footer v-else-if="operation.status === 'error'" class="operation-actions">
-      <button type="button" class="operation-button" @click="$emit('close')">
+      <button type="button" class="action-button secondary operation-button" @click="$emit('close')">
         {{ t('button.close') }}
       </button>
       <button
         v-if="operation.canRetry"
         type="button"
-        class="operation-button is-primary"
+        class="action-button primary operation-button"
         @click="$emit('retry')"
       >
         {{ t('editor.aiOperation.retry') }}
@@ -181,37 +181,10 @@ const title = computed(() => {
 
 .operation-button {
   min-width: 58px;
+  min-height: 30px;
   height: 30px;
   padding: 0 12px;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  background: var(--button-bg);
-  color: var(--text-primary);
-  cursor: pointer;
-  font: inherit;
   font-size: 12px;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
-}
-
-.operation-button:hover {
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--input-border));
-  background: var(--button-bg-hover);
-}
-
-.operation-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--focus-ring);
-}
-
-.operation-button.is-primary {
-  border-color: var(--accent-solid);
-  background: var(--accent-solid);
-  color: var(--accent-solid-text);
-}
-
-.operation-button.is-primary:hover {
-  border-color: var(--accent-hover);
-  background: var(--accent-hover);
 }
 
 @keyframes editor-ai-operation-spin {

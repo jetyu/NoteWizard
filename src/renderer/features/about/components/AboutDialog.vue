@@ -63,7 +63,7 @@
               </dl>
 
               <div class="diagnostic-actions">
-                <button type="button" class="copy-diagnostic-button" :class="{ 'is-copied': isDiagnosticCopied }"
+                <button type="button" class="action-button secondary copy-diagnostic-button" :class="{ 'is-copied': isDiagnosticCopied }"
                   @click="handleCopyDiagnosticInfo">
                   <IconCheck v-if="isDiagnosticCopied" :size="14" aria-hidden="true" />
                   <IconCopy v-else :size="14" aria-hidden="true" />
@@ -350,8 +350,7 @@ function clearCopyFeedbackTimer(): void {
 
 .store-badge:focus-visible,
 .website-link:focus-visible,
-.technical-summary:focus-visible,
-.copy-diagnostic-button:focus-visible {
+.technical-summary:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
@@ -438,28 +437,11 @@ function clearCopyFeedbackTimer(): void {
 }
 
 .copy-diagnostic-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 5px;
+  min-width: auto;
   min-height: 28px;
   padding: 0 9px;
-  border: 1px solid var(--border-muted);
-  border-radius: 7px;
-  background: var(--surface-raised);
-  color: var(--text-secondary);
   font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  appearance: none;
-  outline: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-}
-
-.copy-diagnostic-button:hover {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-muted));
-  background: var(--surface-hover);
-  color: var(--accent-hover);
 }
 
 .copy-diagnostic-button.is-copied {

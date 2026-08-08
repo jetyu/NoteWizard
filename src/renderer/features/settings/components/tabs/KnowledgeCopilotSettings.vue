@@ -151,7 +151,7 @@
           </div>
 
           <div class="settings-card-actions">
-            <button type="button" class="action-button"
+            <button type="button" class="action-button primary"
               :disabled="!settingsStore.config.knowledgeCopilot.enabled || isIndexing || !isConfigured"
               @click="handleRebuildIndex">
               <span v-if="isIndexing" class="spinner"></span>

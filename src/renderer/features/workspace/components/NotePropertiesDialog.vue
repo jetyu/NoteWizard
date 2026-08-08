@@ -77,7 +77,7 @@
 
           <div class="note-properties-footer">
             <button
-              class="footer-button footer-button--copy"
+              class="action-button secondary footer-button footer-button--copy"
               :class="{ 'is-copied': isCopied }"
               type="button"
               @click="copyProperties"
@@ -356,22 +356,9 @@ watch(note, (nextNote) => {
 }
 
 .footer-button {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
   padding: 7px 12px;
-  border: 1px solid var(--panel-border, #e5e7eb);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text, #374151);
   font-size: 0.84rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.footer-button:hover {
-  background: var(--panel-hover, #f3f4f6);
 }
 
 .footer-button--copy.is-copied {
