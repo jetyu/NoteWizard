@@ -733,15 +733,12 @@ export const vfsService = {
         try {
           const oldContent = await this.readContent(safeContentId);
 
-          // 简化策略：时间间隔到达 且 笔记有一定内容（> 100 字符）
           const isTimeElapsed = (Date.now() - lastTime) >= interval;
-          const isMeaningful = text.length > 100;
+          const hasPreviousContent = oldContent.length > 0;
 
-          if (isTimeElapsed && isMeaningful) {
-            if (oldContent !== text) {
-              await historyService.saveVersion(root, safeContentId, oldContent, config.noteStorage.maxHistoryVersions);
-              lastSnapshotTimes.set(safeContentId, Date.now());
-            }
+          if (isTimeElapsed && hasPreviousContent && oldContent !== text) {
+            await historyService.saveVersion(root, safeContentId, oldContent, config.noteStorage.maxHistoryVersions);
+            lastSnapshotTimes.set(safeContentId, Date.now());
           }
         } catch (error: unknown) {
           logger.warn(`Failed to save history version: ${getErrorMessage(error)}`);
