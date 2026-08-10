@@ -1,3 +1,9 @@
+### v2.2.4 - 2026-08-12
+This update optimizes details and the user experience.
+#### Improvements
+* Improved snapshot functionality
+* Improved version history comparison functionality
+
 ### v2.2.3 - 2026-08-08
 This update optimizes details and the user experience.
 ### New
