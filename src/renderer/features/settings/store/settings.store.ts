@@ -319,7 +319,7 @@ function createDefaultNoteStorageConfig(): NoteStorageConfig {
     path: '',
     maxHistoryVersions: 50,
     trashAutoClearDays: 30,
-    snapshotInterval: 15,
+    snapshotInterval: 10,
   };
 }
 

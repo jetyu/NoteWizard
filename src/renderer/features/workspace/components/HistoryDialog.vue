@@ -33,7 +33,39 @@
               <div v-if="isLoadingContent" class="loading-state">
                 <div class="spinner"></div>
               </div>
-              <PreviewPane v-else-if="selectedContentHtml" :html="selectedContentHtml" />
+              <div v-else-if="selectedVersion" class="history-diff">
+                <div class="diff-toolbar">
+                  <span class="diff-target">
+                    {{ formatSelectedVersionTime() }}
+                    <span aria-hidden="true">→</span>
+                    {{ $t('label.currentVersion') }}
+                  </span>
+                  <div class="diff-stats">
+                    <span class="diff-stat diff-stat--added">
+                      {{ $t('history.diffAdded') }} {{ historyDiff.stats.added }}
+                    </span>
+                    <span class="diff-stat diff-stat--deleted">
+                      {{ $t('history.diffDeleted') }} {{ historyDiff.stats.deleted }}
+                    </span>
+                    <span class="diff-stat diff-stat--modified">
+                      {{ $t('history.diffModified') }} {{ historyDiff.stats.modified }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="!historyDiff.hasChanges" class="empty-diff">
+                  {{ $t('sync.summary.noChanges') }}
+                </div>
+                <div v-else class="diff-lines" role="table">
+                  <div v-for="(line, index) in historyDiff.lines" :key="`${index}-${line.type}`"
+                    class="diff-line" :class="`diff-line--${line.type}`" role="row">
+                    <span class="diff-line-number" role="cell">{{ line.oldLineNumber ?? '' }}</span>
+                    <span class="diff-line-number" role="cell">{{ line.newLineNumber ?? '' }}</span>
+                    <span class="diff-line-marker" role="cell" aria-hidden="true">{{ diffMarker(line.type) }}</span>
+                    <code class="diff-line-content" role="cell">{{ line.content || '\u00A0' }}</code>
+                  </div>
+                </div>
+              </div>
               <div v-else class="empty-preview">
                 <IconTextRecognition :size="72" class="empty-preview__icon" aria-hidden="true" />
                 <p>{{ $t('history.previewPlaceholder') }}</p>
@@ -55,18 +87,17 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { useWorkspaceStore } from '../store/workspace.store';
-import { renderMarkdown } from '@renderer/core/markdown/markdownRenderer';
-import { workspaceService } from '../services/workspace.service';
-import { useSettingsStore } from '@renderer/features/settings';
-import { PreviewPane } from '@renderer/features/preview';
 import { useI18n } from 'vue-i18n';
+import { useWorkspaceStore } from '../store/workspace.store';
 import { IconTextRecognition, IconX } from '@tabler/icons-vue';
 import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
+import {
+  createHistoryDiff,
+  type HistoryDiffLineType,
+} from '../utils/historyDiff.utils';
 
-const { t } = useI18n();
 const workspaceStore = useWorkspaceStore();
-const settingsStore = useSettingsStore();
+const { t } = useI18n();
 const overlayRef = ref<HTMLElement | null>(null);
 const dialogRef = ref<HTMLElement | null>(null);
 const dragHandleRef = ref<HTMLElement | null>(null);
@@ -89,22 +120,23 @@ const formatTime = (timestamp: number) => {
   return new Date(timestamp).toLocaleString();
 };
 
-const selectedContentHtml = computed(() => {
-  if (!selectedContentMarkdown.value) {
-    return '';
-  }
+const historyDiff = computed(() => createHistoryDiff(
+  selectedContentMarkdown.value,
+  workspaceStore.activeNote?.content ?? '',
+));
 
-  return renderMarkdown(selectedContentMarkdown.value, {
-    allowHtml: settingsStore.config.preview.allowHtml,
-    allowInlineSvg: settingsStore.config.preview.allowInlineSvg,
-    remoteImageMode: settingsStore.config.preview.remoteImageMode,
-    trustedRemoteImageHosts: settingsStore.config.preview.trustedRemoteImageHosts,
-    blockedImageLabel: t('preview.remoteImageBlocked'),
-    copyCodeButtonLabel: t('preview.copyCode'),
-    contentId: workspaceStore.activeNote?.contentId ?? null,
-    workspaceRoot: workspaceService.getCurrentWorkspaceRoot(),
-  });
-});
+const formatSelectedVersionTime = () => {
+  const version = sortedVersions.value.find(item => item.filename === selectedVersion.value);
+  return version ? formatTime(version.timestamp) : '';
+};
+
+const diffMarker = (type: HistoryDiffLineType) => {
+  if (type === 'added') return t('history.diffAdded');
+  if (type === 'deleted') return t('history.diffDeleted');
+  if (type === 'modified-before') return t('history.diffModifiedBefore');
+  if (type === 'modified-after') return t('history.diffModifiedAfter');
+  return '';
+};
 
 const closeDialog = () => {
   workspaceStore.closeHistoryDialog();
@@ -164,9 +196,9 @@ watch(() => workspaceStore.isHistoryDialogOpen, async (newVal) => {
 }
 
 .history-modal {
-  width: 900px;
+  width: 1040px;
   max-width: 95vw;
-  height: 600px;
+  height: 680px;
   max-height: 90vh;
   background: var(--panel, #ffffff);
   border-radius: 12px;
@@ -204,7 +236,7 @@ watch(() => workspaceStore.isHistoryDialogOpen, async (newVal) => {
 }
 
 .history-sidebar {
-  width: 250px;
+  width: 230px;
   border-right: 1px solid var(--panel-border, #e5e7eb);
   background: var(--panel-header, #f9fafb);
   display: flex;
@@ -251,6 +283,145 @@ watch(() => workspaceStore.isHistoryDialogOpen, async (newVal) => {
   min-width: 0;
   overflow: hidden;
   background: var(--panel, #ffffff);
+}
+
+.history-diff {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.diff-toolbar {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--panel-border, #e5e7eb);
+  background: var(--surface-subtle, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.diff-target {
+  min-width: 0;
+  color: var(--text-secondary, #5f6b7a);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diff-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.diff-stat {
+  min-width: 64px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.diff-stat--added {
+  color: var(--status-success-text);
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+}
+
+.diff-stat--deleted {
+  color: var(--status-danger-text);
+  background: var(--status-danger-bg);
+  border-color: var(--status-danger-border);
+}
+
+.diff-stat--modified {
+  color: var(--status-warning-text);
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+}
+
+.diff-lines {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel, #ffffff);
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.diff-line {
+  width: max-content;
+  min-width: 100%;
+  display: grid;
+  grid-template-columns: 52px 52px 64px minmax(0, 1fr);
+  border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 42%, transparent);
+}
+
+.diff-line--added {
+  background: var(--status-success-bg);
+}
+
+.diff-line--deleted {
+  background: var(--status-danger-bg);
+}
+
+.diff-line--modified-before,
+.diff-line--modified-after {
+  background: var(--status-warning-bg);
+}
+
+.diff-line-number {
+  padding: 2px 8px;
+  border-right: 1px solid color-mix(in srgb, var(--panel-border) 68%, transparent);
+  color: var(--text-muted, #9ca3af);
+  background: color-mix(in srgb, var(--surface-subtle) 82%, transparent);
+  text-align: right;
+  user-select: none;
+}
+
+.diff-line-marker {
+  padding: 2px 6px;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 700;
+  text-align: center;
+  user-select: none;
+}
+
+.diff-line--added .diff-line-marker,
+.diff-line--modified-after .diff-line-marker {
+  color: var(--status-success-text);
+}
+
+.diff-line--deleted .diff-line-marker,
+.diff-line--modified-before .diff-line-marker {
+  color: var(--status-danger-text);
+}
+
+.diff-line-content {
+  min-width: max-content;
+  padding: 2px 12px;
+  color: var(--text, #111827);
+  font: inherit;
+  white-space: pre;
+}
+
+.empty-diff {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.9rem;
 }
 
 .empty-preview,

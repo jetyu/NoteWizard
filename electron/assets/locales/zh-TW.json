@@ -450,7 +450,6 @@
   "option.previewRemoteImages.trusted": "僅受信任來源",
   "option.snapshotInterval.15min": "15 分鐘",
   "option.snapshotInterval.30min": "30 分鐘",
-  "option.snapshotInterval.60min": "60 分鐘",
   "option.startup.workbench": "工作台",
   "option.startup.workspace": "工作區",
   "option.sync.10min": "每 10 分鐘",

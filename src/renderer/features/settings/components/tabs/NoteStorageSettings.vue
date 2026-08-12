@@ -6,7 +6,8 @@
       <section class="setting-card">
         <div class="setting-copy">
           <p class="setting-label">{{ t('label.noteStorageLocation') }}</p>
-          <p class="setting-description">{{ t('text.noteStorageLocation') }}{{ settingsStore.config.noteStorage.path }}</p>
+          <p class="setting-description">{{ t('text.noteStorageLocation') }}{{ settingsStore.config.noteStorage.path }}
+          </p>
         </div>
         <button type="button" class="action-button secondary" @click="handlePickPath">
           {{ t('button.browse') }}
@@ -38,9 +39,10 @@
         <label class="select-shell" :class="{ disabled: maxHistoryVersions === 0 }">
           <select class="settings-select small-select" :value="snapshotInterval" :disabled="maxHistoryVersions === 0"
             @change="handleSnapshotIntervalChange">
+            <option :value="5"> {{ t('option.snapshotInterval.05min') }}</option>
+            <option :value="10">{{ t('option.snapshotInterval.10min') }}</option>
             <option :value="15">{{ t('option.snapshotInterval.15min') }}</option>
             <option :value="30">{{ t('option.snapshotInterval.30min') }}</option>
-            <option :value="60">{{ t('option.snapshotInterval.60min') }}</option>
           </select>
         </label>
       </section>
@@ -149,7 +151,7 @@ const maxHistoryVersions = computed({
 });
 
 const snapshotInterval = computed({
-  get: () => settingsStore.config.noteStorage.snapshotInterval ?? 15,
+  get: () => settingsStore.config.noteStorage.snapshotInterval ?? 10,
   set: (val: number) => {
     settingsStore.noteStorage.update('snapshotInterval', val);
   },

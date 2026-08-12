@@ -538,7 +538,7 @@ export function normalizeNoteStorageConfig(
     path: normalizeString(config.path, defaultPath).trim() || defaultPath,
     maxHistoryVersions: normalizeAllowedInteger(config.maxHistoryVersions, [0, 10, 20, 50, 100], 50),
     trashAutoClearDays: normalizeAllowedInteger(config.trashAutoClearDays, [0, 7, 30], 30),
-    snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [15, 30, 60], 15),
+    snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [5, 10, 15, 30], 10),
   };
 }
 
