@@ -126,8 +126,6 @@ class TrayService {
     if (!normalizedVersion || normalizedVersion === this.lastUpdateNotificationVersion) {
       return;
     }
-    this.mainWindow = null;
-    this.onQuickCapture = null;
 
     this.lastUpdateNotificationVersion = normalizedVersion;
     this.tray.displayBalloon({
