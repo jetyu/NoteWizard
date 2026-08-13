@@ -42,7 +42,7 @@
 
       <section class="search-view__answer-pane">
         <header class="search-view__pane-header">
-          <h2>{{ $t('label.ConversationContent') }}</h2>
+          <h2>{{ conversationPaneTitle }}</h2>
         </header>
 
         <div ref="messageListRef" class="search-view__chat-scroll">
@@ -52,6 +52,10 @@
           <div v-else-if="!canUseKnowledgeSearch && !hasChatMessages" class="search-view__status">
             <IconMessageChatbot :size="72" class="search-view__status-icon" />
             <p class="search-view__status-text">{{ knowledgeUnavailableReason }}</p>
+          </div>
+          <div v-else-if="isActiveDraftThread" class="search-view__status">
+            <IconMessageChatbot :size="72" class="search-view__status-icon" />
+            <p class="search-view__status-text">{{ $t('search.newKnowledgeChatPreview') }}</p>
           </div>
           <div v-else-if="!hasChatMessages" class="search-view__status">
             <IconMessageChatbot :size="72" class="search-view__status-icon" />
@@ -78,8 +82,13 @@
                   <span v-if="formatQuestionAnsweredAt(question)" class="search-view__message-timestamp">
                     {{ formatQuestionAnsweredAt(question) }}
                   </span>
-                  <div v-if="isGeneratingQuestion(question) && !getQuestionAnswer(question)" class="search-view__thinking">
-                    <div class="search-view__spinner"></div>
+                  <div v-if="isGeneratingQuestion(question) && !getQuestionAnswer(question)"
+                    class="search-view__thinking" role="status" aria-live="polite">
+                    <span class="search-view__thinking-dots" aria-hidden="true">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </span>
                     <span>{{ getQuestionThinkingLabel(question) }}</span>
                   </div>
                   <p v-else-if="getQuestionError(question)"
@@ -320,7 +329,15 @@ const appShellStore = useAppShellStore();
 const settingsStore = useSettingsStore();
 const { config } = storeToRefs(settingsStore);
 const { selectNote, createNote, initializeWorkspace, applyNoteContentUpdate } = useWorkspace();
-const { searchViewRequest } = useSearch();
+const {
+  searchViewRequest,
+  lastKnowledgeConversationThreadId,
+  activeKnowledgeConversationThreadId,
+  knowledgeConversationDraft,
+  rememberKnowledgeConversationThread,
+  setKnowledgeConversationDraft,
+  forgetKnowledgeConversationThread,
+} = useSearch();
 const { isEnabled: knowledgeCopilotEnabled, isConfigured: knowledgeCopilotConfigured } = useKnowledgeCopilotConfig();
 const { askQuestionStream, isGenerating: isAIGenerating, usedSearchFallback } = useKnowledgeCopilotChat();
 const { runTask, resumeTask, isRunning: isAgentRunning } = useKnowledgeCopilotTask();
@@ -349,8 +366,8 @@ const messageListRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
 const selectedQuestion = ref<WorkbenchQuestionEntry | null>(null);
 const activeThreadId = ref<string | null>(null);
-const draftThreadId = ref<string | null>(null);
-const draftThreadCreatedAt = ref(0);
+const draftThreadId = ref<string | null>(knowledgeConversationDraft.value?.id ?? null);
+const draftThreadCreatedAt = ref(knowledgeConversationDraft.value?.createdAt ?? 0);
 const generatingQuestionId = ref('');
 const generatingQuestionMode = ref<KnowledgeInputMode | null>(null);
 const activeFallbackQuestionId = ref('');
@@ -476,12 +493,15 @@ const questionThreads = computed<QuestionThread[]>(() => {
 
   return threads;
 });
+const activeThread = computed<QuestionThread | undefined>(() => (
+  questionThreads.value.find((thread) => thread.id === activeThreadId.value)
+));
+const isActiveDraftThread = computed(() => activeThread.value?.isDraft === true);
+const conversationPaneTitle = computed(() => (
+  activeThread.value?.title ?? t('label.ConversationContent')
+));
 const chatQuestions = computed<WorkbenchQuestionEntry[]>(() => {
-  if (!activeThreadId.value) {
-    return [];
-  }
-
-  return questionThreads.value.find((thread) => thread.id === activeThreadId.value)?.questions ?? [];
+  return activeThread.value?.questions ?? [];
 });
 const hasChatMessages = computed(() => chatQuestions.value.length > 0);
 const currentSources = computed<WorkbenchQuestionSource[]>(() => {
@@ -625,11 +645,22 @@ function startNewThread(): void {
   if (!draftThreadId.value) {
     draftThreadCreatedAt.value = Date.now();
     draftThreadId.value = createThreadId(draftThreadCreatedAt.value);
+    setKnowledgeConversationDraft({
+      id: draftThreadId.value,
+      createdAt: draftThreadCreatedAt.value,
+    });
   }
 
   activeThreadId.value = draftThreadId.value;
+  rememberKnowledgeConversationThread(draftThreadId.value, true);
+  searchQuery.value = '';
   resetAnswer();
-  void nextTick(resizeComposer);
+  void nextTick(() => {
+    resizeComposer();
+    if (messageListRef.value) {
+      messageListRef.value.scrollTop = 0;
+    }
+  });
   focusSearchInput();
 }
 
@@ -704,7 +735,9 @@ async function askKnowledgeQuestion(query: string): Promise<void> {
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
+      setKnowledgeConversationDraft(null);
     }
+    rememberKnowledgeConversationThread(threadId);
     selectedQuestion.value = draftQuestion;
     generatingQuestionId.value = draftQuestion?.id ?? '';
     generatingQuestionMode.value = 'ask';
@@ -877,7 +910,9 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
+      setKnowledgeConversationDraft(null);
     }
+    rememberKnowledgeConversationThread(threadId);
     selectedQuestion.value = draftQuestion;
     generatingQuestionId.value = draftQuestion?.id ?? '';
     generatingQuestionMode.value = 'agent-task';
@@ -986,6 +1021,7 @@ function openSourceNote(source: WorkbenchQuestionSource): void {
 
 function selectThread(thread: QuestionThread): void {
   activeThreadId.value = thread.id;
+  rememberKnowledgeConversationThread(thread.id, thread.isDraft);
   selectedQuestion.value = thread.latestQuestion;
   searchError.value = '';
   semanticResults.value = [];
@@ -1005,6 +1041,7 @@ async function deleteQuestionThread(thread: QuestionThread): Promise<void> {
   if (thread.isDraft) {
     draftThreadId.value = null;
     draftThreadCreatedAt.value = 0;
+    forgetKnowledgeConversationThread(thread.id);
     if (activeThreadId.value === thread.id) {
       activeThreadId.value = null;
       resetAnswer();
@@ -1016,7 +1053,10 @@ async function deleteQuestionThread(thread: QuestionThread): Promise<void> {
 
   if (hasDeleted && activeThreadId.value === thread.id) {
     activeThreadId.value = null;
+    forgetKnowledgeConversationThread(thread.id);
     resetAnswer();
+  } else if (hasDeleted) {
+    forgetKnowledgeConversationThread(thread.id);
   }
 }
 
@@ -1516,7 +1556,26 @@ function applySearchRequest(): void {
     selectThread(requestedThread);
     return;
   }
+
+  if (!request.query.trim()) {
+    draftThreadId.value = knowledgeConversationDraft.value?.id ?? null;
+    draftThreadCreatedAt.value = knowledgeConversationDraft.value?.createdAt ?? 0;
+    searchQuery.value = '';
+    const restoredThread = questionThreads.value.find(
+      (thread) => thread.id === activeKnowledgeConversationThreadId.value,
+    ) ?? questionThreads.value.find(
+      (thread) => !thread.isDraft && thread.id === lastKnowledgeConversationThreadId.value,
+    ) ?? questionThreads.value.find((thread) => !thread.isDraft);
+    if (restoredThread) {
+      selectThread(restoredThread);
+      return;
+    }
+  }
+
   activeThreadId.value = null;
+  if (draftThreadId.value) {
+    forgetKnowledgeConversationThread(draftThreadId.value);
+  }
   draftThreadId.value = null;
   draftThreadCreatedAt.value = 0;
   searchQuery.value = request.query;
@@ -2038,6 +2097,30 @@ onBeforeUnmount(() => {
   font-size: 0.86rem;
 }
 
+.search-view__thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+}
+
+.search-view__thinking-dots>span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  animation: search-thinking-pulse 1.2s ease-in-out infinite;
+}
+
+.search-view__thinking-dots>span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.search-view__thinking-dots>span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
 .search-view__history-list {
   flex: 1;
   min-height: 0;
@@ -2192,18 +2275,24 @@ onBeforeUnmount(() => {
   color: var(--color-danger, #ef4444);
 }
 
-.search-view__spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--panel-border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: search-spin 0.8s linear infinite;
+@keyframes search-thinking-pulse {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }
 
-@keyframes search-spin {
-  to {
-    transform: rotate(360deg);
+@media (prefers-reduced-motion: reduce) {
+  .search-view__thinking-dots>span {
+    animation: none;
+    opacity: 0.7;
   }
 }
 
