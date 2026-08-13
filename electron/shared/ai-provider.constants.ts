@@ -29,6 +29,7 @@ export const AI_PROVIDERS = {
   KIMI: 'kimi',
   ZHIPU: 'zhipu',
   GROK: 'grok',
+  ANTHROPIC: 'anthropic',
 } as const satisfies Record<string, string>;
 
 export type AiProvider = (typeof AI_PROVIDERS)[keyof typeof AI_PROVIDERS];
@@ -49,6 +50,7 @@ export const AI_PROVIDER_DEFAULT_BASE_URLS = {
   [AI_PROVIDERS.KIMI]: 'https://api.moonshot.ai/v1',
   [AI_PROVIDERS.ZHIPU]: 'https://open.bigmodel.cn/api/paas/v4',
   [AI_PROVIDERS.GROK]: 'https://api.x.ai/v1',
+  [AI_PROVIDERS.ANTHROPIC]: 'https://api.anthropic.com',
 } as const satisfies Record<AiProvider, string>;
 
 export const AI_PROVIDER_CAPABILITIES = {
@@ -67,6 +69,7 @@ export const AI_PROVIDER_CAPABILITIES = {
   [AI_PROVIDERS.KIMI]: ['chat'],
   [AI_PROVIDERS.ZHIPU]: ['chat'],
   [AI_PROVIDERS.GROK]: ['chat'],
+  [AI_PROVIDERS.ANTHROPIC]: ['chat'],
 } as const satisfies Record<AiProvider, readonly AiCapability[]>;
 
 const AI_PROVIDER_SET = new Set<string>(Object.values(AI_PROVIDERS));
@@ -82,6 +85,7 @@ const AI_PROVIDER_BY_HOSTNAME = new Map<string, AiProvider>([
   ['api.moonshot.ai', AI_PROVIDERS.KIMI],
   ['open.bigmodel.cn', AI_PROVIDERS.ZHIPU],
   ['api.x.ai', AI_PROVIDERS.GROK],
+  ['api.anthropic.com', AI_PROVIDERS.ANTHROPIC],
 ]);
 
 export function isAiProvider(value: unknown): value is AiProvider {

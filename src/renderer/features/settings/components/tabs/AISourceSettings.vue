@@ -26,6 +26,10 @@
                   </span>
                 </div>
               </div>
+              <span v-if="isBuiltInAiSource(source)" class="source-rate-limit-badge"
+                :title="t('builtInAi.rateLimit.tooltip')" :aria-label="t('builtInAi.rateLimit.tooltip')">
+                {{ t('builtInAi.rateLimit.badge') }}
+              </span>
               <div v-if="!isBuiltInAiSource(source)" class="settings-card-actions">
                 <button class="action-btn icon-action-button" @click="handleEditSource(source)" :title="t('common.editor')">
                   <IconPencil :size="14" />
@@ -826,6 +830,23 @@ const formatCapabilities = (capabilities: string[]): string => {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.source-rate-limit-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-height: 22px;
+  padding: 2px 9px;
+  border: 1px solid var(--status-info-border);
+  border-radius: var(--radius-sm);
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1;
+  cursor: help;
 }
 
 .source-provider {

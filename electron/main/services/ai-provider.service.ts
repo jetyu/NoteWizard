@@ -1,4 +1,5 @@
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -94,6 +95,16 @@ export function createProviderChatModel(config: AiProviderModelConfig): BaseChat
 
   if (config.provider === AI_PROVIDERS.GOOGLE_GEMINI) {
     return new ChatGoogleGenerativeAI({ apiKey, model: config.model, temperature: 0, baseUrl: config.baseUrl });
+  }
+
+  if (config.provider === AI_PROVIDERS.ANTHROPIC) {
+    return new ChatAnthropic({
+      apiKey,
+      model: config.model,
+      temperature: 0,
+      maxRetries: 2,
+      anthropicApiUrl: config.baseUrl,
+    });
   }
 
   if (config.provider === AI_PROVIDERS.OLLAMA) {

@@ -9,6 +9,7 @@ import ollamaLogoUrl from '@assets/images/ai-providers/ollama.svg';
 import openRouterLogoUrl from '@assets/images/ai-providers/openrouter.svg';
 import deepSeekLogoUrl from '@assets/images/ai-providers/deepseek.svg';
 import alibabaCloudLogoUrl from '@assets/images/ai-providers/alibaba-cloud.svg';
+import anthropicLogoUrl from '@assets/images/ai-providers/anthropic.svg';
 import volcengineLogoUrl from '@assets/images/ai-providers/volcengine.svg';
 import kimiLogoUrl from '@assets/images/ai-providers/kimi.svg';
 import zhipuLogoUrl from '@assets/images/ai-providers/zhipu.svg';
@@ -35,6 +36,7 @@ export const AI_PROVIDER_PRESENTATIONS = {
     labelKey: 'aiProvider.alibabaCloudModelStudio',
     logoUrl: alibabaCloudLogoUrl,
   },
+  [AI_PROVIDERS.ANTHROPIC]: { labelKey: 'aiProvider.anthropic', logoUrl: anthropicLogoUrl },
   [AI_PROVIDERS.VOLCENGINE]: { labelKey: 'aiProvider.volcengine', logoUrl: volcengineLogoUrl },
   [AI_PROVIDERS.KIMI]: { labelKey: 'aiProvider.kimi', logoUrl: kimiLogoUrl },
   [AI_PROVIDERS.ZHIPU]: { labelKey: 'aiProvider.zhipu', logoUrl: zhipuLogoUrl },
@@ -44,6 +46,7 @@ export const AI_PROVIDER_PRESENTATIONS = {
 export const SELECTABLE_AI_PROVIDERS: AiProvider[] = [
   AI_PROVIDERS.SILICONFLOW,
   AI_PROVIDERS.OPENAI,
+  AI_PROVIDERS.ANTHROPIC,
   AI_PROVIDERS.DEEPSEEK,
   AI_PROVIDERS.ALIBABA_CLOUD_MODEL_STUDIO,
   AI_PROVIDERS.VOLCENGINE,
