@@ -1,3 +1,14 @@
+### v2.2.5 - 2026-08-17 
+This update adds service provider support and optimizes and fixes issues related to the Knowledge Assistant, application updates, and overall user experience.
+#### New
+* Added Anthropic (Claude) AI service provider configuration support
+* Added display of official AI service availability status
+#### Improvements
+* Optimized the Knowledge Assistant's question-and-answer experience, improving dialogue interaction and content presentation.
+#### Fixes
+* Fixed an issue with the tray function malfunctioning during application updates.
+* Fixed an issue with abnormal display of Knowledge Assistant dialogue content in some scenarios.
+
 ### v2.2.4 - 2026-08-12
 This update optimizes details and the user experience.
 #### Improvements
