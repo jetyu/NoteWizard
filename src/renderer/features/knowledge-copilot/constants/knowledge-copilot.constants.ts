@@ -1,13 +1,14 @@
 import { KNOWLEDGE_COPILOT_REBUILD_CONCURRENCY_LIMITS } from '@shared/knowledge-copilot.constants';
+import { BUILT_IN_AI_MODELS, BUILT_IN_AI_SOURCE_ID } from '@shared/built-in-ai.constants';
 
 export const DEFAULT_KNOWLEDGE_COPILOT_CONFIG = {
   enabled: false,
   embeddingSourceId: '',
   embeddingModel: '',
-  askChatSourceId: '',
-  askChatModel: '',
-  agentChatSourceId: '',
-  agentChatModel: '',
+  askChatSourceId: BUILT_IN_AI_SOURCE_ID,
+  askChatModel: BUILT_IN_AI_MODELS.chat,
+  agentChatSourceId: BUILT_IN_AI_SOURCE_ID,
+  agentChatModel: BUILT_IN_AI_MODELS.chat,
   rerankerSourceId: '',
   rerankerModel: '',
   defaultMode: 'ask' as const,

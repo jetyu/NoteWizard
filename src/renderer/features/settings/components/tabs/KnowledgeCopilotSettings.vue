@@ -43,46 +43,6 @@
 
       <section class="setting-card">
         <div class="setting-copy">
-          <p class="setting-label">{{ t('label.knowledgeCopilotChatModel') }}</p>
-          <p class="setting-description">{{ chatSources.length === 0
-            ? t('text.aiModelUnavailable')
-            : t('text.knowledgeCopilotChatModel') }}</p>
-        </div>
-        <label class="select-shell"
-          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
-          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.askChatSourceId"
-            @change="handleKnowledgeCopilotUpdate('askChatSourceId', ($event.target as HTMLSelectElement).value)"
-            :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
-            <option value="">{{
-              t('option.knowledgeCopilot.disabled') }}</option>
-            <option v-for="source in chatSources" :key="source.id" :value="source.id">
-              {{ source.name }}
-            </option>
-
-          </select>
-        </label>
-      </section>
-
-      <section class="setting-card">
-        <div class="setting-copy">
-          <p class="setting-label">{{ t('label.knowledgeCopilotAgentChatModel') }}</p>
-          <p class="setting-description">{{ chatSources.length === 0
-            ? t('text.aiModelUnavailable')
-            : t('text.knowledgeCopilotAgentChatModel') }}</p>
-        </div>
-        <label class="select-shell"
-          :class="{ disabled: chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled }">
-          <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.agentChatSourceId"
-            @change="handleKnowledgeCopilotUpdate('agentChatSourceId', ($event.target as HTMLSelectElement).value)"
-            :disabled="chatSources.length === 0 || !settingsStore.config.knowledgeCopilot.enabled">
-            <option value="">{{ t('option.knowledgeCopilot.disabled') }}</option>
-            <option v-for="source in chatSources" :key="source.id" :value="source.id">{{ source.name }}</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="setting-card">
-        <div class="setting-copy">
           <p class="setting-label">{{ t('label.knowledgeCopilotRerankerSource') }}</p>
           <p class="setting-description">{{ rerankerSources.length === 0
             ? t('text.aiModelUnavailable')
@@ -211,10 +171,6 @@ const sourceSupportsCapability = (capabilities: string[], capability: string): b
 
 const embeddingSources = computed(() => {
   return settingsStore.config.aiSources.sources.filter((source) => sourceSupportsCapability(source.capabilities, 'embedding'));
-});
-
-const chatSources = computed(() => {
-  return settingsStore.config.aiSources.sources.filter((source) => sourceSupportsCapability(source.capabilities, 'chat'));
 });
 
 const rerankerSources = computed(() => {

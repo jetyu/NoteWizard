@@ -42,7 +42,7 @@
 
       <section class="search-view__answer-pane">
         <header class="search-view__pane-header">
-          <h2>{{ $t('label.ConversationContent') }}</h2>
+          <h2>{{ conversationPaneTitle }}</h2>
         </header>
 
         <div ref="messageListRef" class="search-view__chat-scroll">
@@ -52,6 +52,10 @@
           <div v-else-if="!canUseKnowledgeSearch && !hasChatMessages" class="search-view__status">
             <IconMessageChatbot :size="72" class="search-view__status-icon" />
             <p class="search-view__status-text">{{ knowledgeUnavailableReason }}</p>
+          </div>
+          <div v-else-if="isActiveDraftThread" class="search-view__status">
+            <IconMessageChatbot :size="72" class="search-view__status-icon" />
+            <p class="search-view__status-text">{{ $t('search.newKnowledgeChatPreview') }}</p>
           </div>
           <div v-else-if="!hasChatMessages" class="search-view__status">
             <IconMessageChatbot :size="72" class="search-view__status-icon" />
@@ -78,8 +82,13 @@
                   <span v-if="formatQuestionAnsweredAt(question)" class="search-view__message-timestamp">
                     {{ formatQuestionAnsweredAt(question) }}
                   </span>
-                  <div v-if="isGeneratingQuestion(question) && !getQuestionAnswer(question)" class="search-view__thinking">
-                    <div class="search-view__spinner"></div>
+                  <div v-if="isGeneratingQuestion(question) && !getQuestionAnswer(question)"
+                    class="search-view__thinking" role="status" aria-live="polite">
+                    <span class="search-view__thinking-dots" aria-hidden="true">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </span>
                     <span>{{ getQuestionThinkingLabel(question) }}</span>
                   </div>
                   <p v-else-if="getQuestionError(question)"
@@ -88,7 +97,7 @@
                   </p>
                   <template v-else>
                     <div v-if="shouldDisplayFallbackNotice(question)" class="search-view__fallback-notice">
-                      {{ $t('message.knowledgeCopilot.noChatModel') }}
+                      {{ $t('search.retrievalOnlyNotice') }}
                     </div>
                     <div v-if="getQuestionAnswer(question)" class="search-view__answer-content markdown-body"
                       v-html="renderQuestionAnswer(question)"></div>
@@ -216,7 +225,7 @@
             <div class="search-view__input-toolbar">
               <div class="search-view__toolbar-left">
                 <div class="search-view__mode-selector">
-                  <button type="button" class="search-view__mode-button" :disabled="isBusy"
+                  <button type="button" class="search-view__mode-button" :disabled="isBusy || !canUseKnowledgeSearch"
                     :aria-label="$t('search.inputModeLabel')" :aria-expanded="isModeMenuOpen"
                     @click.stop="toggleModeMenu">
                     <IconTextScanAi v-if="inputMode === 'agent-task'" :size="14" />
@@ -240,8 +249,40 @@
                 </button>
               </div>
               <div class="search-view__toolbar-right">
+                <div class="search-view__model-selector">
+                  <button type="button" class="search-view__mode-button search-view__model-button"
+                    :disabled="isModelSelectorDisabled" :aria-label="$t('search.modelServiceLabel')"
+                    :aria-expanded="isModelMenuOpen" :title="activeModelServiceTitle"
+                    @click.stop="toggleModelMenu">
+                    <IconSubtitlesAi :size="14" />
+                    <span>{{ activeModelServiceName }}</span>
+                    <IconChevronDown :size="13" />
+                  </button>
+                  <div v-if="isModelMenuOpen" class="search-view__mode-menu search-view__model-menu">
+                    <button v-if="inputMode === 'ask'" type="button"
+                      class="search-view__mode-option search-view__model-option"
+                      :class="{ 'is-active': isRetrievalOnlySelected }"
+                      @click="selectModelSource('')">
+                      <span class="search-view__model-option-copy">
+                        <span>{{ $t('search.modelServiceRetrievalOnly') }}</span>
+                        <small>{{ $t('search.modelServiceRetrievalOnlyDescription') }}</small>
+                      </span>
+                      <IconCheck v-if="isRetrievalOnlySelected" :size="14" />
+                    </button>
+                    <button v-for="source in chatSources" :key="source.id" type="button"
+                      class="search-view__mode-option search-view__model-option"
+                      :class="{ 'is-active': activeModelSourceId === source.id }"
+                      @click="selectModelSource(source.id)">
+                      <span class="search-view__model-option-copy">
+                        <span>{{ source.name }}</span>
+                        <small>{{ resolveAiSourceModel(source, 'chat') }}</small>
+                      </span>
+                      <IconCheck v-if="activeModelSourceId === source.id" :size="14" />
+                    </button>
+                  </div>
+                </div>
                 <button type="button" class="search-view__ask-button icon-action-button" :disabled="!canAsk"
-                  :title="canUseKnowledgeSearch ? $t('search.knowledgeAsk') : knowledgeUnavailableReason"
+                  :title="sendButtonTitle"
                   @click="handleAsk">
                   <IconSend :size="15" />
                 </button>
@@ -255,7 +296,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { IconX, IconMessage2Bolt, IconSubtitlesAi, IconTrash, IconFileText, IconPlus, IconTextScanAi, IconChevronDown, IconCheck, IconSend, IconMessageChatbot } from '@tabler/icons-vue';
@@ -268,6 +309,7 @@ import { useWorkbenchStore } from '@renderer/features/workbench';
 import { useWorkspace } from '@renderer/features/workspace';
 import { useAppShellStore } from '@renderer/app/store/appShell.store';
 import { useSettingsStore } from '@renderer/features/settings';
+import { resolveAiSourceModel } from '@shared/ai-provider.constants';
 import type {
   KnowledgeCopilotExecutedWrite,
   KnowledgeCopilotPendingAction,
@@ -320,7 +362,15 @@ const appShellStore = useAppShellStore();
 const settingsStore = useSettingsStore();
 const { config } = storeToRefs(settingsStore);
 const { selectNote, createNote, initializeWorkspace, applyNoteContentUpdate } = useWorkspace();
-const { searchViewRequest } = useSearch();
+const {
+  searchViewRequest,
+  lastKnowledgeConversationThreadId,
+  activeKnowledgeConversationThreadId,
+  knowledgeConversationDraft,
+  rememberKnowledgeConversationThread,
+  setKnowledgeConversationDraft,
+  forgetKnowledgeConversationThread,
+} = useSearch();
 const { isEnabled: knowledgeCopilotEnabled, isConfigured: knowledgeCopilotConfigured } = useKnowledgeCopilotConfig();
 const { askQuestionStream, isGenerating: isAIGenerating, usedSearchFallback } = useKnowledgeCopilotChat();
 const { runTask, resumeTask, isRunning: isAgentRunning } = useKnowledgeCopilotTask();
@@ -340,6 +390,7 @@ const inputModes: InputModeOption[] = [
 
 const inputMode = ref<KnowledgeInputMode>(config.value.knowledgeCopilot.defaultMode === 'agent' ? 'agent-task' : 'ask');
 const isModeMenuOpen = ref(false);
+const isModelMenuOpen = ref(false);
 const searchQuery = ref('');
 const semanticResults = ref<KnowledgeSearchResult[]>([]);
 const isSearching = ref(false);
@@ -349,8 +400,8 @@ const messageListRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
 const selectedQuestion = ref<WorkbenchQuestionEntry | null>(null);
 const activeThreadId = ref<string | null>(null);
-const draftThreadId = ref<string | null>(null);
-const draftThreadCreatedAt = ref(0);
+const draftThreadId = ref<string | null>(knowledgeConversationDraft.value?.id ?? null);
+const draftThreadCreatedAt = ref(knowledgeConversationDraft.value?.createdAt ?? 0);
 const generatingQuestionId = ref('');
 const generatingQuestionMode = ref<KnowledgeInputMode | null>(null);
 const activeFallbackQuestionId = ref('');
@@ -364,6 +415,7 @@ const applyingWriteProposalId = ref('');
 const savingSummaryActionId = ref('');
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 let markdownEnhancementRunId = 0;
+let viewListenersActive = false;
 
 const HISTORY_PANE_DEFAULT_WIDTH = 300;
 const HISTORY_PANE_MIN_WIDTH = 220;
@@ -419,8 +471,50 @@ function handleDividerPointerDown(event: PointerEvent): void {
 
 const canUseKnowledgeSearch = computed(() => knowledgeCopilotEnabled.value && knowledgeCopilotConfigured.value);
 const isBusy = computed(() => isSearching.value || isAIGenerating.value || isAgentRunning.value);
-const canAsk = computed(() => canUseKnowledgeSearch.value && Boolean(searchQuery.value.trim()) && !isBusy.value);
 const activeInputMode = computed(() => inputModes.find((mode) => mode.id === inputMode.value) ?? inputModes[0]);
+const chatSources = computed(() => config.value.aiSources.sources.filter((source) => (
+  source.capabilities.length === 0 || source.capabilities.includes('chat')
+)));
+const activeModelSourceId = computed(() => (
+  inputMode.value === 'agent-task'
+    ? config.value.knowledgeCopilot.agentChatSourceId
+    : config.value.knowledgeCopilot.askChatSourceId
+));
+const activeModelSource = computed(() => (
+  chatSources.value.find((source) => source.id === activeModelSourceId.value) ?? null
+));
+const isRetrievalOnlySelected = computed(() => (
+  inputMode.value === 'ask' && !activeModelSourceId.value
+));
+const activeModelServiceName = computed(() => {
+  if (isRetrievalOnlySelected.value) {
+    return t('search.modelServiceRetrievalOnly');
+  }
+  return activeModelSource.value?.name ?? t('search.modelServiceLabel');
+});
+const activeModelServiceTitle = computed(() => {
+  if (isRetrievalOnlySelected.value) {
+    return t('search.modelServiceRetrievalOnlyDescription');
+  }
+  if (!activeModelSource.value) {
+    return t('search.modelServiceLabel');
+  }
+  return `${activeModelSource.value.name} · ${resolveAiSourceModel(activeModelSource.value, 'chat')}`;
+});
+const isModelSelectorDisabled = computed(() => (
+  isBusy.value
+  || !canUseKnowledgeSearch.value
+  || (inputMode.value === 'agent-task' && chatSources.value.length === 0)
+));
+const hasValidModelSelection = computed(() => (
+  isRetrievalOnlySelected.value || Boolean(activeModelSource.value)
+));
+const canAsk = computed(() => (
+  canUseKnowledgeSearch.value
+  && Boolean(searchQuery.value.trim())
+  && !isBusy.value
+  && hasValidModelSelection.value
+));
 const agentWriteMode = computed<KnowledgeCopilotWriteMode>(() => config.value.workbench.agentWriteMode ?? 'confirm');
 const composerPlaceholder = computed(() => (
   inputMode.value === 'agent-task'
@@ -435,6 +529,12 @@ const knowledgeUnavailableReason = computed(() => {
     return t('message.error.knowledgeCopilotNotConfigured');
   }
   return '';
+});
+const sendButtonTitle = computed(() => {
+  if (!canUseKnowledgeSearch.value) {
+    return knowledgeUnavailableReason.value;
+  }
+  return t('search.knowledgeAsk');
 });
 const questionThreads = computed<QuestionThread[]>(() => {
   const threadMap = new Map<string, WorkbenchQuestionEntry[]>();
@@ -476,12 +576,15 @@ const questionThreads = computed<QuestionThread[]>(() => {
 
   return threads;
 });
+const activeThread = computed<QuestionThread | undefined>(() => (
+  questionThreads.value.find((thread) => thread.id === activeThreadId.value)
+));
+const isActiveDraftThread = computed(() => activeThread.value?.isDraft === true);
+const conversationPaneTitle = computed(() => (
+  activeThread.value?.title ?? t('label.ConversationContent')
+));
 const chatQuestions = computed<WorkbenchQuestionEntry[]>(() => {
-  if (!activeThreadId.value) {
-    return [];
-  }
-
-  return questionThreads.value.find((thread) => thread.id === activeThreadId.value)?.questions ?? [];
+  return activeThread.value?.questions ?? [];
 });
 const hasChatMessages = computed(() => chatQuestions.value.length > 0);
 const currentSources = computed<WorkbenchQuestionSource[]>(() => {
@@ -509,17 +612,50 @@ function focusSearchInput(): void {
 }
 
 function toggleModeMenu(): void {
-  if (isBusy.value) {
+  if (isBusy.value || !canUseKnowledgeSearch.value) {
     return;
   }
 
   isModeMenuOpen.value = !isModeMenuOpen.value;
+  if (isModeMenuOpen.value) {
+    isModelMenuOpen.value = false;
+  }
 }
 
 function selectInputMode(mode: KnowledgeInputMode): void {
   inputMode.value = mode;
   isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
   focusSearchInput();
+}
+
+function toggleModelMenu(): void {
+  if (isModelSelectorDisabled.value) {
+    return;
+  }
+
+  isModelMenuOpen.value = !isModelMenuOpen.value;
+  if (isModelMenuOpen.value) {
+    isModeMenuOpen.value = false;
+  }
+}
+
+async function selectModelSource(sourceId: string): Promise<void> {
+  if (isBusy.value) {
+    return;
+  }
+
+  try {
+    const key = inputMode.value === 'agent-task' ? 'agentChatSourceId' : 'askChatSourceId';
+    await settingsStore.knowledgeCopilot.update(key, sourceId);
+    isModelMenuOpen.value = false;
+    searchError.value = '';
+    focusSearchInput();
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    searchError.value = message;
+    searchViewLogger.error('Failed to update Knowledge Copilot model service', { error: message });
+  }
 }
 
 function createThreadId(askedAt: number): string {
@@ -561,6 +697,10 @@ function resizeComposer(): void {
 }
 
 function scrollChatToBottom(): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
   void nextTick(() => {
     const messageList = messageListRef.value;
     if (!messageList) {
@@ -572,6 +712,10 @@ function scrollChatToBottom(): void {
 }
 
 async function syncMarkdownEnhancements(): Promise<void> {
+  if (!viewListenersActive) {
+    return;
+  }
+
   const runId = ++markdownEnhancementRunId;
   await nextTick();
   if (runId !== markdownEnhancementRunId) {
@@ -582,6 +726,10 @@ async function syncMarkdownEnhancements(): Promise<void> {
 }
 
 function scrollQuestionIntoView(questionId: string): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
   void nextTick(() => {
     const messageList = messageListRef.value;
     if (!messageList) {
@@ -625,11 +773,22 @@ function startNewThread(): void {
   if (!draftThreadId.value) {
     draftThreadCreatedAt.value = Date.now();
     draftThreadId.value = createThreadId(draftThreadCreatedAt.value);
+    setKnowledgeConversationDraft({
+      id: draftThreadId.value,
+      createdAt: draftThreadCreatedAt.value,
+    });
   }
 
   activeThreadId.value = draftThreadId.value;
+  rememberKnowledgeConversationThread(draftThreadId.value, true);
+  searchQuery.value = '';
   resetAnswer();
-  void nextTick(resizeComposer);
+  void nextTick(() => {
+    resizeComposer();
+    if (messageListRef.value) {
+      messageListRef.value.scrollTop = 0;
+    }
+  });
   focusSearchInput();
 }
 
@@ -651,6 +810,7 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 function handleAsk(): void {
   clearPendingSearch();
   isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
 
   const query = searchQuery.value.trim();
   if (!query) {
@@ -704,7 +864,9 @@ async function askKnowledgeQuestion(query: string): Promise<void> {
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
+      setKnowledgeConversationDraft(null);
     }
+    rememberKnowledgeConversationThread(threadId);
     selectedQuestion.value = draftQuestion;
     generatingQuestionId.value = draftQuestion?.id ?? '';
     generatingQuestionMode.value = 'ask';
@@ -877,7 +1039,9 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
+      setKnowledgeConversationDraft(null);
     }
+    rememberKnowledgeConversationThread(threadId);
     selectedQuestion.value = draftQuestion;
     generatingQuestionId.value = draftQuestion?.id ?? '';
     generatingQuestionMode.value = 'agent-task';
@@ -986,6 +1150,7 @@ function openSourceNote(source: WorkbenchQuestionSource): void {
 
 function selectThread(thread: QuestionThread): void {
   activeThreadId.value = thread.id;
+  rememberKnowledgeConversationThread(thread.id, thread.isDraft);
   selectedQuestion.value = thread.latestQuestion;
   searchError.value = '';
   semanticResults.value = [];
@@ -1005,6 +1170,7 @@ async function deleteQuestionThread(thread: QuestionThread): Promise<void> {
   if (thread.isDraft) {
     draftThreadId.value = null;
     draftThreadCreatedAt.value = 0;
+    forgetKnowledgeConversationThread(thread.id);
     if (activeThreadId.value === thread.id) {
       activeThreadId.value = null;
       resetAnswer();
@@ -1016,7 +1182,10 @@ async function deleteQuestionThread(thread: QuestionThread): Promise<void> {
 
   if (hasDeleted && activeThreadId.value === thread.id) {
     activeThreadId.value = null;
+    forgetKnowledgeConversationThread(thread.id);
     resetAnswer();
+  } else if (hasDeleted) {
+    forgetKnowledgeConversationThread(thread.id);
   }
 }
 
@@ -1516,7 +1685,26 @@ function applySearchRequest(): void {
     selectThread(requestedThread);
     return;
   }
+
+  if (!request.query.trim()) {
+    draftThreadId.value = knowledgeConversationDraft.value?.id ?? null;
+    draftThreadCreatedAt.value = knowledgeConversationDraft.value?.createdAt ?? 0;
+    searchQuery.value = '';
+    const restoredThread = questionThreads.value.find(
+      (thread) => thread.id === activeKnowledgeConversationThreadId.value,
+    ) ?? questionThreads.value.find(
+      (thread) => !thread.isDraft && thread.id === lastKnowledgeConversationThreadId.value,
+    ) ?? questionThreads.value.find((thread) => !thread.isDraft);
+    if (restoredThread) {
+      selectThread(restoredThread);
+      return;
+    }
+  }
+
   activeThreadId.value = null;
+  if (draftThreadId.value) {
+    forgetKnowledgeConversationThread(draftThreadId.value);
+  }
   draftThreadId.value = null;
   draftThreadCreatedAt.value = 0;
   searchQuery.value = request.query;
@@ -1564,23 +1752,51 @@ function handleDocumentClick(event: MouseEvent): void {
   if (isModeMenuOpen.value && !target.closest('.search-view__mode-selector')) {
     isModeMenuOpen.value = false;
   }
+  if (isModelMenuOpen.value && !target.closest('.search-view__model-selector')) {
+    isModelMenuOpen.value = false;
+  }
+}
+
+function activateViewListeners(): void {
+  if (viewListenersActive) {
+    return;
+  }
+
+  viewListenersActive = true;
+  document.addEventListener('click', handleDocumentClick);
+  window.addEventListener('resize', clampHistoryPaneWidth);
+}
+
+function deactivateViewListeners(): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
+  viewListenersActive = false;
+  markdownEnhancementRunId += 1;
+  isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
+  document.removeEventListener('click', handleDocumentClick);
+  handlePaneResizeEnd();
+  window.removeEventListener('resize', clampHistoryPaneWidth);
 }
 
 onMounted(() => {
   applySearchRequest();
+});
+
+onActivated(() => {
+  activateViewListeners();
   focusSearchInput();
   scrollChatToBottom();
   void syncMarkdownEnhancements();
-  document.addEventListener('click', handleDocumentClick);
-  window.addEventListener('resize', clampHistoryPaneWidth);
 });
+
+onDeactivated(deactivateViewListeners);
 
 onBeforeUnmount(() => {
   clearPendingSearch();
-  markdownEnhancementRunId += 1;
-  document.removeEventListener('click', handleDocumentClick);
-  handlePaneResizeEnd();
-  window.removeEventListener('resize', clampHistoryPaneWidth);
+  deactivateViewListeners();
 });
 </script>
 
@@ -1733,21 +1949,31 @@ onBeforeUnmount(() => {
 .search-view__toolbar-left {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 8px;
 }
 
 .search-view__toolbar-right {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 8px;
+}
+
+.search-view__model-selector {
+  position: relative;
+  flex: 0 1 180px;
+  min-width: 0;
 }
 
 .search-view__mode-selector {
   position: relative;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .search-view__mode-button {
+  max-width: 100%;
   height: 28px;
   display: inline-flex;
   align-items: center;
@@ -1775,6 +2001,18 @@ onBeforeUnmount(() => {
   opacity: 0.7;
 }
 
+.search-view__model-button {
+  width: 100%;
+  max-width: 180px;
+}
+
+.search-view__mode-button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-view__mode-menu {
   position: absolute;
   left: 0;
@@ -1786,6 +2024,14 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-md);
   background: var(--panel);
   box-shadow: 0 10px 25px color-mix(in srgb, #000 12%, transparent);
+}
+
+.search-view__model-menu {
+  right: 0;
+  left: auto;
+  width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .search-view__mode-option {
@@ -1819,6 +2065,29 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-size: 0.7rem;
   line-height: 1.3;
+}
+
+.search-view__model-option {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.search-view__model-option-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.search-view__model-option-copy > span,
+.search-view__model-option-copy > small {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-view__execution-button {
@@ -2038,6 +2307,30 @@ onBeforeUnmount(() => {
   font-size: 0.86rem;
 }
 
+.search-view__thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+}
+
+.search-view__thinking-dots>span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  animation: search-thinking-pulse 1.2s ease-in-out infinite;
+}
+
+.search-view__thinking-dots>span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.search-view__thinking-dots>span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
 .search-view__history-list {
   flex: 1;
   min-height: 0;
@@ -2192,18 +2485,24 @@ onBeforeUnmount(() => {
   color: var(--color-danger, #ef4444);
 }
 
-.search-view__spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--panel-border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: search-spin 0.8s linear infinite;
+@keyframes search-thinking-pulse {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }
 
-@keyframes search-spin {
-  to {
-    transform: rotate(360deg);
+@media (prefers-reduced-motion: reduce) {
+  .search-view__thinking-dots>span {
+    animation: none;
+    opacity: 0.7;
   }
 }
 

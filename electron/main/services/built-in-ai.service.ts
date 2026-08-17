@@ -6,16 +6,23 @@ import {
 import {
   BUILT_IN_AI_BASE_URL,
   BUILT_IN_AI_CAPABILITIES,
+  BUILT_IN_AI_HEALTH_STATUS,
   BUILT_IN_AI_MODELS,
   BUILT_IN_AI_SOURCE_ID,
   BUILT_IN_AI_SOURCE_NAME,
+  BUILT_IN_AI_STATUS_URL,
+  type BuiltInAiHealthFailureReason,
+  type BuiltInAiHealthResult,
   type BuiltInAiSourceMetadata,
 } from '../../shared/built-in-ai.constants.js';
 import { $t } from '../utils/i18n.js';
-import { mainProcessFetch } from './network.service.js';
+import { isElectronNetworkRequestError, mainProcessFetch } from './network.service.js';
 
 const BUILT_IN_AI_KEY_URL = 'https://snaptium.com/key.txt';
 const BUILT_IN_AI_AUTH_FAILURE_STATUSES = new Set([401, 403]);
+const BUILT_IN_AI_HEALTH_CACHE_MS = 60_000;
+const BUILT_IN_AI_HEALTH_DEGRADED_MS = 1_500;
+const BUILT_IN_AI_HEALTH_TIMEOUT_MS = 5_000;
 
 const builtInAiConfigSchema = z.object({
   baseUrl: z.string().url().transform(value => value.replace(/\/+$/, '')),
@@ -33,6 +40,10 @@ const builtInAiKeySchema = z.string()
   .max(512)
   .refine(value => !/\s/.test(value));
 
+const builtInAiHealthResponseSchema = z.object({
+  success: z.literal(true),
+});
+
 export type BuiltInAiConfig = z.infer<typeof builtInAiConfigSchema>;
 
 export interface ResolvedBuiltInAiRequestConfig {
@@ -45,6 +56,8 @@ export interface ResolvedBuiltInAiRequestConfig {
 
 let cachedBuiltInAiKey: string | null = null;
 let builtInAiKeyPromise: Promise<string> | null = null;
+let cachedBuiltInAiHealth: BuiltInAiHealthResult | null = null;
+let builtInAiHealthPromise: Promise<BuiltInAiHealthResult> | null = null;
 
 export function normalizeBuiltInAiConfig(value: unknown): BuiltInAiConfig {
   return builtInAiConfigSchema.parse(value);
@@ -102,6 +115,73 @@ async function loadBuiltInAiKey(): Promise<string> {
   return builtInAiKeyPromise;
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
+function resolveHealthFailureReason(error: unknown): BuiltInAiHealthFailureReason {
+  if (isAbortError(error)) {
+    return 'timeout';
+  }
+  if (isElectronNetworkRequestError(error)) {
+    return 'network';
+  }
+  return 'server';
+}
+
+async function requestBuiltInAiHealth(): Promise<BuiltInAiHealthResult> {
+  const startedAt = Date.now();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BUILT_IN_AI_HEALTH_TIMEOUT_MS);
+
+  try {
+    const response = await mainProcessFetch(BUILT_IN_AI_STATUS_URL, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    const latencyMs = Date.now() - startedAt;
+
+    if (!response.ok) {
+      return {
+        status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
+        latencyMs,
+        checkedAt: Date.now(),
+        reason: 'server',
+      };
+    }
+
+    try {
+      builtInAiHealthResponseSchema.parse(await response.json());
+    } catch {
+      return {
+        status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
+        latencyMs,
+        checkedAt: Date.now(),
+        reason: 'invalid-response',
+      };
+    }
+
+    return {
+      status: latencyMs >= BUILT_IN_AI_HEALTH_DEGRADED_MS
+        ? BUILT_IN_AI_HEALTH_STATUS.DEGRADED
+        : BUILT_IN_AI_HEALTH_STATUS.HEALTHY,
+      latencyMs,
+      checkedAt: Date.now(),
+    };
+  } catch (error) {
+    return {
+      status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
+      latencyMs: null,
+      checkedAt: Date.now(),
+      reason: resolveHealthFailureReason(error),
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function withBuiltInAiAuthorization(init: RequestInit | undefined, apiKey: string): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set('Authorization', `Bearer ${apiKey}`);
@@ -142,6 +222,28 @@ export const builtInAiService = {
       apiKey,
       models: BUILT_IN_AI_MODELS,
     }), capability);
+  },
+
+  async checkHealth(force = false): Promise<BuiltInAiHealthResult> {
+    if (!force && cachedBuiltInAiHealth
+      && Date.now() - cachedBuiltInAiHealth.checkedAt < BUILT_IN_AI_HEALTH_CACHE_MS) {
+      return cachedBuiltInAiHealth;
+    }
+
+    if (builtInAiHealthPromise) {
+      return builtInAiHealthPromise;
+    }
+
+    builtInAiHealthPromise = requestBuiltInAiHealth()
+      .then((result) => {
+        cachedBuiltInAiHealth = result;
+        return result;
+      })
+      .finally(() => {
+        builtInAiHealthPromise = null;
+      });
+
+    return builtInAiHealthPromise;
   },
 
   invalidateCredential(expectedValue?: string): void {

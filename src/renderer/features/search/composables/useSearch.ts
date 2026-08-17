@@ -23,6 +23,11 @@ export interface QuickSearchRequest {
   selectAll: boolean;
 }
 
+export interface KnowledgeConversationDraftState {
+  id: string;
+  createdAt: number;
+}
+
 export interface RequestQuickSearchOptions {
   selectAll?: boolean;
 }
@@ -33,6 +38,9 @@ const searchViewRequest = ref<SearchViewRequest>({
   mode: 'semantic',
   run: false,
 });
+const lastKnowledgeConversationThreadId = ref<string | null>(null);
+const activeKnowledgeConversationThreadId = ref<string | null>(null);
+const knowledgeConversationDraft = ref<KnowledgeConversationDraftState | null>(null);
 
 const quickSearchRequest = ref<QuickSearchRequest>({
   id: 0,
@@ -60,10 +68,41 @@ export function useSearch() {
     };
   };
 
+  const rememberKnowledgeConversationThread = (threadId?: string, isDraft = false): void => {
+    const normalizedThreadId = threadId?.trim() || null;
+    activeKnowledgeConversationThreadId.value = normalizedThreadId;
+    if (normalizedThreadId && !isDraft) {
+      lastKnowledgeConversationThreadId.value = normalizedThreadId;
+    }
+  };
+
+  const setKnowledgeConversationDraft = (draft: KnowledgeConversationDraftState | null): void => {
+    knowledgeConversationDraft.value = draft;
+  };
+
+  const forgetKnowledgeConversationThread = (threadId: string): void => {
+    const normalizedThreadId = threadId.trim();
+    if (activeKnowledgeConversationThreadId.value === normalizedThreadId) {
+      activeKnowledgeConversationThreadId.value = null;
+    }
+    if (lastKnowledgeConversationThreadId.value === normalizedThreadId) {
+      lastKnowledgeConversationThreadId.value = null;
+    }
+    if (knowledgeConversationDraft.value?.id === normalizedThreadId) {
+      knowledgeConversationDraft.value = null;
+    }
+  };
+
   return {
     searchViewRequest: readonly(searchViewRequest),
+    lastKnowledgeConversationThreadId: readonly(lastKnowledgeConversationThreadId),
+    activeKnowledgeConversationThreadId: readonly(activeKnowledgeConversationThreadId),
+    knowledgeConversationDraft: readonly(knowledgeConversationDraft),
     quickSearchRequest: readonly(quickSearchRequest),
     openSearchView,
+    rememberKnowledgeConversationThread,
+    setKnowledgeConversationDraft,
+    forgetKnowledgeConversationThread,
     requestFocusQuickSearch,
   };
 }

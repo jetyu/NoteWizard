@@ -1,5 +1,6 @@
 import type { KnowledgeCopilotConversationContext } from '@shared/knowledge-copilot.constants';
 import type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
+import type { BuiltInAiHealthResult } from '@shared/built-in-ai.constants';
 
 export type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
 
@@ -786,6 +787,8 @@ export const electronApi = {
       if (!api) throw new Error('AI Source bridge is unavailable');
       return api;
     },
+    checkBuiltInHealth: (force = false): Promise<BuiltInAiHealthResult> =>
+      electronApi.aiSource.getApi().checkBuiltInHealth(force),
     testConnection: (config: AiSourceConfig) => electronApi.aiSource.getApi().testConnection(config),
     validateToolCalling: (config: { provider: import('@shared/ai-provider.constants').AiProvider; baseUrl: string; apiKey: string; model: string }) =>
       electronApi.aiSource.getApi().validateToolCalling(config),

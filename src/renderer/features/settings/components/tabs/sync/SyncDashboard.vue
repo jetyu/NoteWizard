@@ -183,7 +183,7 @@ const emit = defineEmits<{
   (e: 'editProvider', provider: SyncProvider): void;
 }>();
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const settingsStore = useSettingsStore();
 const syncStore = useSyncStore();
 const workspaceStore = useWorkspaceStore();
@@ -214,9 +214,12 @@ const selectedProvider = computed<SyncProvider>(() =>
 const selectedProviderLabel = computed(() =>
   selectedProvider.value === SYNC_PROVIDERS.WEBDAV ? t('option.sync.webdav') : t('option.sync.oss')
 );
-const selectedProviderDescription = computed(() =>
-  selectedProvider.value === SYNC_PROVIDERS.WEBDAV ? t('text.webdavUrl') : t('text.ossEndpoint')
-);
+const selectedProviderDescription = computed(() => {
+  const descriptionKey = selectedProvider.value === SYNC_PROVIDERS.WEBDAV
+    ? 'text.syncTarget.webdav'
+    : 'text.syncTarget.oss';
+  return te(descriptionKey) ? t(descriptionKey) : selectedProviderLabel.value;
+});
 const selectedProviderSettingLabel = computed(() => `${selectedProviderLabel.value} ${t('common.setting')}`);
 const selectedProviderResetLabel = computed(() => `${selectedProviderLabel.value} ${t('common.reset')}`);
 
