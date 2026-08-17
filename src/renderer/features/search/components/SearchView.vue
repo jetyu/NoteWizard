@@ -264,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { IconX, IconMessage2Bolt, IconSubtitlesAi, IconTrash, IconFileText, IconPlus, IconTextScanAi, IconChevronDown, IconCheck, IconSend, IconMessageChatbot } from '@tabler/icons-vue';
@@ -381,6 +381,7 @@ const applyingWriteProposalId = ref('');
 const savingSummaryActionId = ref('');
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 let markdownEnhancementRunId = 0;
+let viewListenersActive = false;
 
 const HISTORY_PANE_DEFAULT_WIDTH = 300;
 const HISTORY_PANE_MIN_WIDTH = 220;
@@ -581,6 +582,10 @@ function resizeComposer(): void {
 }
 
 function scrollChatToBottom(): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
   void nextTick(() => {
     const messageList = messageListRef.value;
     if (!messageList) {
@@ -592,6 +597,10 @@ function scrollChatToBottom(): void {
 }
 
 async function syncMarkdownEnhancements(): Promise<void> {
+  if (!viewListenersActive) {
+    return;
+  }
+
   const runId = ++markdownEnhancementRunId;
   await nextTick();
   if (runId !== markdownEnhancementRunId) {
@@ -602,6 +611,10 @@ async function syncMarkdownEnhancements(): Promise<void> {
 }
 
 function scrollQuestionIntoView(questionId: string): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
   void nextTick(() => {
     const messageList = messageListRef.value;
     if (!messageList) {
@@ -1625,21 +1638,44 @@ function handleDocumentClick(event: MouseEvent): void {
   }
 }
 
-onMounted(() => {
-  applySearchRequest();
-  focusSearchInput();
-  scrollChatToBottom();
-  void syncMarkdownEnhancements();
+function activateViewListeners(): void {
+  if (viewListenersActive) {
+    return;
+  }
+
+  viewListenersActive = true;
   document.addEventListener('click', handleDocumentClick);
   window.addEventListener('resize', clampHistoryPaneWidth);
-});
+}
 
-onBeforeUnmount(() => {
-  clearPendingSearch();
+function deactivateViewListeners(): void {
+  if (!viewListenersActive) {
+    return;
+  }
+
+  viewListenersActive = false;
   markdownEnhancementRunId += 1;
   document.removeEventListener('click', handleDocumentClick);
   handlePaneResizeEnd();
   window.removeEventListener('resize', clampHistoryPaneWidth);
+}
+
+onMounted(() => {
+  applySearchRequest();
+});
+
+onActivated(() => {
+  activateViewListeners();
+  focusSearchInput();
+  scrollChatToBottom();
+  void syncMarkdownEnhancements();
+});
+
+onDeactivated(deactivateViewListeners);
+
+onBeforeUnmount(() => {
+  clearPendingSearch();
+  deactivateViewListeners();
 });
 </script>
 

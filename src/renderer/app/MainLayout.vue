@@ -5,12 +5,14 @@
       <AppSidebar :active-main-view="activeMainView" :main-views="mainViews" :custom-modules="enabledCustomModules"
         @select-main-view="setActiveMainView" @open-module="openModule" @manage-sidebar="openSidebarManager" />
 
+      <KeepAlive>
+        <SearchView v-if="activeMainView === 'search'" />
+      </KeepAlive>
       <WorkbenchView v-if="activeMainView === 'workbench'" />
       <MyFavoritesView v-else-if="activeMainView === 'favorites'" />
       <TagsView v-else-if="activeMainView === 'tags'" />
-      <SearchView v-else-if="activeMainView === 'search'" />
       <SettingsView v-else-if="activeMainView === 'settings'" />
-      <WorkspaceView v-else />
+      <WorkspaceView v-else-if="activeMainView === 'workspace'" />
     </div>
   </div>
 </template>
