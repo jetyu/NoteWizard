@@ -134,6 +134,8 @@ interface SyncTestConnectionResult {
   message?: string;
 }
 
+type BuiltInAiHealthResult = import('@shared/built-in-ai.constants').BuiltInAiHealthResult;
+
 type SyncRunResult =
   | {
     success: true;
@@ -437,6 +439,7 @@ declare global {
       };
 
       aiSource?: {
+        checkBuiltInHealth: (force?: boolean) => Promise<BuiltInAiHealthResult>;
         testConnection: (config: AiSourceConfig) => Promise<{ success: boolean; message?: string }>;
         validateToolCalling: (config: { provider: string; baseUrl: string; apiKey: string; model: string }) => Promise<{
           success: boolean;

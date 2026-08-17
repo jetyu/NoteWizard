@@ -97,7 +97,7 @@
                   </p>
                   <template v-else>
                     <div v-if="shouldDisplayFallbackNotice(question)" class="search-view__fallback-notice">
-                      {{ $t('message.knowledgeCopilot.noChatModel') }}
+                      {{ $t('search.retrievalOnlyNotice') }}
                     </div>
                     <div v-if="getQuestionAnswer(question)" class="search-view__answer-content markdown-body"
                       v-html="renderQuestionAnswer(question)"></div>
@@ -259,6 +259,16 @@
                     <IconChevronDown :size="13" />
                   </button>
                   <div v-if="isModelMenuOpen" class="search-view__mode-menu search-view__model-menu">
+                    <button v-if="inputMode === 'ask'" type="button"
+                      class="search-view__mode-option search-view__model-option"
+                      :class="{ 'is-active': isRetrievalOnlySelected }"
+                      @click="selectModelSource('')">
+                      <span class="search-view__model-option-copy">
+                        <span>{{ $t('search.modelServiceRetrievalOnly') }}</span>
+                        <small>{{ $t('search.modelServiceRetrievalOnlyDescription') }}</small>
+                      </span>
+                      <IconCheck v-if="isRetrievalOnlySelected" :size="14" />
+                    </button>
                     <button v-for="source in chatSources" :key="source.id" type="button"
                       class="search-view__mode-option search-view__model-option"
                       :class="{ 'is-active': activeModelSourceId === source.id }"
@@ -473,21 +483,37 @@ const activeModelSourceId = computed(() => (
 const activeModelSource = computed(() => (
   chatSources.value.find((source) => source.id === activeModelSourceId.value) ?? null
 ));
-const activeModelServiceName = computed(() => activeModelSource.value?.name ?? t('search.modelServiceLabel'));
+const isRetrievalOnlySelected = computed(() => (
+  inputMode.value === 'ask' && !activeModelSourceId.value
+));
+const activeModelServiceName = computed(() => {
+  if (isRetrievalOnlySelected.value) {
+    return t('search.modelServiceRetrievalOnly');
+  }
+  return activeModelSource.value?.name ?? t('search.modelServiceLabel');
+});
 const activeModelServiceTitle = computed(() => {
+  if (isRetrievalOnlySelected.value) {
+    return t('search.modelServiceRetrievalOnlyDescription');
+  }
   if (!activeModelSource.value) {
     return t('search.modelServiceLabel');
   }
   return `${activeModelSource.value.name} · ${resolveAiSourceModel(activeModelSource.value, 'chat')}`;
 });
 const isModelSelectorDisabled = computed(() => (
-  isBusy.value || !canUseKnowledgeSearch.value || chatSources.value.length === 0
+  isBusy.value
+  || !canUseKnowledgeSearch.value
+  || (inputMode.value === 'agent-task' && chatSources.value.length === 0)
+));
+const hasValidModelSelection = computed(() => (
+  isRetrievalOnlySelected.value || Boolean(activeModelSource.value)
 ));
 const canAsk = computed(() => (
   canUseKnowledgeSearch.value
   && Boolean(searchQuery.value.trim())
   && !isBusy.value
-  && Boolean(activeModelSource.value)
+  && hasValidModelSelection.value
 ));
 const agentWriteMode = computed<KnowledgeCopilotWriteMode>(() => config.value.workbench.agentWriteMode ?? 'confirm');
 const composerPlaceholder = computed(() => (

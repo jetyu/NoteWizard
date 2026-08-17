@@ -10,6 +10,7 @@ import { AI_PROVIDERS } from '../../../shared/ai-provider.constants.js';
 import { Document } from '@langchain/core/documents';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
+import { builtInAiService } from '../../services/built-in-ai.service.js';
 
 const logger = loggerService.createLogger('Electron:AI Source IPC');
 
@@ -26,6 +27,10 @@ const ValidateToolCallingSchema = z.object({
   baseUrl: z.string().url(),
   apiKey: z.string(),
   model: z.string().min(1),
+});
+
+const CheckBuiltInHealthSchema = z.object({
+  force: z.boolean().optional(),
 });
 
 async function testProviderCapability(
@@ -55,6 +60,11 @@ async function testProviderCapability(
  * Register AI Source IPC handlers
  */
 export function registerAiSourceIpcHandlers() {
+  ipcMain.handle(IPC_CHANNELS.AI_SOURCE_CHECK_BUILT_IN_HEALTH, async (_event, payload) => {
+    const validated = CheckBuiltInHealthSchema.parse(payload ?? {});
+    return await builtInAiService.checkHealth(validated.force ?? false);
+  });
+
   /**
    * Handle testing the connection to a specific AI source
    */

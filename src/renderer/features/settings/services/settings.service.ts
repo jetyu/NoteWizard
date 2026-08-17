@@ -14,6 +14,7 @@ import {
   inferAiProvider,
   type AiProvider,
 } from '@shared/ai-provider.constants';
+import type { BuiltInAiHealthResult } from '@shared/built-in-ai.constants';
 import type { AppSettings } from '../store/settings.store';
 
 type SettingsChangeReason = 'save' | 'language' | 'import' | 'reset';
@@ -94,6 +95,10 @@ export const settingsService = {
 
   async testConnection(config: AppSettings, override?: AiConnectionPayload): Promise<{ success: boolean; message?: string }> {
     return await electronApi.aiSource.testConnection(buildAiConnectionPayload(config, override));
+  },
+
+  async checkBuiltInAiHealth(force = false): Promise<BuiltInAiHealthResult> {
+    return await electronApi.aiSource.checkBuiltInHealth(force);
   },
 
   async openLogDir(): Promise<boolean | undefined> {
