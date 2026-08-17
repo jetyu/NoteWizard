@@ -17,7 +17,7 @@ import {
   type AiCapabilityModelMap,
   type AiProvider,
 } from '@shared/ai-provider.constants';
-import { isBuiltInAiSourceId } from '@shared/built-in-ai.constants';
+import { BUILT_IN_AI_MODELS, BUILT_IN_AI_SOURCE_ID, isBuiltInAiSourceId } from '@shared/built-in-ai.constants';
 import { normalizeKnowledgeCopilotRebuildConcurrency } from '@shared/knowledge-copilot.constants';
 
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
@@ -297,10 +297,6 @@ function createDefaultKnowledgeCopilotConfig(): KnowledgeCopilotSettings {
     ...DEFAULT_KNOWLEDGE_COPILOT_CONFIG,
     embeddingSourceId: '',
     embeddingModel: '',
-    askChatSourceId: '',
-    askChatModel: '',
-    agentChatSourceId: '',
-    agentChatModel: '',
     rerankerSourceId: '',
     rerankerModel: '',
   };
@@ -630,12 +626,12 @@ export const useSettingsStore = defineStore('settings', () => {
       config.value.knowledgeCopilot.embeddingModel = '';
     }
     if (config.value.knowledgeCopilot.askChatSourceId === id) {
-      config.value.knowledgeCopilot.askChatSourceId = '';
-      config.value.knowledgeCopilot.askChatModel = '';
+      config.value.knowledgeCopilot.askChatSourceId = BUILT_IN_AI_SOURCE_ID;
+      config.value.knowledgeCopilot.askChatModel = BUILT_IN_AI_MODELS.chat;
     }
     if (config.value.knowledgeCopilot.agentChatSourceId === id) {
-      config.value.knowledgeCopilot.agentChatSourceId = '';
-      config.value.knowledgeCopilot.agentChatModel = '';
+      config.value.knowledgeCopilot.agentChatSourceId = BUILT_IN_AI_SOURCE_ID;
+      config.value.knowledgeCopilot.agentChatModel = BUILT_IN_AI_MODELS.chat;
     }
     if (config.value.knowledgeCopilot.rerankerSourceId === id) {
       config.value.knowledgeCopilot.rerankerSourceId = '';
@@ -663,12 +659,12 @@ export const useSettingsStore = defineStore('settings', () => {
         config.value.knowledgeCopilot.embeddingModel = '';
       }
       if (config.value.knowledgeCopilot.askChatSourceId === id && !sourceSupportsCapability(source, 'chat')) {
-        config.value.knowledgeCopilot.askChatSourceId = '';
-        config.value.knowledgeCopilot.askChatModel = '';
+        config.value.knowledgeCopilot.askChatSourceId = BUILT_IN_AI_SOURCE_ID;
+        config.value.knowledgeCopilot.askChatModel = BUILT_IN_AI_MODELS.chat;
       }
       if (config.value.knowledgeCopilot.agentChatSourceId === id && !sourceSupportsCapability(source, 'chat')) {
-        config.value.knowledgeCopilot.agentChatSourceId = '';
-        config.value.knowledgeCopilot.agentChatModel = '';
+        config.value.knowledgeCopilot.agentChatSourceId = BUILT_IN_AI_SOURCE_ID;
+        config.value.knowledgeCopilot.agentChatModel = BUILT_IN_AI_MODELS.chat;
       }
       if (config.value.knowledgeCopilot.rerankerSourceId === id && !sourceSupportsCapability(source, 'reranker')) {
         config.value.knowledgeCopilot.rerankerSourceId = '';

@@ -225,7 +225,7 @@
             <div class="search-view__input-toolbar">
               <div class="search-view__toolbar-left">
                 <div class="search-view__mode-selector">
-                  <button type="button" class="search-view__mode-button" :disabled="isBusy"
+                  <button type="button" class="search-view__mode-button" :disabled="isBusy || !canUseKnowledgeSearch"
                     :aria-label="$t('search.inputModeLabel')" :aria-expanded="isModeMenuOpen"
                     @click.stop="toggleModeMenu">
                     <IconTextScanAi v-if="inputMode === 'agent-task'" :size="14" />
@@ -249,8 +249,30 @@
                 </button>
               </div>
               <div class="search-view__toolbar-right">
+                <div class="search-view__model-selector">
+                  <button type="button" class="search-view__mode-button search-view__model-button"
+                    :disabled="isModelSelectorDisabled" :aria-label="$t('search.modelServiceLabel')"
+                    :aria-expanded="isModelMenuOpen" :title="activeModelServiceTitle"
+                    @click.stop="toggleModelMenu">
+                    <IconSubtitlesAi :size="14" />
+                    <span>{{ activeModelServiceName }}</span>
+                    <IconChevronDown :size="13" />
+                  </button>
+                  <div v-if="isModelMenuOpen" class="search-view__mode-menu search-view__model-menu">
+                    <button v-for="source in chatSources" :key="source.id" type="button"
+                      class="search-view__mode-option search-view__model-option"
+                      :class="{ 'is-active': activeModelSourceId === source.id }"
+                      @click="selectModelSource(source.id)">
+                      <span class="search-view__model-option-copy">
+                        <span>{{ source.name }}</span>
+                        <small>{{ resolveAiSourceModel(source, 'chat') }}</small>
+                      </span>
+                      <IconCheck v-if="activeModelSourceId === source.id" :size="14" />
+                    </button>
+                  </div>
+                </div>
                 <button type="button" class="search-view__ask-button icon-action-button" :disabled="!canAsk"
-                  :title="canUseKnowledgeSearch ? $t('search.knowledgeAsk') : knowledgeUnavailableReason"
+                  :title="sendButtonTitle"
                   @click="handleAsk">
                   <IconSend :size="15" />
                 </button>
@@ -277,6 +299,7 @@ import { useWorkbenchStore } from '@renderer/features/workbench';
 import { useWorkspace } from '@renderer/features/workspace';
 import { useAppShellStore } from '@renderer/app/store/appShell.store';
 import { useSettingsStore } from '@renderer/features/settings';
+import { resolveAiSourceModel } from '@shared/ai-provider.constants';
 import type {
   KnowledgeCopilotExecutedWrite,
   KnowledgeCopilotPendingAction,
@@ -357,6 +380,7 @@ const inputModes: InputModeOption[] = [
 
 const inputMode = ref<KnowledgeInputMode>(config.value.knowledgeCopilot.defaultMode === 'agent' ? 'agent-task' : 'ask');
 const isModeMenuOpen = ref(false);
+const isModelMenuOpen = ref(false);
 const searchQuery = ref('');
 const semanticResults = ref<KnowledgeSearchResult[]>([]);
 const isSearching = ref(false);
@@ -437,8 +461,34 @@ function handleDividerPointerDown(event: PointerEvent): void {
 
 const canUseKnowledgeSearch = computed(() => knowledgeCopilotEnabled.value && knowledgeCopilotConfigured.value);
 const isBusy = computed(() => isSearching.value || isAIGenerating.value || isAgentRunning.value);
-const canAsk = computed(() => canUseKnowledgeSearch.value && Boolean(searchQuery.value.trim()) && !isBusy.value);
 const activeInputMode = computed(() => inputModes.find((mode) => mode.id === inputMode.value) ?? inputModes[0]);
+const chatSources = computed(() => config.value.aiSources.sources.filter((source) => (
+  source.capabilities.length === 0 || source.capabilities.includes('chat')
+)));
+const activeModelSourceId = computed(() => (
+  inputMode.value === 'agent-task'
+    ? config.value.knowledgeCopilot.agentChatSourceId
+    : config.value.knowledgeCopilot.askChatSourceId
+));
+const activeModelSource = computed(() => (
+  chatSources.value.find((source) => source.id === activeModelSourceId.value) ?? null
+));
+const activeModelServiceName = computed(() => activeModelSource.value?.name ?? t('search.modelServiceLabel'));
+const activeModelServiceTitle = computed(() => {
+  if (!activeModelSource.value) {
+    return t('search.modelServiceLabel');
+  }
+  return `${activeModelSource.value.name} · ${resolveAiSourceModel(activeModelSource.value, 'chat')}`;
+});
+const isModelSelectorDisabled = computed(() => (
+  isBusy.value || !canUseKnowledgeSearch.value || chatSources.value.length === 0
+));
+const canAsk = computed(() => (
+  canUseKnowledgeSearch.value
+  && Boolean(searchQuery.value.trim())
+  && !isBusy.value
+  && Boolean(activeModelSource.value)
+));
 const agentWriteMode = computed<KnowledgeCopilotWriteMode>(() => config.value.workbench.agentWriteMode ?? 'confirm');
 const composerPlaceholder = computed(() => (
   inputMode.value === 'agent-task'
@@ -453,6 +503,12 @@ const knowledgeUnavailableReason = computed(() => {
     return t('message.error.knowledgeCopilotNotConfigured');
   }
   return '';
+});
+const sendButtonTitle = computed(() => {
+  if (!canUseKnowledgeSearch.value) {
+    return knowledgeUnavailableReason.value;
+  }
+  return t('search.knowledgeAsk');
 });
 const questionThreads = computed<QuestionThread[]>(() => {
   const threadMap = new Map<string, WorkbenchQuestionEntry[]>();
@@ -530,17 +586,50 @@ function focusSearchInput(): void {
 }
 
 function toggleModeMenu(): void {
-  if (isBusy.value) {
+  if (isBusy.value || !canUseKnowledgeSearch.value) {
     return;
   }
 
   isModeMenuOpen.value = !isModeMenuOpen.value;
+  if (isModeMenuOpen.value) {
+    isModelMenuOpen.value = false;
+  }
 }
 
 function selectInputMode(mode: KnowledgeInputMode): void {
   inputMode.value = mode;
   isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
   focusSearchInput();
+}
+
+function toggleModelMenu(): void {
+  if (isModelSelectorDisabled.value) {
+    return;
+  }
+
+  isModelMenuOpen.value = !isModelMenuOpen.value;
+  if (isModelMenuOpen.value) {
+    isModeMenuOpen.value = false;
+  }
+}
+
+async function selectModelSource(sourceId: string): Promise<void> {
+  if (isBusy.value) {
+    return;
+  }
+
+  try {
+    const key = inputMode.value === 'agent-task' ? 'agentChatSourceId' : 'askChatSourceId';
+    await settingsStore.knowledgeCopilot.update(key, sourceId);
+    isModelMenuOpen.value = false;
+    searchError.value = '';
+    focusSearchInput();
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    searchError.value = message;
+    searchViewLogger.error('Failed to update Knowledge Copilot model service', { error: message });
+  }
 }
 
 function createThreadId(askedAt: number): string {
@@ -695,6 +784,7 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 function handleAsk(): void {
   clearPendingSearch();
   isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
 
   const query = searchQuery.value.trim();
   if (!query) {
@@ -1636,6 +1726,9 @@ function handleDocumentClick(event: MouseEvent): void {
   if (isModeMenuOpen.value && !target.closest('.search-view__mode-selector')) {
     isModeMenuOpen.value = false;
   }
+  if (isModelMenuOpen.value && !target.closest('.search-view__model-selector')) {
+    isModelMenuOpen.value = false;
+  }
 }
 
 function activateViewListeners(): void {
@@ -1655,6 +1748,8 @@ function deactivateViewListeners(): void {
 
   viewListenersActive = false;
   markdownEnhancementRunId += 1;
+  isModeMenuOpen.value = false;
+  isModelMenuOpen.value = false;
   document.removeEventListener('click', handleDocumentClick);
   handlePaneResizeEnd();
   window.removeEventListener('resize', clampHistoryPaneWidth);
@@ -1828,21 +1923,31 @@ onBeforeUnmount(() => {
 .search-view__toolbar-left {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 8px;
 }
 
 .search-view__toolbar-right {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 8px;
+}
+
+.search-view__model-selector {
+  position: relative;
+  flex: 0 1 180px;
+  min-width: 0;
 }
 
 .search-view__mode-selector {
   position: relative;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .search-view__mode-button {
+  max-width: 100%;
   height: 28px;
   display: inline-flex;
   align-items: center;
@@ -1870,6 +1975,18 @@ onBeforeUnmount(() => {
   opacity: 0.7;
 }
 
+.search-view__model-button {
+  width: 100%;
+  max-width: 180px;
+}
+
+.search-view__mode-button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-view__mode-menu {
   position: absolute;
   left: 0;
@@ -1881,6 +1998,14 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-md);
   background: var(--panel);
   box-shadow: 0 10px 25px color-mix(in srgb, #000 12%, transparent);
+}
+
+.search-view__model-menu {
+  right: 0;
+  left: auto;
+  width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .search-view__mode-option {
@@ -1914,6 +2039,29 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-size: 0.7rem;
   line-height: 1.3;
+}
+
+.search-view__model-option {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.search-view__model-option-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.search-view__model-option-copy > span,
+.search-view__model-option-copy > small {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-view__execution-button {
