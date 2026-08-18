@@ -198,7 +198,7 @@ let syncHoverCardHideTimer: ReturnType<typeof setTimeout> | null = null;
 const renameDraft = ref("");
 const renameInput = ref<HTMLInputElement | null>(null);
 const isSubmittingRename = ref(false);
-const collapsedIds = ref<Set<string>>(new Set());
+const collapsedIds = computed<ReadonlySet<string>>(() => new Set(workspaceStore.collapsedNotebookIds));
 const selectedIds = ref<Set<string>>(new Set());
 const selectionAnchorId = ref<string | null>(null);
 const dragState = ref<DragPayload | null>(null);
@@ -227,11 +227,11 @@ function toggleExpandCollapseAll() {
   }
 
   if (isAnyNotebookCollapsed.value) {
-    collapsedIds.value = new Set();
+    workspaceStore.setCollapsedNotebookIds([]);
     return;
   }
 
-  collapsedIds.value = new Set(notebookIdsWithChildren.value);
+  workspaceStore.setCollapsedNotebookIds(notebookIdsWithChildren.value);
 }
 
 function compareTreeNodeOrder(left: WorkspaceTreeNode, right: WorkspaceTreeNode) {
@@ -608,9 +608,11 @@ function toggleCollapse(entry: Extract<WorkspaceTreeEntry, { kind: "notebook" }>
   }
 
   if (collapsedIds.value.has(entry.id)) {
-    collapsedIds.value.delete(entry.id);
+    workspaceStore.setCollapsedNotebookIds(
+      [...collapsedIds.value].filter((id) => id !== entry.id)
+    );
   } else {
-    collapsedIds.value.add(entry.id);
+    workspaceStore.setCollapsedNotebookIds([...collapsedIds.value, entry.id]);
   }
 }
 
@@ -844,7 +846,9 @@ async function applyDropTarget() {
   suppressNextClick.value = true;
 
   if (target.mode === "inside" && target.targetId) {
-    collapsedIds.value.delete(target.targetId);
+    workspaceStore.setCollapsedNotebookIds(
+      [...collapsedIds.value].filter((id) => id !== target.targetId)
+    );
   }
 
   try {
@@ -1054,11 +1058,11 @@ watch(
   notebooks,
   (nextNotebooks: Notebook[]) => {
     const validIds = new Set(nextNotebooks.map((notebook: Notebook) => notebook.id));
-    collapsedIds.value = new Set(
+    workspaceStore.setCollapsedNotebookIds(
       [...collapsedIds.value].filter((id) => validIds.has(id))
     );
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 watch(
