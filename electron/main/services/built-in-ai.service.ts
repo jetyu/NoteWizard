@@ -54,6 +54,8 @@ export interface ResolvedBuiltInAiRequestConfig {
   model: string;
 }
 
+type BuiltInAiFailureReason = 'http' | 'network' | 'timeout' | 'unknown';
+
 let cachedBuiltInAiKey: string | null = null;
 let builtInAiKeyPromise: Promise<string> | null = null;
 let cachedBuiltInAiHealth: BuiltInAiHealthResult | null = null;
@@ -64,10 +66,72 @@ export function normalizeBuiltInAiConfig(value: unknown): BuiltInAiConfig {
 }
 
 export class BuiltInAiRequestError extends Error {
-  constructor(cause: unknown) {
-    super($t('builtInAi.error.unavailable'), { cause });
+  readonly capability?: AiCapability;
+  readonly status?: number;
+
+  constructor(cause: unknown, capability?: AiCapability) {
+    const status = getHttpStatus(cause);
+    super(formatBuiltInAiError(capability, getFailureReason(cause, status), status), { cause });
     this.name = 'BuiltInAiRequestError';
+    this.capability = capability;
+    this.status = status;
   }
+}
+
+function interpolate(template: string, replacements: Record<string, string>): string {
+  return Object.entries(replacements).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const match = /^HTTP (\d{3})(?:\D|$)/.exec(error.message);
+  return match ? Number(match[1]) : undefined;
+}
+
+function getFailureReason(error: unknown, status: number | undefined): BuiltInAiFailureReason {
+  if (status !== undefined) return 'http';
+  if (isAbortError(error)) return 'timeout';
+  if (isElectronNetworkRequestError(error)) return 'network';
+  return 'unknown';
+}
+
+function getCapabilityLabel(capability: AiCapability): string {
+  if (capability === 'chat') return $t('builtInAi.capability.chat', 'Chat');
+  if (capability === 'embedding') return $t('builtInAi.capability.embedding', 'Embedding');
+  return $t('builtInAi.capability.reranker', 'Reranker');
+}
+
+function getFailureReasonLabel(reason: BuiltInAiFailureReason, status: number | undefined): string {
+  if (reason === 'http' && status !== undefined) {
+    return interpolate(
+      $t('builtInAi.error.reason.http', 'the service returned HTTP {status}'),
+      { status: String(status) },
+    );
+  }
+  if (reason === 'network') return $t('builtInAi.error.reason.network', 'network connection failed');
+  if (reason === 'timeout') return $t('builtInAi.error.reason.timeout', 'the request timed out');
+  return $t('builtInAi.error.reason.unknown', 'the request failed');
+}
+
+function formatBuiltInAiError(
+  capability: AiCapability | undefined,
+  reason: BuiltInAiFailureReason,
+  status: number | undefined,
+): string {
+  if (!capability) return $t('builtInAi.error.unavailable');
+  return interpolate(
+    $t(
+      'builtInAi.error.requestFailed',
+      'Snaptium AI {capability} request failed: {reason}. Choose a custom AI source or try again later.',
+    ),
+    {
+      capability: getCapabilityLabel(capability),
+      reason: getFailureReasonLabel(reason, status),
+    },
+  );
 }
 
 function resolveEndpoint(baseUrl: string, capability: AiCapability): string {
@@ -92,22 +156,18 @@ async function loadBuiltInAiKey(): Promise<string> {
   }
 
   builtInAiKeyPromise = (async () => {
-    try {
-      const response = await mainProcessFetch(BUILT_IN_AI_KEY_URL, {
-        method: 'GET',
-        headers: { Accept: 'text/plain' },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const value = builtInAiKeySchema.parse(await response.text());
-      cachedBuiltInAiKey = value;
-      return value;
-    } catch (error) {
-      throw error instanceof BuiltInAiRequestError ? error : new BuiltInAiRequestError(error);
+    const response = await mainProcessFetch(BUILT_IN_AI_KEY_URL, {
+      method: 'GET',
+      headers: { Accept: 'text/plain' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+
+    const value = builtInAiKeySchema.parse(await response.text());
+    cachedBuiltInAiKey = value;
+    return value;
   })().finally(() => {
     builtInAiKeyPromise = null;
   });
@@ -117,6 +177,18 @@ async function loadBuiltInAiKey(): Promise<string> {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
+}
+
+function resolveCapabilityFromUrl(url: string): AiCapability | undefined {
+  try {
+    const pathname = new URL(url).pathname.replace(/\/+$/, '');
+    if (pathname.endsWith('/chat/completions')) return 'chat';
+    if (pathname.endsWith('/embeddings')) return 'embedding';
+    if (pathname.endsWith('/rerank')) return 'reranker';
+  } catch {
+    return undefined;
+  }
+  return undefined;
 }
 
 function resolveHealthFailureReason(error: unknown): BuiltInAiHealthFailureReason {
@@ -216,12 +288,16 @@ export const builtInAiService = {
   },
 
   async resolveRequest(capability: AiCapability): Promise<ResolvedBuiltInAiRequestConfig> {
-    const apiKey = await loadBuiltInAiKey();
-    return resolveBuiltInAiRequest(normalizeBuiltInAiConfig({
-      baseUrl: BUILT_IN_AI_BASE_URL,
-      apiKey,
-      models: BUILT_IN_AI_MODELS,
-    }), capability);
+    try {
+      const apiKey = await loadBuiltInAiKey();
+      return resolveBuiltInAiRequest(normalizeBuiltInAiConfig({
+        baseUrl: BUILT_IN_AI_BASE_URL,
+        apiKey,
+        models: BUILT_IN_AI_MODELS,
+      }), capability);
+    } catch (error) {
+      throw this.normalizeRequestError(error, capability);
+    }
   },
 
   async checkHealth(force = false): Promise<BuiltInAiHealthResult> {
@@ -252,19 +328,14 @@ export const builtInAiService = {
     }
   },
 
-  isEndpoint(endpoint: string): boolean {
-    try {
-      const endpointUrl = new URL(endpoint);
-      const baseUrl = new URL(BUILT_IN_AI_BASE_URL);
-      return endpointUrl.origin === baseUrl.origin
-        && endpointUrl.pathname.startsWith(`${baseUrl.pathname.replace(/\/+$/, '')}/`);
-    } catch {
-      return false;
+  normalizeRequestError(error: unknown, capability?: AiCapability): BuiltInAiRequestError {
+    if (error instanceof BuiltInAiRequestError && (error.capability || !capability)) {
+      return error;
     }
-  },
-
-  normalizeRequestError(error: unknown): BuiltInAiRequestError {
-    return error instanceof BuiltInAiRequestError ? error : new BuiltInAiRequestError(error);
+    return new BuiltInAiRequestError(
+      error instanceof BuiltInAiRequestError ? error.cause : error,
+      capability,
+    );
   },
 
   findRequestError(error: unknown): BuiltInAiRequestError | null {
@@ -292,6 +363,7 @@ export const builtInAiService = {
       : input instanceof URL
         ? input.toString()
         : input.url;
+    const capability = resolveCapabilityFromUrl(url);
 
     try {
       const apiKey = await loadBuiltInAiKey();
@@ -308,7 +380,7 @@ export const builtInAiService = {
       }
       return response;
     } catch (error) {
-      throw this.normalizeRequestError(error);
+      throw this.normalizeRequestError(error, capability);
     }
   },
 };

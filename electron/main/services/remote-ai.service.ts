@@ -2,6 +2,7 @@ import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 import { isElectronNetworkRequestError, mainProcessFetch } from './network.service.js';
 import { builtInAiService } from './built-in-ai.service.js';
+import { AI_PROVIDERS, type AiProvider } from '../../shared/ai-provider.constants.js';
 
 const logger = loggerService.createLogger('Electron:Remote AI Service');
 
@@ -52,6 +53,7 @@ export type AiChatToolChoice =
   };
 
 interface RequestConfig {
+  provider: AiProvider;
   endpoint: string;
   apiKey: string;
 }
@@ -78,6 +80,7 @@ interface RerankConfig extends RequestConfig {
 }
 
 interface TestConnectionConfig {
+  provider: AiProvider;
   aiBaseUrl: string;
   aiApiKey: string;
   aiModel: string;
@@ -293,6 +296,7 @@ export const remoteAiService = {
     endpoint: string,
     apiKey: string,
     payload: JsonObject,
+    provider: AiProvider,
   ): Promise<TResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -304,7 +308,7 @@ export const remoteAiService = {
         body: JSON.stringify(payload),
         signal: controller.signal,
       };
-      const response = builtInAiService.isEndpoint(endpoint)
+      const response = provider === AI_PROVIDERS.SNAPTIUM
         ? await builtInAiService.fetch(endpoint, requestInit)
         : await mainProcessFetch(endpoint, requestInit);
 
@@ -339,7 +343,7 @@ export const remoteAiService = {
       return data as TResponse;
     } catch (error) {
       clearTimeout(timeoutId);
-      if (builtInAiService.isEndpoint(endpoint)) {
+      if (provider === AI_PROVIDERS.SNAPTIUM) {
         throw builtInAiService.normalizeRequestError(error);
       }
 
@@ -362,7 +366,7 @@ export const remoteAiService = {
   },
 
   async chat(config: ChatConfig): Promise<ChatResponse> {
-    const { endpoint, apiKey, model, messages, max_tokens, temperature, stream, tools, tool_choice } = config;
+    const { provider, endpoint, apiKey, model, messages, max_tokens, temperature, stream, tools, tool_choice } = config;
 
     return await this.request<ChatResponse>(endpoint, apiKey, {
       model,
@@ -372,14 +376,14 @@ export const remoteAiService = {
       stream: Boolean(stream),
       ...(tools?.length ? { tools } : {}),
       ...(tool_choice ? { tool_choice } : {}),
-    });
+    }, provider);
   },
 
   async chatStream(
     config: ChatConfig,
     onChunk: (chunk: AiChatStreamChunk) => void,
   ): Promise<AiChatStreamResult> {
-    const { endpoint, apiKey, model, messages, max_tokens, temperature, tools, tool_choice } = config;
+    const { provider, endpoint, apiKey, model, messages, max_tokens, temperature, tools, tool_choice } = config;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
     let accumulated = '';
@@ -399,7 +403,7 @@ export const remoteAiService = {
         }),
         signal: controller.signal,
       };
-      const response = builtInAiService.isEndpoint(endpoint)
+      const response = provider === AI_PROVIDERS.SNAPTIUM
         ? await builtInAiService.fetch(endpoint, requestInit)
         : await mainProcessFetch(endpoint, requestInit);
 
@@ -453,7 +457,7 @@ export const remoteAiService = {
 
       return { content: accumulated };
     } catch (error) {
-      if (builtInAiService.isEndpoint(endpoint)) {
+      if (provider === AI_PROVIDERS.SNAPTIUM) {
         throw builtInAiService.normalizeRequestError(error);
       }
 
@@ -478,7 +482,7 @@ export const remoteAiService = {
   },
 
   async embed(config: EmbedConfig): Promise<EmbeddingResponse> {
-    const { endpoint, apiKey, model, input } = config;
+    const { provider, endpoint, apiKey, model, input } = config;
     const sourceInput = Array.isArray(input) ? input : [input];
     const normalizedInput = sourceInput.filter(
       (text): text is string => typeof text === 'string' && text.trim().length > 0,
@@ -487,17 +491,17 @@ export const remoteAiService = {
     return await this.request<EmbeddingResponse>(endpoint, apiKey, {
       model,
       input: normalizedInput,
-    });
+    }, provider);
   },
 
   async rerank(config: RerankConfig): Promise<Array<{ index: number; score: number }>> {
-    const { endpoint, apiKey, model, query, documents } = config;
+    const { provider, endpoint, apiKey, model, query, documents } = config;
     const response = await this.request<RerankResponse>(endpoint, apiKey, {
       model,
       query,
       documents,
       top_n: documents.length,
-    });
+    }, provider);
 
     const candidateResults = Array.isArray(response.results)
       ? response.results
@@ -515,7 +519,7 @@ export const remoteAiService = {
   },
 
   async testConnection(config: TestConnectionConfig): Promise<{ success: boolean; message?: string }> {
-    const { aiBaseUrl, aiApiKey, aiModel, capabilities } = config;
+    const { provider, aiBaseUrl, aiApiKey, aiModel, capabilities } = config;
     const normalizedCapabilities = capabilities.length > 0 ? capabilities : ['chat', 'embedding', 'reranker'];
     const orderedCapabilities: Array<'chat' | 'embedding' | 'reranker'> = ['chat', 'embedding', 'reranker'];
     const requestedCapabilities = orderedCapabilities.filter((capability) => normalizedCapabilities.includes(capability));
@@ -528,7 +532,7 @@ export const remoteAiService = {
           ? { model: aiModel, input: ['test'] }
           : { model: aiModel, query: 'test', documents: ['hello', 'world'], top_n: 2 };
 
-      return await this.request<JsonObject>(endpoint, aiApiKey, payload);
+      return await this.request<JsonObject>(endpoint, aiApiKey, payload, provider);
     };
 
     let lastError: unknown = null;

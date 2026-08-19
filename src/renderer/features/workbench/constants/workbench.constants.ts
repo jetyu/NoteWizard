@@ -14,6 +14,8 @@ export interface WorkbenchQuestionEntry {
   query: string;
   askedAt: number;
   answeredAt?: number;
+  generationStatus?: WorkbenchQuestionGenerationStatus;
+  error?: string;
   answer: string;
   fullAnswer?: string;
   sourceNoteIds: string[];
@@ -32,6 +34,8 @@ export interface WorkbenchQuestionSource {
 }
 
 export type WorkbenchQuestionMode = 'ask' | 'agent-task';
+
+export type WorkbenchQuestionGenerationStatus = 'completed' | 'failed' | 'stopped';
 
 export type WorkbenchAgentWriteMode = 'confirm' | 'auto';
 
@@ -167,6 +171,10 @@ export const WORKBENCH_MODULE_DEFINITIONS: WorkbenchModuleDefinition[] = [
 
 function sanitizeQuestionMode(value: unknown): WorkbenchQuestionMode | undefined {
   return value === 'agent-task' ? 'agent-task' : value === 'ask' ? 'ask' : undefined;
+}
+
+function sanitizeQuestionGenerationStatus(value: unknown): WorkbenchQuestionGenerationStatus | undefined {
+  return value === 'completed' || value === 'failed' || value === 'stopped' ? value : undefined;
 }
 
 function sanitizeAgentWriteMode(value: unknown): WorkbenchAgentWriteMode {
@@ -378,6 +386,8 @@ function sanitizeRecentQuestions(value: unknown, limit: number = WORKBENCH_LIMIT
         query: String(normalized.query ?? '').trim(),
         askedAt: Number(normalized.askedAt ?? 0),
         answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+        generationStatus: sanitizeQuestionGenerationStatus(normalized.generationStatus),
+        error: String(normalized.error ?? '').trim().slice(0, 800) || undefined,
         answer: String(normalized.answer ?? '').trim(),
         fullAnswer: String(normalized.fullAnswer ?? '').trim() || undefined,
         sourceNoteIds,

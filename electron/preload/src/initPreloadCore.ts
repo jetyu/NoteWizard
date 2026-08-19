@@ -252,12 +252,14 @@ const electronAPI = Object.freeze({
     indexNote: (request: KnowledgeCopilotQueryPayload) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_INDEX_NOTE, request),
     rebuildIndex: (request: KnowledgeCopilotQueryPayload) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_REBUILD_INDEX, request),
     answerQuestionStream: (payload: KnowledgeCopilotQueryPayload) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM, payload),
+    cancelAnswerQuestion: (payload: { requestId: string }) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_CANCEL_ANSWER_QUESTION, payload),
     onAnswerQuestionStreamEvent: (callback: (payload: JsonObject) => void) => {
       const subscription = (_event: Electron.IpcRendererEvent, payload: JsonObject) => callback(payload);
       ipcRenderer.on(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM_EVENT, subscription);
       return () => ipcRenderer.removeListener(IPC_CHANNELS.KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM_EVENT, subscription);
     },
     runTask: (payload: KnowledgeCopilotQueryPayload) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_RUN_TASK, payload),
+    cancelTask: (payload: { requestId: string }) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_CANCEL_TASK, payload),
     deleteNoteIndex: (noteId: string) => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_DELETE_NOTE_INDEX, noteId),
     getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.KNOWLEDGE_COPILOT_GET_STATUS),
   }),

@@ -4,7 +4,6 @@ import { getErrorMessage } from '../error.service.js';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { createProviderEmbeddings, createProviderReranker } from '../ai-provider.service.js';
-import { builtInAiService } from '../built-in-ai.service.js';
 import { SnaptiumLanceVectorStore } from './snaptium-lance-vector-store.js';
 import type { AiProvider } from '../../../shared/ai-provider.constants.js';
 
@@ -305,10 +304,6 @@ class KnowledgeCopilotIndexService {
 
       return orderedResults.slice(0, topK);
     } catch (error) {
-      const builtInError = builtInAiService.findRequestError(error);
-      if (builtInError) {
-        throw builtInError;
-      }
       logger.warn(`Rerank fallback triggered: ${getErrorMessage(error)}`);
       return candidates.slice(0, topK);
     }

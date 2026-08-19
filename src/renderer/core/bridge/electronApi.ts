@@ -310,7 +310,14 @@ export interface KnowledgeCopilotAskQuestionStreamPayload {
   context?: KnowledgeCopilotConversationContext;
 }
 
+export interface KnowledgeCopilotCancelQuestionResult {
+  success: boolean;
+  cancelled: boolean;
+  error?: string;
+}
+
 export interface KnowledgeCopilotRunTaskPayload {
+  requestId: string;
   task: string;
   writeMode?: KnowledgeCopilotWriteMode;
   conversationId?: string;
@@ -332,6 +339,7 @@ export interface KnowledgeCopilotPendingAction {
 
 export interface KnowledgeAnswerResult {
   success: boolean;
+  cancelled?: boolean;
   answer?: string;
   sources: KnowledgeSearchResult[];
   error?: string;
@@ -371,6 +379,13 @@ export type KnowledgeAnswerStreamEvent =
     answer: string;
     sources: KnowledgeSearchResult[];
     usedSearchFallback: boolean;
+  }
+  | {
+    requestId: string;
+    type: 'cancelled';
+    answer?: string;
+    sources?: KnowledgeSearchResult[];
+    usedSearchFallback?: boolean;
   }
   | {
     requestId: string;
@@ -445,6 +460,7 @@ export type KnowledgeCopilotExecutedWrite =
 
 export interface KnowledgeCopilotTaskResult {
   success: boolean;
+  cancelled?: boolean;
   finalAnswer?: string;
   steps: KnowledgeCopilotStep[];
   traceEvents: KnowledgeCopilotTraceEvent[];
@@ -460,7 +476,8 @@ export interface KnowledgeCopilotTaskResult {
     | 'iteration-limit'
     | 'runtime-limit'
     | 'tool-failure-limit'
-    | 'weak-search-limit';
+    | 'weak-search-limit'
+    | 'cancelled';
   error?: string;
   conversationId: string;
   pendingActions: KnowledgeCopilotPendingAction[];
@@ -909,11 +926,17 @@ export const electronApi = {
     answerQuestionStream: (payload: KnowledgeCopilotAskQuestionStreamPayload): Promise<KnowledgeAnswerResult> => {
       return electronApi.knowledgeCopilot.getApi().answerQuestionStream(payload);
     },
+    cancelAnswerQuestion: (requestId: string): Promise<KnowledgeCopilotCancelQuestionResult> => {
+      return electronApi.knowledgeCopilot.getApi().cancelAnswerQuestion({ requestId });
+    },
     onAnswerQuestionStreamEvent: (callback: (event: KnowledgeAnswerStreamEvent) => void): (() => void) => {
       return electronApi.knowledgeCopilot.getApi().onAnswerQuestionStreamEvent(callback);
     },
     runTask: (payload: KnowledgeCopilotRunTaskPayload): Promise<KnowledgeCopilotTaskResult> => {
       return electronApi.knowledgeCopilot.getApi().runTask(payload);
+    },
+    cancelTask: (requestId: string): Promise<KnowledgeCopilotCancelQuestionResult> => {
+      return electronApi.knowledgeCopilot.getApi().cancelTask({ requestId });
     },
     deleteNoteIndex: (noteId: string) => {
       return electronApi.knowledgeCopilot.getApi().deleteNoteIndex(noteId);

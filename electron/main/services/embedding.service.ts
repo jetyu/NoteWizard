@@ -1,10 +1,12 @@
 import { remoteAiService } from './remote-ai.service.js';
 import { loggerService } from './log/logger.service.js';
 import { getErrorMessage } from '../services/error.service.js';
+import type { AiProvider } from '../../shared/ai-provider.constants.js';
 
 const logger = loggerService.createLogger('Electron:Embedding Service');
 
 interface EmbeddingConfig {
+  provider: AiProvider;
   endpoint: string;
   apiKey: string;
   model: string;
@@ -48,7 +50,7 @@ export async function generateEmbeddings(
   texts: string[],
   config: EmbeddingConfig,
 ): Promise<number[][]> {
-  const { endpoint, apiKey, model } = config;
+  const { provider, endpoint, apiKey, model } = config;
 
   if (!endpoint || !apiKey || !model) {
     throw new Error('Missing embedding configuration');
@@ -60,6 +62,7 @@ export async function generateEmbeddings(
 
   try {
     const data = await remoteAiService.embed({
+      provider,
       endpoint,
       apiKey,
       model,

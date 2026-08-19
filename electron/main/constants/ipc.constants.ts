@@ -61,6 +61,8 @@ export const IPC_CHANNELS = {
   PLATFORM_WIN32_KERNEL: 'win32',
   KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM: 'knowledge-copilot:answer-question-stream',
   KNOWLEDGE_COPILOT_ANSWER_QUESTION_STREAM_EVENT: 'knowledge-copilot:answer-question-stream-event',
+  KNOWLEDGE_COPILOT_CANCEL_ANSWER_QUESTION: 'knowledge-copilot:cancel-answer-question',
+  KNOWLEDGE_COPILOT_CANCEL_TASK: 'knowledge-copilot:cancel-task',
   KNOWLEDGE_COPILOT_DELETE_NOTE_INDEX: 'knowledge-copilot:delete-note-index',
   KNOWLEDGE_COPILOT_GET_STATUS: 'knowledge-copilot:get-status',
   KNOWLEDGE_COPILOT_INDEX_NOTE: 'knowledge-copilot:index-note',
