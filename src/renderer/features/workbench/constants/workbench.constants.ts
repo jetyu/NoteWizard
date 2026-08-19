@@ -14,6 +14,7 @@ export interface WorkbenchQuestionEntry {
   query: string;
   askedAt: number;
   answeredAt?: number;
+  responseTimeMs?: number;
   generationStatus?: WorkbenchQuestionGenerationStatus;
   error?: string;
   answer: string;
@@ -386,6 +387,9 @@ function sanitizeRecentQuestions(value: unknown, limit: number = WORKBENCH_LIMIT
         query: String(normalized.query ?? '').trim(),
         askedAt: Number(normalized.askedAt ?? 0),
         answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+        responseTimeMs: Number.isFinite(Number(normalized.responseTimeMs)) && Number(normalized.responseTimeMs) > 0
+          ? Math.round(Number(normalized.responseTimeMs))
+          : undefined,
         generationStatus: sanitizeQuestionGenerationStatus(normalized.generationStatus),
         error: String(normalized.error ?? '').trim().slice(0, 800) || undefined,
         answer: String(normalized.answer ?? '').trim(),

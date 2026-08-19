@@ -98,6 +98,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
     agentWriteMode?: WorkbenchAgentWriteMode;
     askedAt?: number;
     answeredAt?: number;
+    responseTimeMs?: number;
     generationStatus?: WorkbenchQuestionGenerationStatus;
     error?: string;
     answer?: string;
@@ -128,6 +129,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
           .filter((noteId, index, items) => noteId.length > 0 && items.indexOf(noteId) === index);
     const fullAnswer = trimFullAnswer(payload.answer ?? '');
     const answeredAt = Number(payload.answeredAt ?? 0);
+    const responseTimeMs = Number(payload.responseTimeMs ?? 0);
 
     const nextEntry: WorkbenchQuestionEntry = {
       id: entryId,
@@ -135,6 +137,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
       query,
       askedAt,
       answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+      responseTimeMs: Number.isFinite(responseTimeMs) && responseTimeMs > 0 ? Math.round(responseTimeMs) : undefined,
       generationStatus: payload.generationStatus,
       error: payload.error?.trim().slice(0, 800) || undefined,
       answer: trimAnswer(fullAnswer),
@@ -196,6 +199,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
     questionId: string;
     query: string;
     answeredAt?: number;
+    responseTimeMs?: number;
     answer?: string;
     sourceNoteIds?: string[];
     sources?: WorkbenchQuestionSource[];
@@ -227,11 +231,13 @@ export const useWorkbenchStore = defineStore('workbench', () => {
           .filter((noteId, index, items) => noteId.length > 0 && items.indexOf(noteId) === index);
     const fullAnswer = trimFullAnswer(payload.answer ?? '');
     const answeredAt = Number(payload.answeredAt ?? 0);
+    const responseTimeMs = Number(payload.responseTimeMs ?? targetQuestion.responseTimeMs ?? 0);
     const nextEntry: WorkbenchQuestionEntry = {
       ...targetQuestion,
       query,
       mode: 'ask',
       answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+      responseTimeMs: Number.isFinite(responseTimeMs) && responseTimeMs > 0 ? Math.round(responseTimeMs) : undefined,
       generationStatus: payload.generationStatus,
       error: payload.error?.trim().slice(0, 800) || undefined,
       answer: trimAnswer(fullAnswer),

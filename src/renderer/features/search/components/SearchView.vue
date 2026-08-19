@@ -224,7 +224,7 @@
                     </div>
                   </template>
                   </div>
-                  <div v-if="getQuestionAnswer(question) || isLatestSettledOrdinaryQuestion(question) || formatQuestionAnsweredAt(question)"
+                  <div v-if="getQuestionAnswer(question) || isLatestSettledOrdinaryQuestion(question) || formatQuestionAnsweredAt(question) || formatQuestionResponseTime(question)"
                     class="search-view__message-actions search-view__message-actions--assistant">
                     <button v-if="getQuestionAnswer(question)" type="button" class="search-view__message-action"
                       :title="$t(copiedActionId === `${question.id}:assistant` ? 'search.messageCopied' : 'button.copy')"
@@ -242,6 +242,9 @@
                     </button>
                     <span v-if="formatQuestionAnsweredAt(question)" class="search-view__message-timestamp">
                       {{ formatQuestionAnsweredAt(question) }}
+                    </span>
+                    <span v-if="formatQuestionResponseTime(question)" class="search-view__message-timestamp">
+                      {{ $t('search.responseTime', { duration: formatQuestionResponseTime(question) }) }}
                     </span>
                   </div>
                 </div>
@@ -1034,6 +1037,7 @@ async function askKnowledgeQuestion(query: string, targetQuestion?: WorkbenchQue
   }
 
   const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+  const responseStartedAt = Date.now();
   activeRuns.value = {
     ...activeRuns.value,
     [threadId]: {
@@ -1063,6 +1067,7 @@ async function askKnowledgeQuestion(query: string, targetQuestion?: WorkbenchQue
       ? await workbenchStore.replaceQuestion({
           questionId: targetQuestion.id,
           query,
+          responseTimeMs: 0,
           answer: '',
           sourceNoteIds: [],
           sources: [],
@@ -1154,6 +1159,7 @@ async function askKnowledgeQuestion(query: string, targetQuestion?: WorkbenchQue
       questionId: draftQuestion.id,
       query,
       answeredAt: Date.now(),
+      responseTimeMs: Date.now() - responseStartedAt,
       answer: generatedAnswer,
       sourceNoteIds: Array.from(new Set(runSources.map((result) => result.chunk.noteId))),
       sources: buildQuestionSources(runSources),
@@ -1182,6 +1188,7 @@ async function askKnowledgeQuestion(query: string, targetQuestion?: WorkbenchQue
         questionId: draftQuestion.id,
         query,
         answeredAt: Date.now(),
+        responseTimeMs: Date.now() - responseStartedAt,
         answer: generatedAnswer,
         generationStatus: stopped ? 'stopped' : 'failed',
         error: stopped ? undefined : message,
@@ -1229,6 +1236,7 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
     return;
   }
   const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+  const responseStartedAt = Date.now();
   activeRuns.value = {
     ...activeRuns.value,
     [threadId]: {
@@ -1334,6 +1342,7 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
       threadId,
       askedAt,
       answeredAt: Date.now(),
+      responseTimeMs: Date.now() - responseStartedAt,
       generationStatus,
       error: generationError,
       answer: generatedAnswer,
@@ -1962,6 +1971,16 @@ function formatQuestionAskedAt(question: WorkbenchQuestionEntry): string {
 
 function formatQuestionAnsweredAt(question: WorkbenchQuestionEntry): string {
   return formatMessageTimestamp(question.answeredAt);
+}
+
+function formatQuestionResponseTime(question: WorkbenchQuestionEntry): string {
+  const responseTimeMs = Number(question.responseTimeMs ?? 0);
+  if (!Number.isFinite(responseTimeMs) || responseTimeMs <= 0) {
+    return '';
+  }
+
+  const seconds = responseTimeMs / 1000;
+  return seconds < 10 ? seconds.toFixed(1) : Math.round(seconds).toString();
 }
 
 function applySearchRequest(): void {
