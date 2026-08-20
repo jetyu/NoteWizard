@@ -13,7 +13,7 @@
       <aside class="search-view__history-pane" :style="historyPaneStyle">
         <header class="search-view__pane-header">
           <h2>{{ $t('search.recentConversations') }}</h2>
-          <button type="button" class="search-view__new-thread icon-action-button" :disabled="isBusy"
+          <button type="button" class="search-view__new-thread icon-action-button"
             :title="$t('search.newKnowledgeChat')" @click="startNewThread">
             <IconPlus :size="14" />
             <span>{{ $t('search.newKnowledgeChat') }}</span>
@@ -69,19 +69,32 @@
                   <div class="search-view__user-bubble">
                     {{ question.query }}
                   </div>
-                  <span v-if="formatQuestionAskedAt(question)" class="search-view__message-timestamp">
-                    {{ formatQuestionAskedAt(question) }}
-                  </span>
+                  <div class="search-view__message-actions search-view__message-actions--user">
+                    <button type="button" class="search-view__message-action"
+                      :title="$t(copiedActionId === `${question.id}:user` ? 'search.messageCopied' : 'button.copy')"
+                      :aria-label="$t(copiedActionId === `${question.id}:user` ? 'search.messageCopied' : 'button.copy')"
+                      @click="copyMessageText(question.query, `${question.id}:user`)">
+                      <IconCopyCheck v-if="copiedActionId === `${question.id}:user`" :size="14" />
+                      <IconCopy v-else :size="14" />
+                    </button>
+                    <button v-if="isLatestSettledOrdinaryQuestion(question)" type="button"
+                      class="search-view__message-action" :disabled="isThreadBusy(question.threadId)" :title="$t('button.edit')"
+                      :aria-label="$t('button.edit')"
+                      @click="beginEditingQuestion(question)">
+                      <IconEdit :size="14" />
+                    </button>
+                    <span v-if="formatQuestionAskedAt(question)" class="search-view__message-timestamp">
+                      {{ formatQuestionAskedAt(question) }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="search-view__message search-view__message--assistant">
                 <span class="search-view__assistant-avatar">
                   <IconSubtitlesAi :size="15" />
                 </span>
-                <div class="search-view__assistant-card">
-                  <span v-if="formatQuestionAnsweredAt(question)" class="search-view__message-timestamp">
-                    {{ formatQuestionAnsweredAt(question) }}
-                  </span>
+                <div class="search-view__assistant-message-body">
+                  <div class="search-view__assistant-card">
                   <div v-if="isGeneratingQuestion(question) && !getQuestionAnswer(question)"
                     class="search-view__thinking" role="status" aria-live="polite">
                     <span class="search-view__thinking-dots" aria-hidden="true">
@@ -96,12 +109,17 @@
                     {{ getQuestionError(question) }}
                   </p>
                   <template v-else>
+                    <div v-if="question.generationStatus === 'stopped'" class="search-view__stopped-notice">
+                      {{ $t('search.answerStopped') }}
+                    </div>
                     <div v-if="shouldDisplayFallbackNotice(question)" class="search-view__fallback-notice">
                       {{ $t('search.retrievalOnlyNotice') }}
                     </div>
                     <div v-if="getQuestionAnswer(question)" class="search-view__answer-content markdown-body"
                       v-html="renderQuestionAnswer(question)"></div>
-                    <p v-else class="search-view__status-text">{{ $t('search.noResultsSemantic') }}</p>
+                    <p v-else-if="question.generationStatus !== 'stopped'" class="search-view__status-text">
+                      {{ $t('search.noResultsSemantic') }}
+                    </p>
                     <div v-if="canSaveQuestionAsNote(question)" class="search-view__answer-actions">
                       <button type="button" class="search-view__save-note-button icon-action-button"
                         :disabled="Boolean(savingSummaryActionId)" @click="saveQuestionAsNote(question)">
@@ -149,13 +167,13 @@
                           <pre>{{ JSON.stringify(action.args, null, 2) }}</pre>
                         </div>
                         <div class="search-view__agent-write-actions">
-                          <button type="button" class="search-view__agent-write-apply action-button primary" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'approve')">
+                          <button type="button" class="search-view__agent-write-apply action-button primary" :disabled="isThreadBusy(question.threadId)" @click="resumeAgentAction(question, 'approve')">
                             <IconCheck :size="14" />{{ $t('button.approve') }}
                           </button>
-                          <button v-if="action.allowedDecisions.includes('edit')" type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isAgentRunning" @click="editAndResumeAgentAction(question, action, index)">
+                          <button v-if="action.allowedDecisions.includes('edit')" type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isThreadBusy(question.threadId)" @click="editAndResumeAgentAction(question, action, index)">
                             {{ $t('button.edit') }}
                           </button>
-                          <button type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isAgentRunning" @click="resumeAgentAction(question, 'reject')">
+                          <button type="button" class="search-view__agent-write-dismiss action-button secondary" :disabled="isThreadBusy(question.threadId)" @click="resumeAgentAction(question, 'reject')">
                             {{ $t('button.reject') }}
                           </button>
                         </div>
@@ -205,6 +223,30 @@
                       </article>
                     </div>
                   </template>
+                  </div>
+                  <div v-if="getQuestionAnswer(question) || isLatestSettledOrdinaryQuestion(question) || formatQuestionAnsweredAt(question) || formatQuestionResponseTime(question)"
+                    class="search-view__message-actions search-view__message-actions--assistant">
+                    <button v-if="getQuestionAnswer(question)" type="button" class="search-view__message-action"
+                      :title="$t(copiedActionId === `${question.id}:assistant` ? 'search.messageCopied' : 'button.copy')"
+                      :aria-label="$t(copiedActionId === `${question.id}:assistant` ? 'search.messageCopied' : 'button.copy')"
+                      @click="copyMessageText(getQuestionAnswer(question), `${question.id}:assistant`)">
+                      <IconCopyCheck v-if="copiedActionId === `${question.id}:assistant`" :size="14" />
+                      <IconCopy v-else :size="14" />
+                    </button>
+                    <button v-if="isLatestSettledOrdinaryQuestion(question)" type="button"
+                      class="search-view__message-action" :disabled="isThreadBusy(question.threadId)"
+                      :title="$t(question.generationStatus === 'failed' || question.generationStatus === 'stopped' ? 'search.retryAnswer' : 'search.regenerateAnswer')"
+                      :aria-label="$t(question.generationStatus === 'failed' || question.generationStatus === 'stopped' ? 'search.retryAnswer' : 'search.regenerateAnswer')"
+                      @click="regenerateQuestion(question)">
+                      <IconRefresh :size="14" />
+                    </button>
+                    <span v-if="formatQuestionAnsweredAt(question)" class="search-view__message-timestamp">
+                      {{ formatQuestionAnsweredAt(question) }}
+                    </span>
+                    <span v-if="formatQuestionResponseTime(question)" class="search-view__message-timestamp">
+                      {{ $t('search.responseTime', { duration: formatQuestionResponseTime(question) }) }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </article>
@@ -213,6 +255,13 @@
 
         <section class="search-view__query">
           <div class="search-view__input-shell" :class="{ 'is-disabled': !canUseKnowledgeSearch }">
+            <div v-if="editingQuestionId" class="search-view__editing-indicator">
+              <span>{{ $t('search.editingMessage') }}</span>
+              <button type="button" :title="$t('button.cancel')" :aria-label="$t('button.cancel')"
+                @click="cancelEditingQuestion">
+                <IconX :size="13" />
+              </button>
+            </div>
             <div class="search-view__input-main">
               <textarea ref="searchInput" v-model="searchQuery" class="search-view__input" rows="1"
                 :disabled="!canUseKnowledgeSearch" :placeholder="composerPlaceholder" @input="resizeComposer"
@@ -225,7 +274,7 @@
             <div class="search-view__input-toolbar">
               <div class="search-view__toolbar-left">
                 <div class="search-view__mode-selector">
-                  <button type="button" class="search-view__mode-button" :disabled="isBusy || !canUseKnowledgeSearch"
+                  <button type="button" class="search-view__mode-button" :disabled="isActiveThreadBusy || !canUseKnowledgeSearch"
                     :aria-label="$t('search.inputModeLabel')" :aria-expanded="isModeMenuOpen"
                     @click.stop="toggleModeMenu">
                     <IconTextScanAi v-if="inputMode === 'agent-task'" :size="14" />
@@ -242,7 +291,7 @@
                   </div>
                 </div>
                 <button v-if="inputMode === 'agent-task'" type="button" class="search-view__execution-button action-button secondary"
-                  :disabled="isBusy"
+                  :disabled="isActiveThreadBusy"
                   :title="$t(agentWriteMode === 'auto' ? 'search.agentWriteModeAutoDescription' : 'search.agentWriteModeConfirmDescription')"
                   @click="toggleAgentWriteMode">
                   {{ $t(agentWriteMode === 'auto' ? 'search.agentWriteModeAuto' : 'search.agentWriteModeConfirm') }}
@@ -281,9 +330,14 @@
                     </button>
                   </div>
                 </div>
-                <button type="button" class="search-view__ask-button icon-action-button" :disabled="!canAsk"
-                  :title="sendButtonTitle"
-                  @click="handleAsk">
+                <button v-if="canStopCurrentGeneration" type="button"
+                  class="search-view__ask-button search-view__ask-button--stop icon-action-button"
+                  :title="$t('search.stopGenerating')" :aria-label="$t('search.stopGenerating')"
+                  @click="handleStopCurrentGeneration">
+                  <IconPlayerStopFilled :size="15" />
+                </button>
+                <button v-else type="button" class="search-view__ask-button icon-action-button" :disabled="!canAsk"
+                  :title="sendButtonTitle" @click="handleAsk">
                   <IconSend :size="15" />
                 </button>
               </div>
@@ -299,7 +353,7 @@
 import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { IconX, IconMessage2Bolt, IconSubtitlesAi, IconTrash, IconFileText, IconPlus, IconTextScanAi, IconChevronDown, IconCheck, IconSend, IconMessageChatbot } from '@tabler/icons-vue';
+import { IconX, IconMessage2Bolt, IconSubtitlesAi, IconTrash, IconFileText, IconPlus, IconTextScanAi, IconChevronDown, IconCheck, IconSend, IconMessageChatbot, IconCopy, IconCopyCheck, IconEdit, IconRefresh, IconPlayerStopFilled } from '@tabler/icons-vue';
 import { renderMarkdown } from '@renderer/core/markdown/markdownRenderer';
 import { renderMarkdownEnhancements } from '@renderer/core/markdown/markdownEnhancements';
 import { useKnowledgeCopilotConfig, useKnowledgeCopilotChat, useKnowledgeCopilotTask } from '@renderer/features/knowledge-copilot';
@@ -354,6 +408,16 @@ interface AgentTaskMetadata {
   pendingActions: KnowledgeCopilotPendingAction[];
 }
 
+interface KnowledgeGenerationRun {
+  requestId: string;
+  questionId: string;
+  threadId: string;
+  mode: KnowledgeInputMode;
+  stopRequested: boolean;
+  sources: KnowledgeSearchResult[];
+  usedSearchFallback: boolean;
+}
+
 const searchViewLogger = createLogger('SearchView');
 const { t } = useI18n();
 const workbenchStore = useWorkbenchStore();
@@ -372,8 +436,8 @@ const {
   forgetKnowledgeConversationThread,
 } = useSearch();
 const { isEnabled: knowledgeCopilotEnabled, isConfigured: knowledgeCopilotConfigured } = useKnowledgeCopilotConfig();
-const { askQuestionStream, isGenerating: isAIGenerating, usedSearchFallback } = useKnowledgeCopilotChat();
-const { runTask, resumeTask, isRunning: isAgentRunning } = useKnowledgeCopilotTask();
+const { askQuestionStream, stopGenerating } = useKnowledgeCopilotChat();
+const { runTask, resumeTask, stopTask } = useKnowledgeCopilotTask();
 
 const inputModes: InputModeOption[] = [
   {
@@ -392,8 +456,6 @@ const inputMode = ref<KnowledgeInputMode>(config.value.knowledgeCopilot.defaultM
 const isModeMenuOpen = ref(false);
 const isModelMenuOpen = ref(false);
 const searchQuery = ref('');
-const semanticResults = ref<KnowledgeSearchResult[]>([]);
-const isSearching = ref(false);
 const searchError = ref('');
 const searchInput = ref<HTMLTextAreaElement | null>(null);
 const messageListRef = ref<HTMLElement | null>(null);
@@ -402,19 +464,20 @@ const selectedQuestion = ref<WorkbenchQuestionEntry | null>(null);
 const activeThreadId = ref<string | null>(null);
 const draftThreadId = ref<string | null>(knowledgeConversationDraft.value?.id ?? null);
 const draftThreadCreatedAt = ref(knowledgeConversationDraft.value?.createdAt ?? 0);
-const generatingQuestionId = ref('');
-const generatingQuestionMode = ref<KnowledgeInputMode | null>(null);
-const activeFallbackQuestionId = ref('');
-const activeErrorQuestionId = ref('');
-const activeErrorMessage = ref('');
 const questionModes = ref<Record<string, KnowledgeInputMode>>({});
 const agentTaskMetadata = ref<Record<string, AgentTaskMetadata>>({});
 const streamingAnswers = ref<Record<string, string>>({});
 const questionAnswerStages = ref<Record<string, KnowledgeAnswerStage>>({});
+const activeRuns = ref<Record<string, KnowledgeGenerationRun>>({});
+const questionSources = ref<Record<string, KnowledgeSearchResult[]>>({});
+const activeQuestionErrors = ref<Record<string, string>>({});
+const activeFallbackQuestionIds = ref<Record<string, boolean>>({});
+const copiedActionId = ref('');
+const editingQuestionId = ref('');
 const applyingWriteProposalId = ref('');
 const savingSummaryActionId = ref('');
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 let markdownEnhancementRunId = 0;
+let copiedActionTimeout: ReturnType<typeof setTimeout> | null = null;
 let viewListenersActive = false;
 
 const HISTORY_PANE_DEFAULT_WIDTH = 300;
@@ -470,7 +533,8 @@ function handleDividerPointerDown(event: PointerEvent): void {
 }
 
 const canUseKnowledgeSearch = computed(() => knowledgeCopilotEnabled.value && knowledgeCopilotConfigured.value);
-const isBusy = computed(() => isSearching.value || isAIGenerating.value || isAgentRunning.value);
+const isActiveThreadBusy = computed(() => Boolean(activeThreadId.value && activeRuns.value[activeThreadId.value]));
+const isBusy = computed(() => isActiveThreadBusy.value);
 const activeInputMode = computed(() => inputModes.find((mode) => mode.id === inputMode.value) ?? inputModes[0]);
 const chatSources = computed(() => config.value.aiSources.sources.filter((source) => (
   source.capabilities.length === 0 || source.capabilities.includes('chat')
@@ -515,6 +579,7 @@ const canAsk = computed(() => (
   && !isBusy.value
   && hasValidModelSelection.value
 ));
+const canStopCurrentGeneration = computed(() => isActiveThreadBusy.value);
 const agentWriteMode = computed<KnowledgeCopilotWriteMode>(() => config.value.workbench.agentWriteMode ?? 'confirm');
 const composerPlaceholder = computed(() => (
   inputMode.value === 'agent-task'
@@ -587,10 +652,58 @@ const chatQuestions = computed<WorkbenchQuestionEntry[]>(() => {
   return activeThread.value?.questions ?? [];
 });
 const hasChatMessages = computed(() => chatQuestions.value.length > 0);
-const currentSources = computed<WorkbenchQuestionSource[]>(() => {
+function getActiveRun(threadId: string | null | undefined): KnowledgeGenerationRun | null {
+  if (!threadId) {
+    return null;
+  }
+
+  return activeRuns.value[threadId] ?? null;
+}
+
+function isThreadBusy(threadId: string): boolean {
+  return Boolean(activeRuns.value[threadId]);
+}
+
+function updateActiveRun(threadId: string, update: Partial<KnowledgeGenerationRun>): void {
+  const run = activeRuns.value[threadId];
+  if (!run || (update.requestId && update.requestId !== run.requestId)) {
+    return;
+  }
+
+  activeRuns.value = {
+    ...activeRuns.value,
+    [threadId]: { ...run, ...update },
+  };
+}
+
+function removeActiveRun(threadId: string, requestId: string): void {
+  const run = activeRuns.value[threadId];
+  if (!run || run.requestId !== requestId) {
+    return;
+  }
+
+  const nextRuns = { ...activeRuns.value };
+  delete nextRuns[threadId];
+  activeRuns.value = nextRuns;
+}
+
+function getRunForQuestion(questionId: string): KnowledgeGenerationRun | null {
+  return Object.values(activeRuns.value).find((run) => run.questionId === questionId) ?? null;
+}
+
+function clearQuestionTransientState(questionId: string): void {
+  const nextErrors = { ...activeQuestionErrors.value };
+  delete nextErrors[questionId];
+  activeQuestionErrors.value = nextErrors;
+  const nextFallbacks = { ...activeFallbackQuestionIds.value };
+  delete nextFallbacks[questionId];
+  activeFallbackQuestionIds.value = nextFallbacks;
+}
+
+function buildQuestionSources(results: KnowledgeSearchResult[]): WorkbenchQuestionSource[] {
   const sourceMap = new Map<string, WorkbenchQuestionSource>();
 
-  semanticResults.value.forEach((result) => {
+  results.forEach((result) => {
     const noteId = result.chunk.noteId;
     if (!noteId || sourceMap.has(noteId)) {
       return;
@@ -603,7 +716,7 @@ const currentSources = computed<WorkbenchQuestionSource[]>(() => {
   });
 
   return Array.from(sourceMap.values());
-});
+}
 
 function focusSearchInput(): void {
   void nextTick(() => {
@@ -662,12 +775,15 @@ function createThreadId(askedAt: number): string {
   return `${askedAt}:thread`;
 }
 
-function getThreadConversationContext(threadId: string): KnowledgeCopilotConversationContext {
+function getThreadConversationContext(threadId: string, excludedQuestionId = ''): KnowledgeCopilotConversationContext {
   const thread = conversationThreads.value.find((entry) => entry.id === threadId);
+  const questions = (thread?.questions ?? []).filter((question) => question.id !== excludedQuestionId);
+  const hasSummaryBoundary = !thread?.summaryUpToQuestionId
+    || questions.some((question) => question.id === thread.summaryUpToQuestionId);
   return {
-    summary: thread?.summary,
-    summaryUpToQuestionId: thread?.summaryUpToQuestionId,
-    turns: (thread?.questions ?? [])
+    summary: hasSummaryBoundary ? thread?.summary : undefined,
+    summaryUpToQuestionId: hasSummaryBoundary ? thread?.summaryUpToQuestionId : undefined,
+    turns: questions
     .map((question): KnowledgeCopilotConversationContext['turns'][number] | null => {
       const answer = (question.fullAnswer || question.answer).trim();
       if (!answer) {
@@ -742,34 +858,13 @@ function scrollQuestionIntoView(questionId: string): void {
   });
 }
 
-function clearPendingSearch(): void {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-    searchTimeout = null;
-  }
-}
-
 function resetAnswer(): void {
-  semanticResults.value = [];
   searchError.value = '';
-  usedSearchFallback.value = false;
   selectedQuestion.value = null;
-  generatingQuestionId.value = '';
-  generatingQuestionMode.value = null;
-  activeFallbackQuestionId.value = '';
-  activeErrorQuestionId.value = '';
-  activeErrorMessage.value = '';
-  streamingAnswers.value = {};
-  questionAnswerStages.value = {};
+  editingQuestionId.value = '';
 }
 
 function startNewThread(): void {
-  if (isBusy.value) {
-    return;
-  }
-
-  clearPendingSearch();
-
   if (!draftThreadId.value) {
     draftThreadCreatedAt.value = Date.now();
     draftThreadId.value = createThreadId(draftThreadCreatedAt.value);
@@ -808,7 +903,6 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 }
 
 function handleAsk(): void {
-  clearPendingSearch();
   isModeMenuOpen.value = false;
   isModelMenuOpen.value = false;
 
@@ -829,154 +923,287 @@ function handleAsk(): void {
   searchQuery.value = '';
   void nextTick(resizeComposer);
 
-  searchTimeout = setTimeout(() => {
-    if (inputMode.value === 'agent-task') {
-      void runAgentTaskQuestion(query);
-      return;
-    }
+  if (inputMode.value === 'agent-task') {
+    editingQuestionId.value = '';
+    void runAgentTaskQuestion(query);
+    return;
+  }
 
-    void askKnowledgeQuestion(query);
-  }, 0);
+  const editedQuestion = editingQuestionId.value
+    ? chatQuestions.value.find((question) => question.id === editingQuestionId.value)
+    : undefined;
+  editingQuestionId.value = '';
+  void askKnowledgeQuestion(query, editedQuestion);
 }
 
-async function askKnowledgeQuestion(query: string): Promise<void> {
+async function handleStopCurrentGeneration(): Promise<void> {
+  const run = getActiveRun(activeThreadId.value);
+  if (!run) {
+    return;
+  }
+
+  updateActiveRun(run.threadId, { stopRequested: true });
+  if (run.mode === 'ask') {
+    await stopGenerating(run.requestId);
+  } else {
+    await stopTask(run.requestId);
+  }
+}
+
+async function copyMessageText(text: string, actionId: string): Promise<void> {
+  const normalizedText = text.trim();
+  if (!normalizedText) {
+    return;
+  }
+
+  try {
+    const editorApi = window.electronAPI.editor;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(normalizedText);
+      } catch {
+        if (!editorApi) {
+          throw new Error('Clipboard API is unavailable');
+        }
+        await editorApi.writeClipboard(normalizedText);
+      }
+    } else {
+      if (!editorApi) {
+        throw new Error('Clipboard API is unavailable');
+      }
+      await editorApi.writeClipboard(normalizedText);
+    }
+
+    copiedActionId.value = actionId;
+    if (copiedActionTimeout) {
+      clearTimeout(copiedActionTimeout);
+    }
+    copiedActionTimeout = setTimeout(() => {
+      if (copiedActionId.value === actionId) {
+        copiedActionId.value = '';
+      }
+      copiedActionTimeout = null;
+    }, 1600);
+  } catch (error) {
+    searchViewLogger.error(`Copy Knowledge Assistant message failed: ${getErrorMessage(error)}`);
+  }
+}
+
+function isLatestSettledOrdinaryQuestion(question: WorkbenchQuestionEntry): boolean {
+  const latestQuestion = chatQuestions.value[chatQuestions.value.length - 1];
+  return latestQuestion?.id === question.id
+    && getQuestionMode(question) === 'ask'
+    && !isGeneratingQuestion(question);
+}
+
+function beginEditingQuestion(question: WorkbenchQuestionEntry): void {
+  if (isBusy.value || !isLatestSettledOrdinaryQuestion(question)) {
+    return;
+  }
+
+  inputMode.value = 'ask';
+  editingQuestionId.value = question.id;
+  searchQuery.value = question.query;
+  void nextTick(resizeComposer);
+  focusSearchInput();
+}
+
+function cancelEditingQuestion(): void {
+  editingQuestionId.value = '';
+  searchQuery.value = '';
+  void nextTick(resizeComposer);
+  focusSearchInput();
+}
+
+function regenerateQuestion(question: WorkbenchQuestionEntry): void {
+  if (isBusy.value || !isLatestSettledOrdinaryQuestion(question)) {
+    return;
+  }
+
+  editingQuestionId.value = '';
+  void askKnowledgeQuestion(question.query, question);
+}
+
+async function askKnowledgeQuestion(query: string, targetQuestion?: WorkbenchQuestionEntry): Promise<void> {
   if (!canUseKnowledgeSearch.value) {
     searchError.value = knowledgeUnavailableReason.value;
     return;
   }
 
-  selectedQuestion.value = null;
-  usedSearchFallback.value = false;
-  searchError.value = '';
-  activeFallbackQuestionId.value = '';
-  activeErrorQuestionId.value = '';
-  activeErrorMessage.value = '';
-  semanticResults.value = [];
-  isSearching.value = true;
+  const askedAt = targetQuestion?.askedAt ?? Date.now();
+  const threadId = targetQuestion?.threadId ?? activeThreadId.value ?? createThreadId(askedAt);
+  if (isThreadBusy(threadId)) {
+    return;
+  }
+
+  const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+  const responseStartedAt = Date.now();
+  activeRuns.value = {
+    ...activeRuns.value,
+    [threadId]: {
+      requestId,
+      questionId: targetQuestion?.id ?? '',
+      threadId,
+      mode: 'ask',
+      stopRequested: false,
+      sources: [],
+      usedSearchFallback: false,
+    },
+  };
+  if (targetQuestion) {
+    clearQuestionTransientState(targetQuestion.id);
+  }
   let draftQuestion: WorkbenchQuestionEntry | null = null;
+  let generatedAnswer = '';
+  let generationStatus: WorkbenchQuestionEntry['generationStatus'] = 'completed';
+  let generationError = '';
+  let runSources: KnowledgeSearchResult[] = [];
+  let runFallback = false;
 
   try {
-    const askedAt = Date.now();
-    const threadId = activeThreadId.value ?? createThreadId(askedAt);
-    const context = getThreadConversationContext(threadId);
+    const context = getThreadConversationContext(threadId, targetQuestion?.id);
     activeThreadId.value = threadId;
-    draftQuestion = await workbenchStore.recordQuestion({ query, threadId, mode: 'ask', askedAt });
+    draftQuestion = targetQuestion
+      ? await workbenchStore.replaceQuestion({
+          questionId: targetQuestion.id,
+          query,
+          responseTimeMs: 0,
+          answer: '',
+          sourceNoteIds: [],
+          sources: [],
+        })
+      : await workbenchStore.recordQuestion({ query, threadId, mode: 'ask', askedAt });
+    if (!draftQuestion) {
+      throw new Error('Failed to create Knowledge Assistant question');
+    }
+    const question = draftQuestion;
+    updateActiveRun(threadId, { questionId: draftQuestion.id });
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
       setKnowledgeConversationDraft(null);
     }
     rememberKnowledgeConversationThread(threadId);
-    selectedQuestion.value = draftQuestion;
-    generatingQuestionId.value = draftQuestion?.id ?? '';
-    generatingQuestionMode.value = 'ask';
-    if (draftQuestion) {
-      questionModes.value = {
-        ...questionModes.value,
-        [draftQuestion.id]: 'ask',
-      };
-      questionAnswerStages.value = {
-        ...questionAnswerStages.value,
-        [draftQuestion.id]: 'preparing',
-      };
-    }
-    if (draftQuestion) {
+    questionModes.value = { ...questionModes.value, [draftQuestion.id]: 'ask' };
+    questionAnswerStages.value = { ...questionAnswerStages.value, [draftQuestion.id]: 'preparing' };
+    if (activeThreadId.value === threadId) {
+      selectedQuestion.value = draftQuestion;
       scrollQuestionIntoView(draftQuestion.id);
-    } else {
-      scrollChatToBottom();
     }
 
-    let generatedAnswer = '';
-    try {
-      const result = await askQuestionStream(query, threadId, context, {
-        onEvent: (event) => {
-          if (event.type === 'stage' && draftQuestion) {
-            questionAnswerStages.value = {
-              ...questionAnswerStages.value,
-              [draftQuestion.id]: event.stage,
+    if (!activeRuns.value[threadId]?.stopRequested) {
+      try {
+        const result = await askQuestionStream(query, threadId, context, {
+          onEvent: (event) => {
+            const currentRun = activeRuns.value[threadId];
+            if (!currentRun || currentRun.requestId !== requestId || currentRun.stopRequested) {
+              return;
+            }
+            if (event.type === 'stage') {
+              questionAnswerStages.value = { ...questionAnswerStages.value, [question.id]: event.stage };
+              return;
+            }
+            if (event.type === 'sources') {
+              runSources = event.sources;
+              runFallback = event.usedSearchFallback;
+              updateActiveRun(threadId, { sources: event.sources, usedSearchFallback: event.usedSearchFallback });
+              questionSources.value = { ...questionSources.value, [question.id]: event.sources };
+            }
+          },
+          onDelta: (text) => {
+            const currentRun = activeRuns.value[threadId];
+            if (!currentRun || currentRun.requestId !== requestId || currentRun.stopRequested) {
+              return;
+            }
+            streamingAnswers.value = {
+              ...streamingAnswers.value,
+              [question.id]: `${streamingAnswers.value[question.id] || ''}${text}`,
             };
-            return;
-          }
-
-          if (event.type === 'sources') {
-            semanticResults.value = event.sources;
-            usedSearchFallback.value = event.usedSearchFallback;
-          }
-        },
-        onDelta: (text) => {
-          if (!draftQuestion) {
-            return;
-          }
-
-          streamingAnswers.value = {
-            ...streamingAnswers.value,
-            [draftQuestion.id]: `${streamingAnswers.value[draftQuestion.id] || ''}${text}`,
-          };
-          scrollChatToBottom();
-        },
-      });
-      semanticResults.value = result.sources;
-      generatedAnswer = result.answer || (draftQuestion ? streamingAnswers.value[draftQuestion.id] || '' : '');
-      await workbenchStore.updateConversationSummary(threadId, result.conversationSummary, result.conversationSummaryUpToQuestionId);
-    } catch (error) {
-      const message = getErrorMessage(error);
-      semanticResults.value = [];
-      searchViewLogger.error(`Knowledge answer generation failed: ${message}`);
-      if (draftQuestion) {
-        activeErrorQuestionId.value = draftQuestion.id;
-        activeErrorMessage.value = message;
-      } else {
-        searchError.value = message;
+            if (activeThreadId.value === threadId) {
+              scrollChatToBottom();
+            }
+          },
+        }, requestId);
+        runSources = result.sources;
+        runFallback = result.usedSearchFallback;
+        questionSources.value = { ...questionSources.value, [draftQuestion.id]: result.sources };
+        const stopped = activeRuns.value[threadId]?.stopRequested === true;
+        const visibleStreamingAnswer = streamingAnswers.value[draftQuestion.id] || '';
+        generatedAnswer = stopped || result.cancelled ? visibleStreamingAnswer : result.answer || visibleStreamingAnswer;
+        if (result.cancelled || stopped) {
+          generationStatus = 'stopped';
+        } else {
+          await workbenchStore.updateConversationSummary(threadId, result.conversationSummary, result.conversationSummaryUpToQuestionId);
+        }
+      } catch (error) {
+        const message = getErrorMessage(error);
+        const stopped = activeRuns.value[threadId]?.stopRequested === true;
+        generatedAnswer = streamingAnswers.value[draftQuestion.id] || '';
+        if (stopped) {
+          generationStatus = 'stopped';
+        } else {
+          generationStatus = 'failed';
+          generationError = message;
+          activeQuestionErrors.value = { ...activeQuestionErrors.value, [draftQuestion.id]: message };
+          searchViewLogger.error(`Knowledge answer generation failed: ${message}`);
+        }
       }
+    } else {
+      generationStatus = 'stopped';
     }
 
-    if (draftQuestion && usedSearchFallback.value) {
-      activeFallbackQuestionId.value = draftQuestion.id;
+    if (runFallback) {
+      activeFallbackQuestionIds.value = { ...activeFallbackQuestionIds.value, [draftQuestion.id]: true };
     }
-
-    const recordedQuestion = await workbenchStore.recordQuestion({
+    const recordedQuestion = await workbenchStore.replaceQuestion({
+      questionId: draftQuestion.id,
       query,
-      threadId,
-      askedAt,
-      answeredAt: generatedAnswer.trim() ? Date.now() : undefined,
+      answeredAt: Date.now(),
+      responseTimeMs: Date.now() - responseStartedAt,
       answer: generatedAnswer,
-      sourceNoteIds: Array.from(new Set(semanticResults.value.map((result) => result.chunk.noteId))),
-      sources: currentSources.value,
-      mode: 'ask',
+      sourceNoteIds: Array.from(new Set(runSources.map((result) => result.chunk.noteId))),
+      sources: buildQuestionSources(runSources),
+      generationStatus,
+      error: generationError,
     });
-    selectedQuestion.value = recordedQuestion;
-    if (recordedQuestion) {
-      if (draftQuestion) {
-        const nextStreamingAnswers = { ...streamingAnswers.value };
-        delete nextStreamingAnswers[draftQuestion.id];
-        streamingAnswers.value = nextStreamingAnswers;
-        const nextQuestionAnswerStages = { ...questionAnswerStages.value };
-        delete nextQuestionAnswerStages[draftQuestion.id];
-        questionAnswerStages.value = nextQuestionAnswerStages;
-      }
-      questionModes.value = {
-        ...questionModes.value,
-        [recordedQuestion.id]: 'ask',
-      };
-    }
-    if (recordedQuestion) {
+    if (recordedQuestion && activeThreadId.value === threadId) {
+      selectedQuestion.value = recordedQuestion;
       scrollQuestionIntoView(recordedQuestion.id);
     }
+    const nextStreamingAnswers = { ...streamingAnswers.value };
+    delete nextStreamingAnswers[draftQuestion.id];
+    streamingAnswers.value = nextStreamingAnswers;
+    const nextQuestionAnswerStages = { ...questionAnswerStages.value };
+    delete nextQuestionAnswerStages[draftQuestion.id];
+    questionAnswerStages.value = nextQuestionAnswerStages;
+    const nextQuestionSources = { ...questionSources.value };
+    delete nextQuestionSources[draftQuestion.id];
+    questionSources.value = nextQuestionSources;
   } catch (error) {
     const message = getErrorMessage(error);
     searchViewLogger.error(`Knowledge question failed: ${message}`);
     if (draftQuestion) {
-      activeErrorQuestionId.value = draftQuestion.id;
-      activeErrorMessage.value = message;
-    } else {
+      const stopped = activeRuns.value[threadId]?.stopRequested === true;
+      await workbenchStore.replaceQuestion({
+        questionId: draftQuestion.id,
+        query,
+        answeredAt: Date.now(),
+        responseTimeMs: Date.now() - responseStartedAt,
+        answer: generatedAnswer,
+        generationStatus: stopped ? 'stopped' : 'failed',
+        error: stopped ? undefined : message,
+      });
+      if (!stopped) {
+        activeQuestionErrors.value = { ...activeQuestionErrors.value, [draftQuestion.id]: message };
+      }
+    } else if (activeThreadId.value === threadId) {
       searchError.value = message;
     }
-    semanticResults.value = [];
   } finally {
-    isSearching.value = false;
-    generatingQuestionId.value = '';
-    generatingQuestionMode.value = null;
-    focusSearchInput();
+    removeActiveRun(threadId, requestId);
+    if (activeThreadId.value === threadId) {
+      focusSearchInput();
+    }
   }
 }
 
@@ -1003,15 +1230,30 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
     return;
   }
 
-  selectedQuestion.value = null;
-  usedSearchFallback.value = false;
-  searchError.value = '';
-  activeFallbackQuestionId.value = '';
-  activeErrorQuestionId.value = '';
-  activeErrorMessage.value = '';
-  semanticResults.value = [];
-  isSearching.value = true;
+  const askedAt = Date.now();
+  const threadId = activeThreadId.value ?? createThreadId(askedAt);
+  if (isThreadBusy(threadId)) {
+    return;
+  }
+  const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+  const responseStartedAt = Date.now();
+  activeRuns.value = {
+    ...activeRuns.value,
+    [threadId]: {
+      requestId,
+      questionId: '',
+      threadId,
+      mode: 'agent-task',
+      stopRequested: false,
+      sources: [],
+      usedSearchFallback: false,
+    },
+  };
   let draftQuestion: WorkbenchQuestionEntry | null = null;
+  let generationStatus: WorkbenchQuestionEntry['generationStatus'] = 'completed';
+  let generationError = '';
+  let generatedAnswer = '';
+  let runSources: KnowledgeSearchResult[] = [];
   let metadata: AgentTaskMetadata = {
     writeMode: agentWriteMode.value,
     steps: [],
@@ -1025,8 +1267,6 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
   };
 
   try {
-    const askedAt = Date.now();
-    const threadId = activeThreadId.value ?? createThreadId(askedAt);
     const context = getThreadConversationContext(threadId);
     activeThreadId.value = threadId;
     draftQuestion = await workbenchStore.recordQuestion({
@@ -1036,68 +1276,78 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
       agentWriteMode: agentWriteMode.value,
       askedAt,
     });
+    if (!draftQuestion) {
+      throw new Error('Failed to create Knowledge Assistant task');
+    }
+    updateActiveRun(threadId, { questionId: draftQuestion.id });
     if (draftThreadId.value === threadId) {
       draftThreadId.value = null;
       draftThreadCreatedAt.value = 0;
       setKnowledgeConversationDraft(null);
     }
     rememberKnowledgeConversationThread(threadId);
-    selectedQuestion.value = draftQuestion;
-    generatingQuestionId.value = draftQuestion?.id ?? '';
-    generatingQuestionMode.value = 'agent-task';
-    if (draftQuestion) {
-      questionModes.value = {
-        ...questionModes.value,
-        [draftQuestion.id]: 'agent-task',
-      };
+    questionModes.value = { ...questionModes.value, [draftQuestion.id]: 'agent-task' };
+    if (activeThreadId.value === threadId) {
+      selectedQuestion.value = draftQuestion;
       scrollQuestionIntoView(draftQuestion.id);
-    } else {
-      scrollChatToBottom();
     }
 
-    let generatedAnswer = '';
-    try {
-      const result = await runTask(query, agentWriteMode.value, threadId, context);
-      await workbenchStore.updateConversationSummary(threadId, result.conversationSummary, result.conversationSummaryUpToQuestionId);
-      semanticResults.value = result.sources;
-      generatedAnswer = result.finalAnswer || '';
-      metadata = {
-        writeMode: result.writeMode,
-        steps: result.steps,
-        traceEvents: result.traceEvents,
-        pendingWrites: result.pendingWrites,
-        executedWrites: result.executedWrites,
-        dismissedWriteIds: [],
-        createdWriteIds: [],
-        conversationId: result.conversationId,
-        pendingActions: result.pendingActions,
-      };
-      if (result.executedWrites.length > 0) {
-        await initializeWorkspace();
+    if (!activeRuns.value[threadId]?.stopRequested) {
+      try {
+        const result = await runTask(query, agentWriteMode.value, threadId, context, requestId);
+        const stopped = activeRuns.value[threadId]?.stopRequested === true;
+        if (result.cancelled || stopped) {
+          generationStatus = 'stopped';
+        } else {
+          await workbenchStore.updateConversationSummary(threadId, result.conversationSummary, result.conversationSummaryUpToQuestionId);
+        }
+        runSources = result.sources;
+        questionSources.value = { ...questionSources.value, [draftQuestion.id]: result.sources };
+        updateActiveRun(threadId, { sources: result.sources });
+        generatedAnswer = result.finalAnswer || '';
+        metadata = {
+          writeMode: result.writeMode,
+          steps: result.steps,
+          traceEvents: result.traceEvents,
+          pendingWrites: result.pendingWrites,
+          executedWrites: result.executedWrites,
+          dismissedWriteIds: [],
+          createdWriteIds: [],
+          conversationId: result.conversationId,
+          pendingActions: result.pendingActions,
+        };
+        if (result.executedWrites.length > 0) {
+          await initializeWorkspace();
+        }
+        if (draftQuestion) {
+          setAgentTaskMetadata(draftQuestion.id, metadata);
+        }
+      } catch (error) {
+        const message = getErrorMessage(error);
+        if (activeRuns.value[threadId]?.stopRequested) {
+          generationStatus = 'stopped';
+        } else {
+          generationStatus = 'failed';
+          generationError = message;
+          activeQuestionErrors.value = { ...activeQuestionErrors.value, [draftQuestion.id]: message };
+          searchViewLogger.error(`Agent task failed: ${message}`);
+        }
       }
-      if (draftQuestion) {
-        setAgentTaskMetadata(draftQuestion.id, metadata);
-      }
-    } catch (error) {
-      const message = getErrorMessage(error);
-      semanticResults.value = [];
-      searchViewLogger.error(`Agent task failed: ${message}`);
-      if (draftQuestion) {
-        activeErrorQuestionId.value = draftQuestion.id;
-        activeErrorMessage.value = message;
-      } else {
-        searchError.value = message;
-      }
+    } else {
+      generationStatus = 'stopped';
     }
 
     const recordedQuestion = await workbenchStore.recordQuestion({
       query,
       threadId,
       askedAt,
-      answeredAt: generatedAnswer.trim() ? Date.now() : undefined,
+      answeredAt: Date.now(),
+      responseTimeMs: Date.now() - responseStartedAt,
+      generationStatus,
+      error: generationError,
       answer: generatedAnswer,
-      sourceNoteIds: Array.from(new Set(semanticResults.value.map((result) => result.chunk.noteId))),
-      sources: currentSources.value,
+      sourceNoteIds: Array.from(new Set(runSources.map((result) => result.chunk.noteId))),
+      sources: buildQuestionSources(runSources),
       mode: 'agent-task',
       agentWriteMode: metadata.writeMode,
       agentSteps: metadata.steps,
@@ -1107,29 +1357,32 @@ async function runAgentTaskQuestion(query: string): Promise<void> {
       dismissedWriteIds: metadata.dismissedWriteIds,
       createdWriteIds: metadata.createdWriteIds,
     });
-    selectedQuestion.value = recordedQuestion;
     if (recordedQuestion) {
       questionModes.value = {
         ...questionModes.value,
         [recordedQuestion.id]: 'agent-task',
       };
-      scrollQuestionIntoView(recordedQuestion.id);
+      if (activeThreadId.value === threadId) {
+        selectedQuestion.value = recordedQuestion;
+        scrollQuestionIntoView(recordedQuestion.id);
+      }
+      const nextQuestionSources = { ...questionSources.value };
+      delete nextQuestionSources[recordedQuestion.id];
+      questionSources.value = nextQuestionSources;
     }
   } catch (error) {
     const message = getErrorMessage(error);
     searchViewLogger.error(`Agent task record failed: ${message}`);
     if (draftQuestion) {
-      activeErrorQuestionId.value = draftQuestion.id;
-      activeErrorMessage.value = message;
-    } else {
+      activeQuestionErrors.value = { ...activeQuestionErrors.value, [draftQuestion.id]: message };
+    } else if (activeThreadId.value === threadId) {
       searchError.value = message;
     }
-    semanticResults.value = [];
   } finally {
-    isSearching.value = false;
-    generatingQuestionId.value = '';
-    generatingQuestionMode.value = null;
-    focusSearchInput();
+    removeActiveRun(threadId, requestId);
+    if (activeThreadId.value === threadId) {
+      focusSearchInput();
+    }
   }
 }
 
@@ -1153,11 +1406,8 @@ function selectThread(thread: QuestionThread): void {
   rememberKnowledgeConversationThread(thread.id, thread.isDraft);
   selectedQuestion.value = thread.latestQuestion;
   searchError.value = '';
-  semanticResults.value = [];
-  usedSearchFallback.value = false;
-  activeFallbackQuestionId.value = '';
-  activeErrorQuestionId.value = '';
-  activeErrorMessage.value = '';
+  editingQuestionId.value = '';
+  searchQuery.value = '';
   if (thread.latestQuestion) {
     scrollQuestionIntoView(thread.latestQuestion.id);
   } else {
@@ -1194,6 +1444,12 @@ function getQuestionPreview(question: WorkbenchQuestionEntry): string {
     return getQuestionThinkingLabel(question);
   }
 
+  if (question.generationStatus === 'stopped') {
+    return question.answer || t('search.answerStopped');
+  }
+  if (question.generationStatus === 'failed') {
+    return question.error || t('workbench.empty.noAnswer');
+  }
   return question.answer || t('workbench.empty.noAnswer');
 }
 
@@ -1202,7 +1458,8 @@ function getQuestionMode(question: WorkbenchQuestionEntry): KnowledgeInputMode {
 }
 
 function getQuestionThinkingLabel(question: WorkbenchQuestionEntry): string {
-  if (generatingQuestionId.value === question.id && generatingQuestionMode.value === 'agent-task') {
+  const run = getActiveRun(question.threadId);
+  if (run?.questionId === question.id && run.mode === 'agent-task') {
     return t('search.agentTaskThinking');
   }
 
@@ -1224,8 +1481,14 @@ function canSaveQuestionAsNote(question: WorkbenchQuestionEntry): boolean {
 }
 
 function getQuestionSources(question: WorkbenchQuestionEntry): WorkbenchQuestionSource[] {
-  if (generatingQuestionId.value === question.id && currentSources.value.length > 0) {
-    return currentSources.value;
+  const run = getRunForQuestion(question.id);
+  if (run && run.sources.length > 0) {
+    return buildQuestionSources(run.sources);
+  }
+
+  const liveSources = questionSources.value[question.id];
+  if (liveSources?.length) {
+    return buildQuestionSources(liveSources);
   }
 
   if (question.sources?.length) {
@@ -1273,7 +1536,60 @@ async function editAndResumeAgentAction(question: WorkbenchQuestionEntry, action
     const decisions = metadata.pendingActions.map((_pendingAction, index) => index === actionIndex
       ? ({ type: 'edit' as const, editedAction: { name: action.name, args: parsed as Record<string, unknown> } })
       : ({ type: 'reject' as const, message: 'Only the explicitly edited action was approved' }));
-    const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode);
+    if (isThreadBusy(question.threadId)) return;
+    const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    activeRuns.value = {
+      ...activeRuns.value,
+      [question.threadId]: {
+        requestId,
+        questionId: question.id,
+        threadId: question.threadId,
+        mode: 'agent-task',
+        stopRequested: false,
+        sources: [],
+        usedSearchFallback: false,
+      },
+    };
+    try {
+      const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode, requestId);
+      setAgentTaskMetadata(question.id, {
+        ...metadata,
+        steps: [...metadata.steps, ...result.steps],
+        traceEvents: [...metadata.traceEvents, ...result.traceEvents],
+        executedWrites: [...result.executedWrites, ...metadata.executedWrites],
+        pendingActions: result.pendingActions,
+        conversationId: result.conversationId,
+      });
+    } finally {
+      removeActiveRun(question.threadId, requestId);
+    }
+  } catch (error) {
+    activeQuestionErrors.value = { ...activeQuestionErrors.value, [question.id]: getErrorMessage(error) };
+  }
+}
+
+async function resumeAgentAction(question: WorkbenchQuestionEntry, decision: 'approve' | 'reject'): Promise<void> {
+  const metadata = getAgentMetadata(question);
+  if (!metadata || metadata.pendingActions.length === 0) return;
+  if (isThreadBusy(question.threadId)) return;
+  const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
+  activeRuns.value = {
+    ...activeRuns.value,
+    [question.threadId]: {
+      requestId,
+      questionId: question.id,
+      threadId: question.threadId,
+      mode: 'agent-task',
+      stopRequested: false,
+      sources: [],
+      usedSearchFallback: false,
+    },
+  };
+  const decisions = metadata.pendingActions.map(() => decision === 'approve'
+    ? ({ type: 'approve' as const })
+    : ({ type: 'reject' as const, message: 'User rejected this action' }));
+  try {
+    const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode, requestId);
     setAgentTaskMetadata(question.id, {
       ...metadata,
       steps: [...metadata.steps, ...result.steps],
@@ -1282,27 +1598,9 @@ async function editAndResumeAgentAction(question: WorkbenchQuestionEntry, action
       pendingActions: result.pendingActions,
       conversationId: result.conversationId,
     });
-  } catch (error) {
-    activeErrorQuestionId.value = question.id;
-    activeErrorMessage.value = getErrorMessage(error);
+  } finally {
+    removeActiveRun(question.threadId, requestId);
   }
-}
-
-async function resumeAgentAction(question: WorkbenchQuestionEntry, decision: 'approve' | 'reject'): Promise<void> {
-  const metadata = getAgentMetadata(question);
-  if (!metadata || metadata.pendingActions.length === 0) return;
-  const decisions = metadata.pendingActions.map(() => decision === 'approve'
-    ? ({ type: 'approve' as const })
-    : ({ type: 'reject' as const, message: 'User rejected this action' }));
-  const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode);
-  setAgentTaskMetadata(question.id, {
-    ...metadata,
-    steps: [...metadata.steps, ...result.steps],
-    traceEvents: [...metadata.traceEvents, ...result.traceEvents],
-    executedWrites: [...result.executedWrites, ...metadata.executedWrites],
-    pendingActions: result.pendingActions,
-    conversationId: result.conversationId,
-  });
 }
 
 function getAgentSteps(question: WorkbenchQuestionEntry): KnowledgeCopilotStep[] {
@@ -1534,8 +1832,7 @@ async function saveQuestionAsNote(question: WorkbenchQuestionEntry): Promise<voi
   } catch (error) {
     const message = getErrorMessage(error);
     searchViewLogger.error(`Save question as note failed: ${message}`);
-    activeErrorQuestionId.value = question.id;
-    activeErrorMessage.value = message;
+    activeQuestionErrors.value = { ...activeQuestionErrors.value, [question.id]: message };
   } finally {
     savingSummaryActionId.value = '';
     focusSearchInput();
@@ -1606,8 +1903,7 @@ async function applyWriteProposal(
   } catch (error) {
     const message = getErrorMessage(error);
     searchViewLogger.error(`Create note from agent proposal failed: ${message}`);
-    activeErrorQuestionId.value = question.id;
-    activeErrorMessage.value = message;
+    activeQuestionErrors.value = { ...activeQuestionErrors.value, [question.id]: message };
   } finally {
     applyingWriteProposalId.value = '';
     focusSearchInput();
@@ -1615,15 +1911,16 @@ async function applyWriteProposal(
 }
 
 function getQuestionError(question: WorkbenchQuestionEntry): string {
-  if (activeErrorQuestionId.value !== question.id) {
-    return '';
+  const activeError = activeQuestionErrors.value[question.id];
+  if (activeError) {
+    return activeError;
   }
 
-  return activeErrorMessage.value;
+  return question.generationStatus === 'failed' ? question.error || '' : '';
 }
 
 function shouldDisplayFallbackNotice(question: WorkbenchQuestionEntry): boolean {
-  return activeFallbackQuestionId.value === question.id;
+  return activeFallbackQuestionIds.value[question.id] === true;
 }
 
 function renderQuestionAnswer(question: WorkbenchQuestionEntry): string {
@@ -1642,7 +1939,7 @@ function renderQuestionAnswer(question: WorkbenchQuestionEntry): string {
 }
 
 function isGeneratingQuestion(question: WorkbenchQuestionEntry): boolean {
-  return generatingQuestionId.value === question.id;
+  return getRunForQuestion(question.id)?.questionId === question.id;
 }
 
 function isGeneratingThread(thread: QuestionThread): boolean {
@@ -1674,6 +1971,16 @@ function formatQuestionAskedAt(question: WorkbenchQuestionEntry): string {
 
 function formatQuestionAnsweredAt(question: WorkbenchQuestionEntry): string {
   return formatMessageTimestamp(question.answeredAt);
+}
+
+function formatQuestionResponseTime(question: WorkbenchQuestionEntry): string {
+  const responseTimeMs = Number(question.responseTimeMs ?? 0);
+  if (!Number.isFinite(responseTimeMs) || responseTimeMs <= 0) {
+    return '';
+  }
+
+  const seconds = responseTimeMs / 1000;
+  return seconds < 10 ? seconds.toFixed(1) : Math.round(seconds).toString();
 }
 
 function applySearchRequest(): void {
@@ -1795,7 +2102,10 @@ onActivated(() => {
 onDeactivated(deactivateViewListeners);
 
 onBeforeUnmount(() => {
-  clearPendingSearch();
+  if (copiedActionTimeout) {
+    clearTimeout(copiedActionTimeout);
+    copiedActionTimeout = null;
+  }
   deactivateViewListeners();
 });
 </script>
@@ -2112,6 +2422,10 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
+.search-view__ask-button--stop {
+  color: var(--danger);
+}
+
 .search-view__icon-button:hover {
   background: var(--panel-hover);
   color: var(--text);
@@ -2262,6 +2576,47 @@ onBeforeUnmount(() => {
   overflow-wrap: anywhere;
 }
 
+.search-view__message-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.search-view__message-actions--user {
+  justify-content: flex-end;
+}
+
+.search-view__message-action {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.search-view__message-action:hover:not(:disabled),
+.search-view__message-action:focus-visible {
+  border-color: var(--search-chat-border);
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.search-view__message-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .search-view__message-timestamp {
   display: inline-flex;
   font-size: 0.73rem;
@@ -2282,8 +2637,14 @@ onBeforeUnmount(() => {
   border: 1px solid var(--search-chat-border);
 }
 
-.search-view__assistant-card {
+.search-view__assistant-message-body {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.search-view__assistant-card {
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   padding: 12px 14px;
@@ -2294,9 +2655,39 @@ onBeforeUnmount(() => {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.search-view__assistant-card>.search-view__message-timestamp {
-  display: block;
+.search-view__stopped-notice {
   margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.search-view__editing-indicator {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--search-chat-border) 60%, transparent);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.search-view__editing-indicator button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 5px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.search-view__editing-indicator button:hover {
+  background: var(--panel-hover);
+  color: var(--text);
 }
 
 .search-view__thinking {
@@ -2341,6 +2732,7 @@ onBeforeUnmount(() => {
 .search-view__history-item {
   position: relative;
   width: 100%;
+  height: 88px;
   min-height: 72px;
   display: block;
   padding: 0;
@@ -2369,6 +2761,7 @@ onBeforeUnmount(() => {
 
 .search-view__history-open {
   width: 100%;
+  height: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -2380,6 +2773,7 @@ onBeforeUnmount(() => {
   color: inherit;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .search-view__history-delete {
@@ -2433,6 +2827,7 @@ onBeforeUnmount(() => {
 }
 
 .search-view__history-meta {
+  margin-top: auto;
   color: var(--text-muted);
   font-size: 0.68rem;
   opacity: 0.82;
@@ -2764,7 +3159,8 @@ onBeforeUnmount(() => {
   }
 
   .search-view__history-item {
-    min-height: 70px;
+    height: 88px;
+    min-height: 88px;
   }
 
   /* Responsive input-shell is handled automatically by column layout */

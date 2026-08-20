@@ -11,6 +11,7 @@ import {
   isValidAiTranslationTargetLanguage,
 } from '../../../shared/ai.constants.js';
 import { buildAssistantSystemPrompt, buildEditorSystemPrompt } from '../../prompts/index.js';
+import type { AiProvider } from '../../../shared/ai-provider.constants.js';
 
 const logger = loggerService.createLogger('Electron:AI Chat IPC');
 
@@ -34,6 +35,7 @@ type AiCompletionPayload = z.infer<typeof AiCompletionSchema>;
 type AiChatMessage = AiChatGeneratePayload['messages'][number];
 
 interface GenerateAIResponseConfig {
+  provider: AiProvider;
   endpoint: string;
   apiKey: string;
   model: string;
@@ -41,10 +43,11 @@ interface GenerateAIResponseConfig {
 }
 
 async function generateAIResponse(config: GenerateAIResponseConfig): Promise<string | undefined> {
-  const { endpoint, apiKey, model, messages } = config;
+  const { provider, endpoint, apiKey, model, messages } = config;
 
   try {
     const data = await remoteAiService.chat({
+      provider,
       endpoint,
       apiKey,
       model,
@@ -104,6 +107,7 @@ export function registerAIChatHandlers(): void {
       }
 
       const answer = await generateAIResponse({
+        provider: assistantConfig.provider,
         endpoint: assistantConfig.endpoint,
         apiKey: assistantConfig.apiKey,
         model: assistantConfig.model,
@@ -134,6 +138,7 @@ export function registerAIChatHandlers(): void {
           assistantConfig.writingScenario,
         );
       const answer = await generateAIResponse({
+        provider: assistantConfig.provider,
         endpoint: assistantConfig.endpoint,
         apiKey: assistantConfig.apiKey,
         model: assistantConfig.model,

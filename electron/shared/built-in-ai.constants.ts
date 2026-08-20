@@ -3,22 +3,26 @@ import type { AiCapability, AiCapabilityModelMap } from './ai-provider.constants
 export const BUILT_IN_AI_SOURCE_ID = 'snaptium-built-in' as const;
 export const BUILT_IN_AI_SOURCE_NAME = 'Snaptium AI' as const;
 export const BUILT_IN_AI_BASE_URL = 'https://newapi.snaptium.com/v1' as const;
-export const BUILT_IN_AI_STATUS_URL = 'https://newapi.snaptium.com/api/status' as const;
+export const BUILT_IN_AI_PERF_METRICS_URL = 'https://newapi.snaptium.com/api/perf-metrics' as const;
 export const BUILT_IN_AI_HEALTH_STATUS = {
+  UNKNOWN: 'unknown',
   HEALTHY: 'healthy',
   DEGRADED: 'degraded',
   UNAVAILABLE: 'unavailable',
 } as const;
 export type BuiltInAiHealthStatus =
   typeof BUILT_IN_AI_HEALTH_STATUS[keyof typeof BUILT_IN_AI_HEALTH_STATUS];
-export type BuiltInAiHealthFailureReason =
-  'timeout' | 'network' | 'server' | 'invalid-response' | 'check-failed';
 
-export interface BuiltInAiHealthResult {
+export interface BuiltInAiModelHealth {
   status: BuiltInAiHealthStatus;
   latencyMs: number | null;
+  successRate: number | null;
+  observedAt: number | null;
+}
+
+export interface BuiltInAiHealthSnapshot {
   checkedAt: number;
-  reason?: BuiltInAiHealthFailureReason;
+  models: Record<AiCapability, BuiltInAiModelHealth>;
 }
 
 export const BUILT_IN_AI_MODELS = {

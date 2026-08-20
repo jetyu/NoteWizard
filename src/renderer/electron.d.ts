@@ -134,7 +134,7 @@ interface SyncTestConnectionResult {
   message?: string;
 }
 
-type BuiltInAiHealthResult = import('@shared/built-in-ai.constants').BuiltInAiHealthResult;
+type BuiltInAiHealthSnapshot = import('@shared/built-in-ai.constants').BuiltInAiHealthSnapshot;
 
 type SyncRunResult =
   | {
@@ -439,7 +439,7 @@ declare global {
       };
 
       aiSource?: {
-        checkBuiltInHealth: (force?: boolean) => Promise<BuiltInAiHealthResult>;
+        getBuiltInHealth: () => Promise<BuiltInAiHealthSnapshot>;
         testConnection: (config: AiSourceConfig) => Promise<{ success: boolean; message?: string }>;
         validateToolCalling: (config: { provider: string; baseUrl: string; apiKey: string; model: string }) => Promise<{
           success: boolean;
@@ -533,6 +533,7 @@ declare global {
           context?: import('@shared/knowledge-copilot.constants').KnowledgeCopilotConversationContext;
         }) => Promise<{
           success: boolean;
+          cancelled?: boolean;
           answer?: string;
           sources: Array<{
             chunk: {
@@ -549,9 +550,11 @@ declare global {
           usedSearchFallback: boolean;
           insufficientEvidence?: boolean;
         }>;
+        cancelAnswerQuestion: (payload: { requestId: string }) => Promise<import('@renderer/core/bridge/electronApi').KnowledgeCopilotCancelQuestionResult>;
         onAnswerQuestionStreamEvent: (callback: (event: import('@renderer/core/bridge/electronApi').KnowledgeAnswerStreamEvent) => void) => () => void;
         runTask: (payload: import('@renderer/core/bridge/electronApi').KnowledgeCopilotRunTaskPayload) => Promise<{
           success: boolean;
+          cancelled?: boolean;
           finalAnswer?: string;
           steps: Array<{
             title: string;
@@ -623,11 +626,13 @@ declare global {
             | 'iteration-limit'
             | 'runtime-limit'
             | 'tool-failure-limit'
-            | 'weak-search-limit';
+            | 'weak-search-limit'
+            | 'cancelled';
           error?: string;
           conversationId: string;
           pendingActions: import('@renderer/core/bridge/electronApi').KnowledgeCopilotPendingAction[];
         }>;
+        cancelTask: (payload: { requestId: string }) => Promise<import('@renderer/core/bridge/electronApi').KnowledgeCopilotCancelQuestionResult>;
         deleteNoteIndex: (noteId: string) => Promise<{ success: boolean; error?: string }>;
         getStatus: () => Promise<{
           success: boolean;

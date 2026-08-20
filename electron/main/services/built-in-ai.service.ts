@@ -8,11 +8,11 @@ import {
   BUILT_IN_AI_CAPABILITIES,
   BUILT_IN_AI_HEALTH_STATUS,
   BUILT_IN_AI_MODELS,
+  BUILT_IN_AI_PERF_METRICS_URL,
   BUILT_IN_AI_SOURCE_ID,
   BUILT_IN_AI_SOURCE_NAME,
-  BUILT_IN_AI_STATUS_URL,
-  type BuiltInAiHealthFailureReason,
-  type BuiltInAiHealthResult,
+  type BuiltInAiHealthSnapshot,
+  type BuiltInAiModelHealth,
   type BuiltInAiSourceMetadata,
 } from '../../shared/built-in-ai.constants.js';
 import { $t } from '../utils/i18n.js';
@@ -21,8 +21,16 @@ import { isElectronNetworkRequestError, mainProcessFetch } from './network.servi
 const BUILT_IN_AI_KEY_URL = 'https://snaptium.com/key.txt';
 const BUILT_IN_AI_AUTH_FAILURE_STATUSES = new Set([401, 403]);
 const BUILT_IN_AI_HEALTH_CACHE_MS = 60_000;
-const BUILT_IN_AI_HEALTH_DEGRADED_MS = 1_500;
+const BUILT_IN_AI_HEALTH_WINDOW_HOURS = 1;
+const BUILT_IN_AI_HEALTH_STALE_MS = 15 * 60 * 1_000;
 const BUILT_IN_AI_HEALTH_TIMEOUT_MS = 5_000;
+const BUILT_IN_AI_HEALTHY_SUCCESS_RATE = 95;
+const BUILT_IN_AI_UNAVAILABLE_SUCCESS_RATE = 50;
+const BUILT_IN_AI_HEALTHY_LATENCY_MS = {
+  chat: 3_000,
+  embedding: 2_000,
+  reranker: 3_000,
+} as const satisfies Record<AiCapability, number>;
 
 const builtInAiConfigSchema = z.object({
   baseUrl: z.string().url().transform(value => value.replace(/\/+$/, '')),
@@ -40,8 +48,19 @@ const builtInAiKeySchema = z.string()
   .max(512)
   .refine(value => !/\s/.test(value));
 
-const builtInAiHealthResponseSchema = z.object({
+const builtInAiPerfMetricsResponseSchema = z.object({
   success: z.literal(true),
+  data: z.object({
+    model_name: z.string(),
+    groups: z.array(z.object({
+      series: z.array(z.object({
+        ts: z.number().int().nonnegative(),
+        avg_ttft_ms: z.number().nonnegative(),
+        avg_latency_ms: z.number().nonnegative(),
+        success_rate: z.number().min(0).max(100),
+      })),
+    })),
+  }),
 });
 
 export type BuiltInAiConfig = z.infer<typeof builtInAiConfigSchema>;
@@ -54,20 +73,84 @@ export interface ResolvedBuiltInAiRequestConfig {
   model: string;
 }
 
+type BuiltInAiFailureReason = 'http' | 'network' | 'timeout' | 'unknown';
+
 let cachedBuiltInAiKey: string | null = null;
 let builtInAiKeyPromise: Promise<string> | null = null;
-let cachedBuiltInAiHealth: BuiltInAiHealthResult | null = null;
-let builtInAiHealthPromise: Promise<BuiltInAiHealthResult> | null = null;
+let cachedBuiltInAiHealth: BuiltInAiHealthSnapshot | null = null;
+let builtInAiHealthPromise: Promise<BuiltInAiHealthSnapshot> | null = null;
 
 export function normalizeBuiltInAiConfig(value: unknown): BuiltInAiConfig {
   return builtInAiConfigSchema.parse(value);
 }
 
 export class BuiltInAiRequestError extends Error {
-  constructor(cause: unknown) {
-    super($t('builtInAi.error.unavailable'), { cause });
+  readonly capability?: AiCapability;
+  readonly status?: number;
+
+  constructor(cause: unknown, capability?: AiCapability) {
+    const status = getHttpStatus(cause);
+    super(formatBuiltInAiError(capability, getFailureReason(cause, status), status), { cause });
     this.name = 'BuiltInAiRequestError';
+    this.capability = capability;
+    this.status = status;
   }
+}
+
+function interpolate(template: string, replacements: Record<string, string>): string {
+  return Object.entries(replacements).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, value),
+    template,
+  );
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const match = /^HTTP (\d{3})(?:\D|$)/.exec(error.message);
+  return match ? Number(match[1]) : undefined;
+}
+
+function getFailureReason(error: unknown, status: number | undefined): BuiltInAiFailureReason {
+  if (status !== undefined) return 'http';
+  if (isAbortError(error)) return 'timeout';
+  if (isElectronNetworkRequestError(error)) return 'network';
+  return 'unknown';
+}
+
+function getCapabilityLabel(capability: AiCapability): string {
+  if (capability === 'chat') return $t('builtInAi.capability.chat', 'Chat');
+  if (capability === 'embedding') return $t('builtInAi.capability.embedding', 'Embedding');
+  return $t('builtInAi.capability.reranker', 'Reranker');
+}
+
+function getFailureReasonLabel(reason: BuiltInAiFailureReason, status: number | undefined): string {
+  if (reason === 'http' && status !== undefined) {
+    return interpolate(
+      $t('builtInAi.error.reason.http', 'the service returned HTTP {status}'),
+      { status: String(status) },
+    );
+  }
+  if (reason === 'network') return $t('builtInAi.error.reason.network', 'network connection failed');
+  if (reason === 'timeout') return $t('builtInAi.error.reason.timeout', 'the request timed out');
+  return $t('builtInAi.error.reason.unknown', 'the request failed');
+}
+
+function formatBuiltInAiError(
+  capability: AiCapability | undefined,
+  reason: BuiltInAiFailureReason,
+  status: number | undefined,
+): string {
+  if (!capability) return $t('builtInAi.error.unavailable');
+  return interpolate(
+    $t(
+      'builtInAi.error.requestFailed',
+      'Snaptium AI {capability} request failed: {reason}. Choose a custom AI source or try again later.',
+    ),
+    {
+      capability: getCapabilityLabel(capability),
+      reason: getFailureReasonLabel(reason, status),
+    },
+  );
 }
 
 function resolveEndpoint(baseUrl: string, capability: AiCapability): string {
@@ -92,22 +175,18 @@ async function loadBuiltInAiKey(): Promise<string> {
   }
 
   builtInAiKeyPromise = (async () => {
-    try {
-      const response = await mainProcessFetch(BUILT_IN_AI_KEY_URL, {
-        method: 'GET',
-        headers: { Accept: 'text/plain' },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const value = builtInAiKeySchema.parse(await response.text());
-      cachedBuiltInAiKey = value;
-      return value;
-    } catch (error) {
-      throw error instanceof BuiltInAiRequestError ? error : new BuiltInAiRequestError(error);
+    const response = await mainProcessFetch(BUILT_IN_AI_KEY_URL, {
+      method: 'GET',
+      headers: { Accept: 'text/plain' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+
+    const value = builtInAiKeySchema.parse(await response.text());
+    cachedBuiltInAiKey = value;
+    return value;
   })().finally(() => {
     builtInAiKeyPromise = null;
   });
@@ -119,63 +198,124 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
 }
 
-function resolveHealthFailureReason(error: unknown): BuiltInAiHealthFailureReason {
-  if (isAbortError(error)) {
-    return 'timeout';
+function resolveCapabilityFromUrl(url: string): AiCapability | undefined {
+  try {
+    const pathname = new URL(url).pathname.replace(/\/+$/, '');
+    if (pathname.endsWith('/chat/completions')) return 'chat';
+    if (pathname.endsWith('/embeddings')) return 'embedding';
+    if (pathname.endsWith('/rerank')) return 'reranker';
+  } catch {
+    return undefined;
   }
-  if (isElectronNetworkRequestError(error)) {
-    return 'network';
-  }
-  return 'server';
+  return undefined;
 }
 
-async function requestBuiltInAiHealth(): Promise<BuiltInAiHealthResult> {
-  const startedAt = Date.now();
+function createUnknownModelHealth(): BuiltInAiModelHealth {
+  return {
+    status: BUILT_IN_AI_HEALTH_STATUS.UNKNOWN,
+    latencyMs: null,
+    successRate: null,
+    observedAt: null,
+  };
+}
+
+function classifyBuiltInAiModelHealth(
+  capability: AiCapability,
+  latencyMs: number,
+  successRate: number,
+  observedAt: number,
+): BuiltInAiModelHealth {
+  let status: BuiltInAiModelHealth['status'] = BUILT_IN_AI_HEALTH_STATUS.DEGRADED;
+  if (successRate < BUILT_IN_AI_UNAVAILABLE_SUCCESS_RATE) {
+    status = BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE;
+  } else if (successRate >= BUILT_IN_AI_HEALTHY_SUCCESS_RATE
+    && latencyMs <= BUILT_IN_AI_HEALTHY_LATENCY_MS[capability]) {
+    status = BUILT_IN_AI_HEALTH_STATUS.HEALTHY;
+  }
+
+  return { status, latencyMs, successRate, observedAt };
+}
+
+function parseBuiltInAiModelHealth(
+  capability: AiCapability,
+  model: string,
+  value: unknown,
+  checkedAt: number,
+): BuiltInAiModelHealth {
+  const response = builtInAiPerfMetricsResponseSchema.parse(value);
+  if (response.data.model_name !== model) {
+    return createUnknownModelHealth();
+  }
+
+  const cutoff = checkedAt - BUILT_IN_AI_HEALTH_STALE_MS;
+  const latestPoints = response.data.groups.flatMap((group) => {
+    const latestPoint = group.series.reduce<(typeof group.series)[number] | null>(
+      (latest, point) => {
+        if (capability === 'chat' && point.avg_ttft_ms <= 0) return latest;
+        return !latest || point.ts > latest.ts ? point : latest;
+      },
+      null,
+    );
+    return latestPoint && latestPoint.ts * 1_000 >= cutoff ? [latestPoint] : [];
+  });
+  if (latestPoints.length === 0) {
+    return createUnknownModelHealth();
+  }
+
+  const latencyMs = Math.round(
+    latestPoints.reduce(
+      (total, point) => total + (capability === 'chat' ? point.avg_ttft_ms : point.avg_latency_ms),
+      0,
+    ) / latestPoints.length,
+  );
+  const successRate = latestPoints.reduce(
+    (total, point) => total + point.success_rate,
+    0,
+  ) / latestPoints.length;
+  const observedAt = Math.max(...latestPoints.map(point => point.ts * 1_000));
+  return classifyBuiltInAiModelHealth(capability, latencyMs, successRate, observedAt);
+}
+
+async function requestBuiltInAiModelHealth(
+  capability: AiCapability,
+  model: string,
+  checkedAt: number,
+  signal: AbortSignal,
+): Promise<BuiltInAiModelHealth> {
+  const url = new URL(BUILT_IN_AI_PERF_METRICS_URL);
+  url.searchParams.set('model', model);
+  url.searchParams.set('hours', String(BUILT_IN_AI_HEALTH_WINDOW_HOURS));
+
+  try {
+    const response = await mainProcessFetch(url.toString(), {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal,
+    });
+    if (!response.ok) {
+      return createUnknownModelHealth();
+    }
+    return parseBuiltInAiModelHealth(capability, model, await response.json(), checkedAt);
+  } catch {
+    return createUnknownModelHealth();
+  }
+}
+
+async function requestBuiltInAiHealth(): Promise<BuiltInAiHealthSnapshot> {
+  const checkedAt = Date.now();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BUILT_IN_AI_HEALTH_TIMEOUT_MS);
 
   try {
-    const response = await mainProcessFetch(BUILT_IN_AI_STATUS_URL, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    const latencyMs = Date.now() - startedAt;
-
-    if (!response.ok) {
-      return {
-        status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
-        latencyMs,
-        checkedAt: Date.now(),
-        reason: 'server',
-      };
-    }
-
-    try {
-      builtInAiHealthResponseSchema.parse(await response.json());
-    } catch {
-      return {
-        status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
-        latencyMs,
-        checkedAt: Date.now(),
-        reason: 'invalid-response',
-      };
-    }
-
+    const [chat, embedding, reranker] = await Promise.all([
+      requestBuiltInAiModelHealth('chat', BUILT_IN_AI_MODELS.chat, checkedAt, controller.signal),
+      requestBuiltInAiModelHealth('embedding', BUILT_IN_AI_MODELS.embedding, checkedAt, controller.signal),
+      requestBuiltInAiModelHealth('reranker', BUILT_IN_AI_MODELS.reranker, checkedAt, controller.signal),
+    ]);
     return {
-      status: latencyMs >= BUILT_IN_AI_HEALTH_DEGRADED_MS
-        ? BUILT_IN_AI_HEALTH_STATUS.DEGRADED
-        : BUILT_IN_AI_HEALTH_STATUS.HEALTHY,
-      latencyMs,
-      checkedAt: Date.now(),
-    };
-  } catch (error) {
-    return {
-      status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
-      latencyMs: null,
-      checkedAt: Date.now(),
-      reason: resolveHealthFailureReason(error),
+      checkedAt,
+      models: { chat, embedding, reranker },
     };
   } finally {
     clearTimeout(timeoutId);
@@ -216,16 +356,20 @@ export const builtInAiService = {
   },
 
   async resolveRequest(capability: AiCapability): Promise<ResolvedBuiltInAiRequestConfig> {
-    const apiKey = await loadBuiltInAiKey();
-    return resolveBuiltInAiRequest(normalizeBuiltInAiConfig({
-      baseUrl: BUILT_IN_AI_BASE_URL,
-      apiKey,
-      models: BUILT_IN_AI_MODELS,
-    }), capability);
+    try {
+      const apiKey = await loadBuiltInAiKey();
+      return resolveBuiltInAiRequest(normalizeBuiltInAiConfig({
+        baseUrl: BUILT_IN_AI_BASE_URL,
+        apiKey,
+        models: BUILT_IN_AI_MODELS,
+      }), capability);
+    } catch (error) {
+      throw this.normalizeRequestError(error, capability);
+    }
   },
 
-  async checkHealth(force = false): Promise<BuiltInAiHealthResult> {
-    if (!force && cachedBuiltInAiHealth
+  async getHealth(): Promise<BuiltInAiHealthSnapshot> {
+    if (cachedBuiltInAiHealth
       && Date.now() - cachedBuiltInAiHealth.checkedAt < BUILT_IN_AI_HEALTH_CACHE_MS) {
       return cachedBuiltInAiHealth;
     }
@@ -252,19 +396,14 @@ export const builtInAiService = {
     }
   },
 
-  isEndpoint(endpoint: string): boolean {
-    try {
-      const endpointUrl = new URL(endpoint);
-      const baseUrl = new URL(BUILT_IN_AI_BASE_URL);
-      return endpointUrl.origin === baseUrl.origin
-        && endpointUrl.pathname.startsWith(`${baseUrl.pathname.replace(/\/+$/, '')}/`);
-    } catch {
-      return false;
+  normalizeRequestError(error: unknown, capability?: AiCapability): BuiltInAiRequestError {
+    if (error instanceof BuiltInAiRequestError && (error.capability || !capability)) {
+      return error;
     }
-  },
-
-  normalizeRequestError(error: unknown): BuiltInAiRequestError {
-    return error instanceof BuiltInAiRequestError ? error : new BuiltInAiRequestError(error);
+    return new BuiltInAiRequestError(
+      error instanceof BuiltInAiRequestError ? error.cause : error,
+      capability,
+    );
   },
 
   findRequestError(error: unknown): BuiltInAiRequestError | null {
@@ -292,6 +431,7 @@ export const builtInAiService = {
       : input instanceof URL
         ? input.toString()
         : input.url;
+    const capability = resolveCapabilityFromUrl(url);
 
     try {
       const apiKey = await loadBuiltInAiKey();
@@ -308,7 +448,7 @@ export const builtInAiService = {
       }
       return response;
     } catch (error) {
-      throw this.normalizeRequestError(error);
+      throw this.normalizeRequestError(error, capability);
     }
   },
 };

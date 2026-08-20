@@ -31,7 +31,7 @@
       'workspace-tree--dragging': !!dragState,
       'workspace-tree--root-drop': dropTarget?.mode === 'root',
     }" @dragover.prevent="handleTreeDragOver" @drop.prevent="handleTreeDrop">
-      <li v-for="entry in treeEntries" :key="entry.id" class="workspace-row" :class="{
+      <li v-for="entry in treeEntries" :key="entry.id" class="workspace-row" :data-workspace-entry-id="entry.id" :class="{
         active:
           entry.kind === 'note'
             ? entry.id === activeNoteId
@@ -1207,6 +1207,46 @@ const treeEntries = computed<WorkspaceTreeEntry[]>(() => {
   visit(null, 0);
   return entries;
 });
+
+function expandActiveEntryAncestors(activeId: string) {
+  const activeNote = notes.value.find((note) => note.id === activeId);
+  const activeNotebook = notebooks.value.find((notebook) => notebook.id === activeId);
+  let parentId = activeNote?.parentId ?? activeNotebook?.parentId ?? null;
+  const nextCollapsedIds = new Set(collapsedIds.value);
+
+  while (parentId) {
+    nextCollapsedIds.delete(parentId);
+    parentId = notebookMap.value.get(parentId)?.parentId ?? null;
+  }
+
+  if (nextCollapsedIds.size !== collapsedIds.value.size) {
+    workspaceStore.setCollapsedNotebookIds([...nextCollapsedIds]);
+  }
+}
+
+async function scrollActiveEntryIntoView() {
+  const activeId = getCurrentActiveId();
+  if (!activeId) {
+    return;
+  }
+
+  expandActiveEntryAncestors(activeId);
+  await nextTick();
+
+  const entries = sidebarRef.value?.querySelectorAll<HTMLElement>('[data-workspace-entry-id]');
+  const activeEntry = Array.from(entries ?? []).find(
+    (entry) => entry.dataset.workspaceEntryId === activeId,
+  );
+
+  activeEntry?.scrollIntoView({ block: 'nearest' });
+}
+
+watch(
+  [activeNoteId, activeNotebookId],
+  () => {
+    void scrollActiveEntryIntoView();
+  },
+);
 
 const selectedEntries = computed(() => {
   return treeEntries.value.filter((entry) => selectedIds.value.has(entry.id));
