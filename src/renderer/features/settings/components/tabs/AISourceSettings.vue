@@ -57,7 +57,7 @@
                     :title="getBuiltInHealthTooltip(modelRow.capability)"
                     :aria-label="getBuiltInHealthTooltip(modelRow.capability)" aria-live="polite"
                     role="img">
-                    <IconBrandSpeedtest :size="18" stroke="1.8" aria-hidden="true" />
+                    <IconBrandSpeedtest :size="14" stroke="1.8" aria-hidden="true" />
                   </span>
                 </div>
               </template>
@@ -1014,7 +1014,7 @@ const formatCapabilities = (capabilities: string[]): string => {
   justify-content: center;
   flex: 0 0 auto;
   margin-left: auto;
-  padding: 2px;
+  line-height: 0;
   color: var(--text-tertiary);
   cursor: help;
   transition: color 0.15s ease;
