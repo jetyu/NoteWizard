@@ -106,6 +106,7 @@ export const useWorkspaceStore = defineStore('workspace', {
       isNotePropertiesDialogOpen: false,
       notePropertiesTargetId: null as string | null,
       visibleTreeEntries: [] as WorkspaceTreeSelectionEntry[],
+      collapsedNotebookIds: [] as string[],
     };
   },
 
@@ -157,6 +158,10 @@ export const useWorkspaceStore = defineStore('workspace', {
   },
 
   actions: {
+    setCollapsedNotebookIds(ids: readonly string[]): void {
+      this.collapsedNotebookIds = Array.from(new Set(ids));
+    },
+
     setVisibleTreeEntries(entries: readonly WorkspaceTreeSelectionEntry[]): void {
       this.visibleTreeEntries = entries.map((entry) => ({
         id: entry.id,

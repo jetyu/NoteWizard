@@ -1,5 +1,4 @@
 import { aiConfigService } from '../ai-config.service.js';
-import { builtInAiService } from '../built-in-ai.service.js';
 import { createProviderChatModel } from '../ai-provider.service.js';
 import { knowledgeCopilotIndexService } from './knowledge-copilot-index.service.js';
 import { assessKnowledgeEvidence } from './knowledge-evidence-assessment.service.js';
@@ -67,9 +66,12 @@ export async function answerKnowledgeQuestionStream(
   query: string,
   context: KnowledgeCopilotConversationContext,
   onEvent: (event: KnowledgeAnswerStreamEvent) => void,
+  signal?: AbortSignal,
 ): Promise<KnowledgeAnswerResult> {
+  signal?.throwIfAborted();
   onEvent({ type: 'stage', stage: 'preparing' });
   const config = await ensureKnowledgeCopilotReady();
+  signal?.throwIfAborted();
   const chatModel = config.askChatConfig
     ? createProviderChatModel({
       provider: config.askChatConfig.provider,
@@ -85,7 +87,7 @@ export async function answerKnowledgeQuestionStream(
     const summarized = await chatModel.invoke([
       new SystemMessage(buildKnowledgeConversationSummaryPrompt()),
       new HumanMessage([conversationSummary, formatKnowledgeCopilotConversationContext({ ...context, summary: undefined, turns: summaryCandidates })].filter(Boolean).join('\n\n')),
-    ]);
+    ], { signal });
     conversationSummary = summarized.text.trim().slice(0, KNOWLEDGE_COPILOT_CONVERSATION_LIMITS.SUMMARY_LENGTH) || conversationSummary;
     conversationSummaryUpToQuestionId = summaryCandidates[summaryCandidates.length - 1]?.id ?? conversationSummaryUpToQuestionId;
   }
@@ -97,18 +99,15 @@ export async function answerKnowledgeQuestionStream(
       const rewritten = await chatModel.invoke([
         new SystemMessage(buildKnowledgeFollowupRewritePrompt(config.uiLanguage, query)),
         new HumanMessage(`${formatKnowledgeCopilotConversationContext(conversationContext)}\n\nLatest user question: ${query}`),
-      ]);
+      ], { signal });
       retrievalQuery = rewritten.text.trim() || query;
     } catch (error) {
-      const builtInError = builtInAiService.findRequestError(error);
-      if (builtInError) {
-        throw builtInError;
-      }
       logger.warn('Knowledge follow-up rewrite failed; using original query', {
         error: error instanceof Error ? error.message : String(error),
       });
     }
   }
+  signal?.throwIfAborted();
   onEvent({ type: 'stage', stage: 'searching' });
   const results = await knowledgeCopilotIndexService.searchKnowledgeBase({
     query: retrievalQuery,
@@ -116,6 +115,7 @@ export async function answerKnowledgeQuestionStream(
     similarityThreshold: Number(config.knowledgeCopilot.similarityThreshold),
     rerankerConfig: config.rerankerConfig,
   });
+  signal?.throwIfAborted();
 
   if (!results.length) {
     return {
@@ -182,8 +182,9 @@ export async function answerKnowledgeQuestionStream(
       new AIMessage(turn.answer),
     ]),
     new HumanMessage(query),
-  ]);
+  ], { signal });
   for await (const chunk of stream) {
+    signal?.throwIfAborted();
     const text = chunk.text;
     if (!text) continue;
     answer += text;

@@ -29,10 +29,6 @@ const ValidateToolCallingSchema = z.object({
   model: z.string().min(1),
 });
 
-const CheckBuiltInHealthSchema = z.object({
-  force: z.boolean().optional(),
-});
-
 async function testProviderCapability(
   validated: z.infer<typeof TestConnectionSchema>,
   capability: 'chat' | 'embedding' | 'reranker',
@@ -60,9 +56,8 @@ async function testProviderCapability(
  * Register AI Source IPC handlers
  */
 export function registerAiSourceIpcHandlers() {
-  ipcMain.handle(IPC_CHANNELS.AI_SOURCE_CHECK_BUILT_IN_HEALTH, async (_event, payload) => {
-    const validated = CheckBuiltInHealthSchema.parse(payload ?? {});
-    return await builtInAiService.checkHealth(validated.force ?? false);
+  ipcMain.handle(IPC_CHANNELS.AI_SOURCE_GET_BUILT_IN_HEALTH, async () => {
+    return await builtInAiService.getHealth();
   });
 
   /**

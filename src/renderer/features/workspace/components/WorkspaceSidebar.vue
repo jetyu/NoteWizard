@@ -31,7 +31,7 @@
       'workspace-tree--dragging': !!dragState,
       'workspace-tree--root-drop': dropTarget?.mode === 'root',
     }" @dragover.prevent="handleTreeDragOver" @drop.prevent="handleTreeDrop">
-      <li v-for="entry in treeEntries" :key="entry.id" class="workspace-row" :class="{
+      <li v-for="entry in treeEntries" :key="entry.id" class="workspace-row" :data-workspace-entry-id="entry.id" :class="{
         active:
           entry.kind === 'note'
             ? entry.id === activeNoteId
@@ -198,7 +198,7 @@ let syncHoverCardHideTimer: ReturnType<typeof setTimeout> | null = null;
 const renameDraft = ref("");
 const renameInput = ref<HTMLInputElement | null>(null);
 const isSubmittingRename = ref(false);
-const collapsedIds = ref<Set<string>>(new Set());
+const collapsedIds = computed<ReadonlySet<string>>(() => new Set(workspaceStore.collapsedNotebookIds));
 const selectedIds = ref<Set<string>>(new Set());
 const selectionAnchorId = ref<string | null>(null);
 const dragState = ref<DragPayload | null>(null);
@@ -227,11 +227,11 @@ function toggleExpandCollapseAll() {
   }
 
   if (isAnyNotebookCollapsed.value) {
-    collapsedIds.value = new Set();
+    workspaceStore.setCollapsedNotebookIds([]);
     return;
   }
 
-  collapsedIds.value = new Set(notebookIdsWithChildren.value);
+  workspaceStore.setCollapsedNotebookIds(notebookIdsWithChildren.value);
 }
 
 function compareTreeNodeOrder(left: WorkspaceTreeNode, right: WorkspaceTreeNode) {
@@ -608,9 +608,11 @@ function toggleCollapse(entry: Extract<WorkspaceTreeEntry, { kind: "notebook" }>
   }
 
   if (collapsedIds.value.has(entry.id)) {
-    collapsedIds.value.delete(entry.id);
+    workspaceStore.setCollapsedNotebookIds(
+      [...collapsedIds.value].filter((id) => id !== entry.id)
+    );
   } else {
-    collapsedIds.value.add(entry.id);
+    workspaceStore.setCollapsedNotebookIds([...collapsedIds.value, entry.id]);
   }
 }
 
@@ -844,7 +846,9 @@ async function applyDropTarget() {
   suppressNextClick.value = true;
 
   if (target.mode === "inside" && target.targetId) {
-    collapsedIds.value.delete(target.targetId);
+    workspaceStore.setCollapsedNotebookIds(
+      [...collapsedIds.value].filter((id) => id !== target.targetId)
+    );
   }
 
   try {
@@ -1054,11 +1058,11 @@ watch(
   notebooks,
   (nextNotebooks: Notebook[]) => {
     const validIds = new Set(nextNotebooks.map((notebook: Notebook) => notebook.id));
-    collapsedIds.value = new Set(
+    workspaceStore.setCollapsedNotebookIds(
       [...collapsedIds.value].filter((id) => validIds.has(id))
     );
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 watch(
@@ -1203,6 +1207,46 @@ const treeEntries = computed<WorkspaceTreeEntry[]>(() => {
   visit(null, 0);
   return entries;
 });
+
+function expandActiveEntryAncestors(activeId: string) {
+  const activeNote = notes.value.find((note) => note.id === activeId);
+  const activeNotebook = notebooks.value.find((notebook) => notebook.id === activeId);
+  let parentId = activeNote?.parentId ?? activeNotebook?.parentId ?? null;
+  const nextCollapsedIds = new Set(collapsedIds.value);
+
+  while (parentId) {
+    nextCollapsedIds.delete(parentId);
+    parentId = notebookMap.value.get(parentId)?.parentId ?? null;
+  }
+
+  if (nextCollapsedIds.size !== collapsedIds.value.size) {
+    workspaceStore.setCollapsedNotebookIds([...nextCollapsedIds]);
+  }
+}
+
+async function scrollActiveEntryIntoView() {
+  const activeId = getCurrentActiveId();
+  if (!activeId) {
+    return;
+  }
+
+  expandActiveEntryAncestors(activeId);
+  await nextTick();
+
+  const entries = sidebarRef.value?.querySelectorAll<HTMLElement>('[data-workspace-entry-id]');
+  const activeEntry = Array.from(entries ?? []).find(
+    (entry) => entry.dataset.workspaceEntryId === activeId,
+  );
+
+  activeEntry?.scrollIntoView({ block: 'nearest' });
+}
+
+watch(
+  [activeNoteId, activeNotebookId],
+  () => {
+    void scrollActiveEntryIntoView();
+  },
+);
 
 const selectedEntries = computed(() => {
   return treeEntries.value.filter((entry) => selectedIds.value.has(entry.id));

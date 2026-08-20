@@ -27,12 +27,6 @@
                 </div>
               </div>
               <div v-if="isBuiltInAiSource(source)" class="source-header-badges">
-                <button type="button" class="source-health-badge" :class="builtInHealthDisplayStatus"
-                  :disabled="isCheckingBuiltInHealth" :title="builtInHealthTooltip"
-                  :aria-label="builtInHealthTooltip" aria-live="polite" @click="refreshBuiltInAiHealth(true)">
-                  <span class="source-health-dot" aria-hidden="true"></span>
-                  <span>{{ builtInHealthLabel }}</span>
-                </button>
                 <span class="source-rate-limit-badge" :title="t('builtInAi.rateLimit.tooltip')"
                   :aria-label="t('builtInAi.rateLimit.tooltip')">
                   {{ t('builtInAi.rateLimit.badge') }}
@@ -57,6 +51,13 @@
                   <span class="label">{{ t(modelRow.labelKey) }}</span>
                   <span class="value" :title="resolveAiSourceModel(source, modelRow.capability)">
                     {{ resolveAiSourceModel(source, modelRow.capability) }}
+                  </span>
+                  <span class="model-health-icon"
+                    :class="[getBuiltInHealthStatus(modelRow.capability), { checking: isCheckingBuiltInHealth }]"
+                    :title="getBuiltInHealthTooltip(modelRow.capability)"
+                    :aria-label="getBuiltInHealthTooltip(modelRow.capability)" aria-live="polite"
+                    role="img">
+                    <IconBrandSpeedtest :size="14" stroke="1.8" aria-hidden="true" />
                   </span>
                 </div>
               </template>
@@ -218,16 +219,23 @@ import {
 import {
   BUILT_IN_AI_HEALTH_STATUS,
   isBuiltInAiSourceId,
-  type BuiltInAiHealthFailureReason,
-  type BuiltInAiHealthResult,
-  type BuiltInAiHealthStatus,
+  type BuiltInAiHealthSnapshot,
+  type BuiltInAiModelHealth,
 } from '@shared/built-in-ai.constants';
 import { getAiProviderPresentation, SELECTABLE_AI_PROVIDERS } from '../../config/ai-providers';
 import { settingsService } from '../../services/settings.service';
 import { systemDialog } from '../../services/system-dialog.service';
 import { createLogger } from '../../../logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
-import { IconPlus, IconBulb, IconTrash, IconPencil, IconChevronDown, IconCheck } from '@tabler/icons-vue';
+import {
+  IconBrandSpeedtest,
+  IconBulb,
+  IconCheck,
+  IconChevronDown,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+} from '@tabler/icons-vue';
 import siliconFlowLogoUrl from '@assets/images/ai-partner/siliconflow.png';
 import PasswordInput from '../PasswordInput.vue';
 
@@ -242,7 +250,7 @@ const showAddForm = ref(false);
 const isAdding = ref(false);
 const isTesting = ref(false);
 const isCheckingBuiltInHealth = ref(false);
-const builtInHealthResult = ref<BuiltInAiHealthResult | null>(null);
+const builtInHealthSnapshot = ref<BuiltInAiHealthSnapshot | null>(null);
 const editingSourceId = ref<string | null>(null);
 const isProviderMenuOpen = ref(false);
 const providerSelectRef = ref<HTMLElement | null>(null);
@@ -286,92 +294,57 @@ const builtInModelRows: ReadonlyArray<{ capability: AiCapability; labelKey: stri
   { capability: 'reranker', labelKey: 'label.aiCapabilityReranker' },
 ];
 
+const builtInModelLabelKeys = {
+  chat: 'builtInAi.capability.chat',
+  embedding: 'builtInAi.capability.embedding',
+  reranker: 'builtInAi.capability.reranker',
+} as const satisfies Record<AiCapability, string>;
+
 const isBuiltInAiSource = (source: AISource): boolean => isBuiltInAiSourceId(source.id);
-type BuiltInAiHealthDisplayStatus = BuiltInAiHealthStatus | 'checking';
 
-const builtInHealthDisplayStatus = computed<BuiltInAiHealthDisplayStatus>(() => {
-  if (isCheckingBuiltInHealth.value || !builtInHealthResult.value) {
-    return 'checking';
-  }
-  return builtInHealthResult.value.status;
-});
+const getBuiltInModelHealth = (capability: AiCapability): BuiltInAiModelHealth | null =>
+  builtInHealthSnapshot.value?.models[capability] ?? null;
 
-const formatBuiltInHealthLatency = (latencyMs: number): string => {
-  if (latencyMs < 1_000) {
-    return t('builtInAi.health.latencyMs', { value: Math.round(latencyMs) });
-  }
-  return t('builtInAi.health.latencySeconds', { value: (latencyMs / 1_000).toFixed(1) });
-};
+const getBuiltInHealthStatus = (capability: AiCapability): BuiltInAiModelHealth['status'] =>
+  getBuiltInModelHealth(capability)?.status ?? BUILT_IN_AI_HEALTH_STATUS.UNKNOWN;
 
-const builtInHealthLabel = computed<string>(() => {
-  const result = builtInHealthResult.value;
-  if (isCheckingBuiltInHealth.value || !result) {
-    return t('builtInAi.health.checking');
-  }
-  if (result.status === BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE || result.latencyMs === null) {
-    return t('builtInAi.health.unavailable');
-  }
-  return formatBuiltInHealthLatency(result.latencyMs);
-});
-
-const getBuiltInHealthFailureReason = (reason?: BuiltInAiHealthFailureReason): string => {
-  switch (reason) {
-    case 'timeout':
-      return t('builtInAi.health.reason.timeout');
-    case 'network':
-      return t('builtInAi.health.reason.network');
-    case 'invalid-response':
-      return t('builtInAi.health.reason.invalidResponse');
-    case 'check-failed':
-      return t('builtInAi.health.reason.checkFailed');
-    default:
-      return t('builtInAi.health.reason.server');
-  }
-};
-
-const builtInHealthTooltip = computed<string>(() => {
-  const result = builtInHealthResult.value;
-  if (isCheckingBuiltInHealth.value || !result) {
-    return t('builtInAi.health.tooltip.checking');
+const getBuiltInHealthTooltip = (capability: AiCapability): string => {
+  const model = t(builtInModelLabelKeys[capability]);
+  if (isCheckingBuiltInHealth.value) {
+    return t('builtInAi.health.tooltip.checking', { model });
   }
 
-  const checkedAt = new Intl.DateTimeFormat(undefined, {
+  const result = getBuiltInModelHealth(capability);
+  if (!result || result.status === BUILT_IN_AI_HEALTH_STATUS.UNKNOWN || result.observedAt === null) {
+    return t('builtInAi.health.tooltip.checkFailed', { model });
+  }
+
+  const observedAt = new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(result.checkedAt));
+  }).format(new Date(result.observedAt));
 
   if (result.status === BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE) {
-    if (result.reason === 'check-failed') {
-      return t('builtInAi.health.tooltip.checkFailed', { time: checkedAt });
-    }
     return t('builtInAi.health.tooltip.unavailable', {
-      time: checkedAt,
-      reason: getBuiltInHealthFailureReason(result.reason),
+      model,
+      time: observedAt,
+      reason: t('builtInAi.health.reason.server'),
     });
   }
-  const latency = result.latencyMs === null
-    ? t('builtInAi.health.unavailable')
-    : formatBuiltInHealthLatency(result.latencyMs);
   return result.status === BUILT_IN_AI_HEALTH_STATUS.DEGRADED
-    ? t('builtInAi.health.tooltip.degraded', { latency, time: checkedAt })
-    : t('builtInAi.health.tooltip.healthy', { latency, time: checkedAt });
-});
+    ? t('builtInAi.health.tooltip.degraded', { model, time: observedAt })
+    : t('builtInAi.health.tooltip.healthy', { model, time: observedAt });
+};
 
-const refreshBuiltInAiHealth = async (force = false): Promise<void> => {
+const refreshBuiltInAiHealth = async (): Promise<void> => {
   if (isCheckingBuiltInHealth.value) return;
 
   isCheckingBuiltInHealth.value = true;
   try {
-    builtInHealthResult.value = await settingsService.checkBuiltInAiHealth(force);
+    builtInHealthSnapshot.value = await settingsService.getBuiltInAiHealth();
   } catch (error) {
-    aisLogger.warn(`Failed to check built-in AI health: ${getErrorMessage(error)}`);
-    builtInHealthResult.value = {
-      status: BUILT_IN_AI_HEALTH_STATUS.UNAVAILABLE,
-      latencyMs: null,
-      checkedAt: Date.now(),
-      reason: 'check-failed',
-    };
+    aisLogger.warn(`Failed to load built-in AI performance metrics: ${getErrorMessage(error)}`);
+    builtInHealthSnapshot.value = null;
   } finally {
     isCheckingBuiltInHealth.value = false;
   }
@@ -946,75 +919,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   margin-left: auto;
 }
 
-.source-health-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 22px;
-  gap: 5px;
-  padding: 2px 8px;
-  border: 1px solid var(--status-neutral-border);
-  border-radius: var(--radius-sm);
-  background: var(--status-neutral-bg);
-  color: var(--status-neutral-text);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 650;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.source-health-badge:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.source-health-badge:disabled {
-  cursor: default;
-}
-
-.source-health-badge.healthy {
-  border-color: var(--status-success-border);
-  background: var(--status-success-bg);
-  color: var(--status-success-text);
-}
-
-.source-health-badge.degraded {
-  border-color: var(--status-warning-border);
-  background: var(--status-warning-bg);
-  color: var(--status-warning-text);
-}
-
-.source-health-badge.unavailable {
-  border-color: var(--status-danger-border);
-  background: var(--status-danger-bg);
-  color: var(--status-danger-text);
-}
-
-.source-health-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.source-health-badge.checking .source-health-dot {
-  animation: source-health-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes source-health-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.85);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 .source-rate-limit-badge {
   display: inline-flex;
   align-items: center;
@@ -1102,6 +1006,45 @@ const formatCapabilities = (capabilities: string[]): string => {
 .source-details .detail-item .value {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.model-health-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+  line-height: 0;
+  color: var(--text-tertiary);
+  cursor: help;
+  transition: color 0.15s ease;
+}
+
+.model-health-icon.healthy {
+  color: var(--status-success-text);
+}
+
+.model-health-icon.degraded {
+  color: var(--status-warning-text);
+}
+
+.model-health-icon.unavailable {
+  color: var(--status-danger-text);
+}
+
+.model-health-icon.checking {
+  animation: model-health-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes model-health-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 .model-description-item {
