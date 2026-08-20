@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../../main/constants/ipc.constants.js';
 import type { DiagnosticLogExportResult } from '../../shared/diagnostic-log.constants.js';
-import type { BuiltInAiHealthResult } from '../../shared/built-in-ai.constants.js';
+import type { BuiltInAiHealthSnapshot } from '../../shared/built-in-ai.constants.js';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -215,8 +215,8 @@ const electronAPI = Object.freeze({
     importEnex: () => ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT_ENEX),
   }),
   aiSource: Object.freeze({
-    checkBuiltInHealth: (force = false): Promise<BuiltInAiHealthResult> =>
-      ipcRenderer.invoke(IPC_CHANNELS.AI_SOURCE_CHECK_BUILT_IN_HEALTH, { force }),
+    getBuiltInHealth: (): Promise<BuiltInAiHealthSnapshot> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_SOURCE_GET_BUILT_IN_HEALTH),
     testConnection: (config: AiSourceTestConnectionPayload) => ipcRenderer.invoke(IPC_CHANNELS.AI_SOURCE_TEST_CONNECTION, config),
     validateToolCalling: (config: { provider: string; baseUrl: string; apiKey: string; model: string }) =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_SOURCE_VALIDATE_TOOL_CALLING, config),

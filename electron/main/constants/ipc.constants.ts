@@ -7,7 +7,7 @@ export const IPC_CHANNELS = {
   ACCESS_CONTROL_UPDATE_CONFIG: 'access-control:update-config',
   AI_CHAT_GENERATE: 'ai-chat:generate',
   AI_CHAT_GENERATE_COMPLETION: 'ai-chat:generate-completion',
-  AI_SOURCE_CHECK_BUILT_IN_HEALTH: 'ai-source:check-built-in-health',
+  AI_SOURCE_GET_BUILT_IN_HEALTH: 'ai-source:get-built-in-health',
   AI_SOURCE_TEST_CONNECTION: 'ai-source:test-connection',
   AI_SOURCE_VALIDATE_TOOL_CALLING: 'ai-source:validate-tool-calling',
   APP_GET_DISTRIBUTION: 'app:get-distribution',
