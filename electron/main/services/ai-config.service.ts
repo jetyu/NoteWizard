@@ -84,6 +84,7 @@ interface ResolvedRerankerConfig {
 }
 
 interface ResolvedAssistantConfig {
+  provider: AiProvider;
   endpoint: string;
   apiKey: string;
   model: string;
@@ -253,6 +254,7 @@ export const aiConfigService = {
     );
 
     return {
+      provider: requestConfig.provider,
       endpoint: requestConfig.endpoint,
       apiKey: requestConfig.apiKey,
       model: requestConfig.model,

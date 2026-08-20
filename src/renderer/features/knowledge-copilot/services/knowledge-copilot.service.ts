@@ -134,6 +134,7 @@ export const knowledgeCopilotService = {
   },
 
   async answerQuestionStream(
+    requestId: string,
     query: string,
     conversationId: string | undefined,
     context: KnowledgeCopilotConversationContext,
@@ -142,7 +143,6 @@ export const knowledgeCopilotService = {
       onDelta?: (text: string) => void;
     } = {},
   ): Promise<KnowledgeAnswerResult> {
-    const requestId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
     let unsubscribe: (() => void) | null = null;
 
     try {
@@ -174,7 +174,21 @@ export const knowledgeCopilotService = {
     }
   },
 
+  async cancelAnswerQuestion(requestId: string): Promise<boolean> {
+    const normalizedRequestId = requestId.trim();
+    if (!normalizedRequestId) {
+      return false;
+    }
+
+    const result = await electronApi.knowledgeCopilot.cancelAnswerQuestion(normalizedRequestId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to cancel Knowledge Assistant request');
+    }
+    return result.cancelled;
+  },
+
   async runTask(
+    requestId: string,
     task: string,
     writeMode: KnowledgeCopilotWriteMode = 'confirm',
     conversationId?: string,
@@ -182,7 +196,7 @@ export const knowledgeCopilotService = {
     decisions?: KnowledgeCopilotDecision[],
   ): Promise<KnowledgeCopilotTaskResult> {
     try {
-      return await electronApi.knowledgeCopilot.runTask({ task, writeMode, conversationId, context, decisions });
+      return await electronApi.knowledgeCopilot.runTask({ requestId, task, writeMode, conversationId, context, decisions });
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       knowledgeCopilotLogger.error('KnowledgeCopilot agent task failed', { error: message });
@@ -201,6 +215,19 @@ export const knowledgeCopilotService = {
         pendingActions: [],
       };
     }
+  },
+
+  async cancelTask(requestId: string): Promise<boolean> {
+    const normalizedRequestId = requestId.trim();
+    if (!normalizedRequestId) {
+      return false;
+    }
+
+    const result = await electronApi.knowledgeCopilot.cancelTask(normalizedRequestId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to cancel Knowledge Assistant task');
+    }
+    return result.cancelled;
   },
 
   async getStatus(): Promise<KnowledgeCopilotStatusResult> {

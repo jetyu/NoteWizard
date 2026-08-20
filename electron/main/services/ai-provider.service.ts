@@ -28,6 +28,7 @@ class OpenAiCompatibleReranker extends BaseDocumentCompressor {
 
   async compressDocuments(documents: DocumentInterface[], query: string): Promise<DocumentInterface[]> {
     const ranked = await remoteAiService.rerank({
+      provider: this.config.provider,
       endpoint: remoteAiService.resolveCapabilityEndpoint(this.config.baseUrl, 'reranker'),
       apiKey: this.config.apiKey,
       model: this.config.model,

@@ -14,6 +14,7 @@ import {
   type WorkbenchQuestionAgentWriteProposal,
   type WorkbenchAgentWriteMode,
   type WorkbenchQuestionEntry,
+  type WorkbenchQuestionGenerationStatus,
   type WorkbenchQuestionMode,
   type WorkbenchQuestionSource,
   type WorkbenchSettings,
@@ -28,6 +29,8 @@ interface RecommendationFeedbackPayload {
   action: WorkbenchRecommendationFeedbackAction;
   at?: number;
 }
+
+type WorkbenchMutation = Partial<WorkbenchSettings> | ((current: WorkbenchSettings) => Partial<WorkbenchSettings>);
 
 function trimAnswer(answer: string) {
   return answer.trim().slice(0, 240);
@@ -75,15 +78,17 @@ export const useWorkbenchStore = defineStore('workbench', () => {
   const conversationThreads = computed(() => workbench.value.conversationThreads);
   const recommendationFeedback = computed(() => workbench.value.recommendationFeedback);
 
-  async function saveWorkbench(nextValue: Partial<WorkbenchSettings>) {
-    const nextSettings = sanitizeWorkbenchSettings({
-      ...workbench.value,
-      ...nextValue,
-    });
+  let workbenchMutationQueue: Promise<void> = Promise.resolve();
 
-    await settingsStore.persistence.save({
-      workbench: nextSettings,
+  async function saveWorkbench(nextValue: WorkbenchMutation): Promise<void> {
+    const operation = workbenchMutationQueue.then(async () => {
+      const current = sanitizeWorkbenchSettings(config.value.workbench);
+      const patch = typeof nextValue === 'function' ? nextValue(current) : nextValue;
+      const nextSettings = sanitizeWorkbenchSettings({ ...current, ...patch });
+      await settingsStore.persistence.save({ workbench: nextSettings });
     });
+    workbenchMutationQueue = operation.catch(() => undefined);
+    await operation;
   }
 
   async function recordQuestion(payload: {
@@ -93,6 +98,9 @@ export const useWorkbenchStore = defineStore('workbench', () => {
     agentWriteMode?: WorkbenchAgentWriteMode;
     askedAt?: number;
     answeredAt?: number;
+    responseTimeMs?: number;
+    generationStatus?: WorkbenchQuestionGenerationStatus;
+    error?: string;
     answer?: string;
     sourceNoteIds?: string[];
     sources?: WorkbenchQuestionSource[];
@@ -121,6 +129,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
           .filter((noteId, index, items) => noteId.length > 0 && items.indexOf(noteId) === index);
     const fullAnswer = trimFullAnswer(payload.answer ?? '');
     const answeredAt = Number(payload.answeredAt ?? 0);
+    const responseTimeMs = Number(payload.responseTimeMs ?? 0);
 
     const nextEntry: WorkbenchQuestionEntry = {
       id: entryId,
@@ -128,6 +137,9 @@ export const useWorkbenchStore = defineStore('workbench', () => {
       query,
       askedAt,
       answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+      responseTimeMs: Number.isFinite(responseTimeMs) && responseTimeMs > 0 ? Math.round(responseTimeMs) : undefined,
+      generationStatus: payload.generationStatus,
+      error: payload.error?.trim().slice(0, 800) || undefined,
       answer: trimAnswer(fullAnswer),
       fullAnswer: fullAnswer || undefined,
       sourceNoteIds,
@@ -142,41 +154,112 @@ export const useWorkbenchStore = defineStore('workbench', () => {
       createdWriteIds: sanitizeQuestionIdList(payload.createdWriteIds),
     };
 
-    const nextQuestions = [
-      nextEntry,
-      ...recentQuestions.value.filter((entry) => entry.id !== nextEntry.id),
-    ].slice(0, WORKBENCH_LIMITS.QUESTIONS);
-
-    const existingThread = conversationThreads.value.find((thread) => thread.id === threadId);
-    const nextThread: WorkbenchConversationThread = {
-      id: threadId,
-      questions: [
-        nextEntry,
-        ...(existingThread?.questions ?? []).filter((entry) => entry.id !== nextEntry.id),
-      ].sort((left, right) => left.askedAt - right.askedAt).slice(-WORKBENCH_LIMITS.CONVERSATION_TURNS),
-      summary: existingThread?.summary,
-      summaryUpToQuestionId: existingThread?.summaryUpToQuestionId,
-      updatedAt: askedAt,
-    };
-    await saveWorkbench({
-      recentQuestions: nextQuestions,
-      conversationThreads: [
-        nextThread,
-        ...conversationThreads.value.filter((thread) => thread.id !== threadId),
-      ].slice(0, WORKBENCH_LIMITS.CONVERSATION_THREADS),
+    await saveWorkbench((current) => {
+      const existingThread = current.conversationThreads.find((thread) => thread.id === threadId);
+      const nextThread: WorkbenchConversationThread = {
+        id: threadId,
+        questions: [
+          nextEntry,
+          ...(existingThread?.questions ?? []).filter((entry) => entry.id !== nextEntry.id),
+        ].sort((left, right) => left.askedAt - right.askedAt).slice(-WORKBENCH_LIMITS.CONVERSATION_TURNS),
+        summary: existingThread?.summary,
+        summaryUpToQuestionId: existingThread?.summaryUpToQuestionId,
+        updatedAt: askedAt,
+      };
+      return {
+        recentQuestions: [
+          nextEntry,
+          ...current.recentQuestions.filter((entry) => entry.id !== nextEntry.id),
+        ].slice(0, WORKBENCH_LIMITS.QUESTIONS),
+        conversationThreads: [
+          nextThread,
+          ...current.conversationThreads.filter((thread) => thread.id !== threadId),
+        ].slice(0, WORKBENCH_LIMITS.CONVERSATION_THREADS),
+      };
     });
     return nextEntry;
   }
 
   async function updateConversationSummary(threadId: string, summary?: string, summaryUpToQuestionId?: string): Promise<void> {
     const normalizedThreadId = threadId.trim();
-    const thread = conversationThreads.value.find((entry) => entry.id === normalizedThreadId);
-    if (!thread) return;
-    await saveWorkbench({
-      conversationThreads: conversationThreads.value.map((entry) => entry.id === normalizedThreadId
-        ? { ...entry, summary: summary?.trim() || undefined, summaryUpToQuestionId: summaryUpToQuestionId?.trim() || undefined }
-        : entry),
+    if (!normalizedThreadId) return;
+    await saveWorkbench((current) => {
+      if (!current.conversationThreads.some((entry) => entry.id === normalizedThreadId)) {
+        return {};
+      }
+      return {
+        conversationThreads: current.conversationThreads.map((entry) => entry.id === normalizedThreadId
+          ? { ...entry, summary: summary?.trim() || undefined, summaryUpToQuestionId: summaryUpToQuestionId?.trim() || undefined }
+          : entry),
+      };
     });
+  }
+
+  async function replaceQuestion(payload: {
+    questionId: string;
+    query: string;
+    answeredAt?: number;
+    responseTimeMs?: number;
+    answer?: string;
+    sourceNoteIds?: string[];
+    sources?: WorkbenchQuestionSource[];
+    generationStatus?: WorkbenchQuestionGenerationStatus;
+    error?: string;
+  }): Promise<WorkbenchQuestionEntry | null> {
+    const questionId = payload.questionId.trim();
+    const query = payload.query.trim();
+    if (!questionId || !query) {
+      return null;
+    }
+
+    const thread = conversationThreads.value.find((entry) => (
+      entry.questions.some((question) => question.id === questionId)
+    ));
+    const targetQuestion = thread?.questions.find((question) => question.id === questionId)
+      ?? recentQuestions.value.find((question) => question.id === questionId);
+    if (!targetQuestion) {
+      return null;
+    }
+
+    const sources = sanitizeQuestionSources(payload.sources);
+    const sourceNoteIds = Array.isArray(payload.sourceNoteIds)
+      ? payload.sourceNoteIds
+          .map((noteId) => String(noteId ?? '').trim())
+          .filter((noteId, index, items) => noteId.length > 0 && items.indexOf(noteId) === index)
+      : sources
+          .map((source) => source.noteId)
+          .filter((noteId, index, items) => noteId.length > 0 && items.indexOf(noteId) === index);
+    const fullAnswer = trimFullAnswer(payload.answer ?? '');
+    const answeredAt = Number(payload.answeredAt ?? 0);
+    const responseTimeMs = Number(payload.responseTimeMs ?? targetQuestion.responseTimeMs ?? 0);
+    const nextEntry: WorkbenchQuestionEntry = {
+      ...targetQuestion,
+      query,
+      mode: 'ask',
+      answeredAt: Number.isFinite(answeredAt) && answeredAt > 0 ? answeredAt : undefined,
+      responseTimeMs: Number.isFinite(responseTimeMs) && responseTimeMs > 0 ? Math.round(responseTimeMs) : undefined,
+      generationStatus: payload.generationStatus,
+      error: payload.error?.trim().slice(0, 800) || undefined,
+      answer: trimAnswer(fullAnswer),
+      fullAnswer: fullAnswer || undefined,
+      sourceNoteIds,
+      sources,
+    };
+
+    await saveWorkbench((current) => ({
+      recentQuestions: [
+        nextEntry,
+        ...current.recentQuestions.filter((question) => question.id !== questionId),
+      ].slice(0, WORKBENCH_LIMITS.QUESTIONS),
+      conversationThreads: current.conversationThreads.map((entry) => entry.id === targetQuestion.threadId
+        ? {
+            ...entry,
+            questions: entry.questions.map((question) => question.id === questionId ? nextEntry : question),
+            updatedAt: Date.now(),
+          }
+        : entry),
+    }));
+    return nextEntry;
   }
 
   async function deleteConversationThread(threadId: string): Promise<boolean> {
@@ -210,12 +293,16 @@ export const useWorkbenchStore = defineStore('workbench', () => {
       createdWriteIds: sanitizeQuestionIdList(payload.createdWriteIds ?? targetQuestion.createdWriteIds),
     };
 
-    await saveWorkbench({
+    await saveWorkbench((current) => ({
       recentQuestions: [
         nextEntry,
-        ...recentQuestions.value.filter((entry) => entry.id !== questionId),
+        ...current.recentQuestions.filter((entry) => entry.id !== questionId),
       ].slice(0, WORKBENCH_LIMITS.QUESTIONS),
-    });
+      conversationThreads: current.conversationThreads.map((thread) => ({
+        ...thread,
+        questions: thread.questions.map((question) => question.id === questionId ? nextEntry : question),
+      })),
+    }));
 
     return nextEntry;
   }
@@ -298,6 +385,7 @@ export const useWorkbenchStore = defineStore('workbench', () => {
     conversationThreads,
     recommendationFeedback,
     recordQuestion,
+    replaceQuestion,
     updateQuestionAgentWriteState,
     deleteQuestion,
     deleteConversationThread,
