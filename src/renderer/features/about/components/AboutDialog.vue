@@ -76,12 +76,17 @@
               <div class="about-footer-meta">
                 <span>
                   <span class="footer-meta-label">{{ t('about.author') }}</span>
-                  Snaptium Team
+                  Jet
                 </span>
                 <span class="footer-meta-divider" aria-hidden="true">•</span>
                 <span>
                   <span class="footer-meta-label">{{ t('about.license') }}</span>
                   Apache 2.0
+                </span>
+                <span class="footer-meta-divider" aria-hidden="true">•</span>
+                <span>
+                  <span class="footer-meta-label">{{ t('about.supportEmail') }}</span>
+                  hi@snaptium.com
                 </span>
               </div>
               <p>{{ t('about.copyrights') }}</p>
