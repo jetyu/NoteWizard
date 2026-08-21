@@ -315,7 +315,13 @@ const getBuiltInHealthTooltip = (capability: AiCapability): string => {
   }
 
   const result = getBuiltInModelHealth(capability);
-  if (!result || result.status === BUILT_IN_AI_HEALTH_STATUS.UNKNOWN || result.observedAt === null) {
+  if (!result || result.status === BUILT_IN_AI_HEALTH_STATUS.UNKNOWN) {
+    return t('builtInAi.health.tooltip.checkFailed', { model });
+  }
+  if (result.status === BUILT_IN_AI_HEALTH_STATUS.NO_DATA) {
+    return t('builtInAi.health.tooltip.noData', { model });
+  }
+  if (result.observedAt === null) {
     return t('builtInAi.health.tooltip.checkFailed', { model });
   }
 
@@ -1024,6 +1030,14 @@ const formatCapabilities = (capabilities: string[]): string => {
   color: var(--status-success-text);
 }
 
+.model-health-icon.unknown {
+  color: var(--status-danger-text);
+}
+
+.model-health-icon.no-data {
+  color: var(--text-tertiary);
+}
+
 .model-health-icon.degraded {
   color: var(--status-warning-text);
 }
@@ -1033,6 +1047,7 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .model-health-icon.checking {
+  color: var(--text-tertiary);
   animation: model-health-pulse 1.2s ease-in-out infinite;
 }
 

@@ -219,6 +219,15 @@ function createUnknownModelHealth(): BuiltInAiModelHealth {
   };
 }
 
+function createNoDataModelHealth(): BuiltInAiModelHealth {
+  return {
+    status: BUILT_IN_AI_HEALTH_STATUS.NO_DATA,
+    latencyMs: null,
+    successRate: null,
+    observedAt: null,
+  };
+}
+
 function classifyBuiltInAiModelHealth(
   capability: AiCapability,
   latencyMs: number,
@@ -259,7 +268,7 @@ function parseBuiltInAiModelHealth(
     return latestPoint && latestPoint.ts * 1_000 >= cutoff ? [latestPoint] : [];
   });
   if (latestPoints.length === 0) {
-    return createUnknownModelHealth();
+    return createNoDataModelHealth();
   }
 
   const latencyMs = Math.round(
