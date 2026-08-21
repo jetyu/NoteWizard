@@ -4,25 +4,25 @@
       <div class="settings-form-group">
         <label class="setting-label">{{ t('label.webdavUrl') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.webdav.url"
-          @change="handleFieldChange('url', $event)" placeholder="https://example.com/dav" />
+          @change="handleFieldChange('url', $event)" :placeholder="t('placeholder.syncWebDavUrl')" />
       </div>
 
       <div class="settings-form-group">
         <label class="setting-label">{{ t('label.remotePath') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.remotePath" @change="handleRemotePathChange"
-          placeholder="/Snaptium" />
+          :placeholder="t('placeholder.syncRemotePath')" />
       </div>
 
       <div class="settings-form-group">
         <label class="setting-label">{{ t('label.webdavUsername') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.webdav.username"
-          @change="handleFieldChange('username', $event)" />
+          @change="handleFieldChange('username', $event)" :placeholder="t('placeholder.syncWebDavUsername')" />
       </div>
 
       <div class="settings-form-group">
         <label class="setting-label">{{ t('label.webdavPassword') }}</label>
         <PasswordInput :value="settingsStore.config.sync.webdav.password" autocomplete="off"
-          @change="handleFieldChange('password', $event)" />
+          :placeholder="t('placeholder.syncWebDavPassword')" @change="handleFieldChange('password', $event)" />
       </div>
 
       <div class="settings-form-actions-row">
