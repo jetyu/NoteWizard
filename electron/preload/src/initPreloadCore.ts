@@ -2,6 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../../main/constants/ipc.constants.js';
 import type { DiagnosticLogExportResult } from '../../shared/diagnostic-log.constants.js';
 import type { BuiltInAiHealthSnapshot } from '../../shared/built-in-ai.constants.js';
+import type {
+  ScheduledBackupRunPayload,
+  ScheduledBackupRunResult,
+} from '../../shared/scheduled-backup.constants.js';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -187,6 +191,8 @@ const electronAPI = Object.freeze({
     getConfig: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_LOAD),
     saveConfig: (config: JsonObject) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SAVE, config),
     setStartup: (enabled: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_STARTUP, enabled),
+    openBackupDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_OPEN_BACKUP_DIRECTORY),
+    pickBackupDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PICK_BACKUP_DIRECTORY),
     pickDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_PICK_DIRECTORY),
     confirmEmbeddingSourceChange: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CONFIRM_EMBEDDING_SOURCE_CHANGE),
     confirmKnowledgeCopilotChunkRebuild: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CONFIRM_KNOWLEDGE_COPILOT_CHUNK_REBUILD),
@@ -205,6 +211,8 @@ const electronAPI = Object.freeze({
     resetConfig: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET),
   }),
   dataTransfer: Object.freeze({
+    createScheduledBackup: (payload: ScheduledBackupRunPayload): Promise<ScheduledBackupRunResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA_CREATE_SCHEDULED_BACKUP, payload),
     importSppx: () => ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT_SPPX),
     exportSppx: () => ipcRenderer.invoke(IPC_CHANNELS.DATA_EXPORT_SPPX),
     importMarkdown: () => ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT_MARKDOWN),

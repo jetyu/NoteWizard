@@ -1,8 +1,16 @@
 import type { KnowledgeCopilotConversationContext } from '@shared/knowledge-copilot.constants';
 import type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
 import type { BuiltInAiHealthSnapshot } from '@shared/built-in-ai.constants';
+import type {
+  ScheduledBackupRunPayload,
+  ScheduledBackupRunResult,
+} from '@shared/scheduled-backup.constants';
 
 export type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
+export type {
+  ScheduledBackupRunPayload,
+  ScheduledBackupRunResult,
+} from '@shared/scheduled-backup.constants';
 
 export interface OpenFileResult {
   filePath: string;
@@ -742,6 +750,8 @@ export const electronApi = {
     saveConfig: (config: JsonObject) => electronApi.settings.getApi().saveConfig(config),
     setStartup: (enabled: boolean) => electronApi.settings.getApi().setStartup(enabled),
     switchLanguage: (locale: string) => electronApi.settings.getApi().switchLanguage(locale),
+    openBackupDirectory: (): Promise<boolean> => electronApi.settings.getApi().openBackupDirectory(),
+    pickBackupDirectory: () => electronApi.settings.getApi().pickBackupDirectory(),
     pickDirectory: () => electronApi.settings.getApi().pickDirectory(),
     confirmEmbeddingSourceChange: () => electronApi.settings.getApi().confirmEmbeddingSourceChange(),
     confirmKnowledgeCopilotChunkRebuild: (): Promise<boolean> => electronApi.settings.getApi().confirmKnowledgeCopilotChunkRebuild(),
@@ -762,6 +772,9 @@ export const electronApi = {
       const api = ensureElectronApi().dataTransfer;
       if (!api) throw new Error('Data transfer bridge is unavailable');
       return api;
+    },
+    createScheduledBackup: (payload: ScheduledBackupRunPayload): Promise<ScheduledBackupRunResult> => {
+      return electronApi.dataTransfer.getApi().createScheduledBackup(payload);
     },
     importSppx: (): Promise<SppxImportResult> => {
       return electronApi.dataTransfer.getApi().importSppx();

@@ -8,6 +8,8 @@ import {
   type DiagnosticLogExportResult,
   type SppxExportResult,
   type SppxImportResult,
+  type ScheduledBackupRunPayload,
+  type ScheduledBackupRunResult,
 } from '@renderer/core/bridge/electronApi';
 import { switchLanguage } from '@renderer/features/i18n';
 import {
@@ -113,6 +115,14 @@ export const settingsService = {
     return normalizeDirectory(await electronApi.settings.pickDirectory());
   },
 
+  async pickBackupDirectory(): Promise<string | null> {
+    return normalizeDirectory(await electronApi.settings.pickBackupDirectory());
+  },
+
+  async openBackupDirectory(): Promise<boolean> {
+    return await electronApi.settings.openBackupDirectory();
+  },
+
   async confirmEmbeddingSourceChange(currentSourceId: string, nextSourceId: string): Promise<boolean> {
     if (!nextSourceId || currentSourceId === nextSourceId) {
       return true;
@@ -169,6 +179,10 @@ export const settingsService = {
 
   async exportSppxPackage(): Promise<SppxExportResult> {
     return await electronApi.dataTransfer.exportSppx();
+  },
+
+  async createScheduledBackup(payload: ScheduledBackupRunPayload): Promise<ScheduledBackupRunResult> {
+    return await electronApi.dataTransfer.createScheduledBackup(payload);
   },
 
   async importSppxPackage(): Promise<SppxImportResult> {

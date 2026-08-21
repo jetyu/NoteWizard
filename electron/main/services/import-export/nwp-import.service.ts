@@ -7,7 +7,7 @@ import { VFS_CONSTANTS } from '../../constants/vfs.constants.js';
 import { loggerService } from '../log/logger.service.js';
 import { vfsService } from '../vfs.service.js';
 import { extractZipArchiveToDirectory } from '../../utils/zip.utils.js';
-import { createSecureTempDirectory } from './temp-directory.utils.js';
+import { createSecureTempDirectory } from '../../utils/temp-directory.utils.js';
 import { getErrorMessage } from '../../services/error.service.js';
 
 const logger = loggerService.createLogger('Main:NWP Import Service');

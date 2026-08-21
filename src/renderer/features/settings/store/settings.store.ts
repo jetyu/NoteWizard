@@ -22,6 +22,10 @@ import { normalizeKnowledgeCopilotRebuildConcurrency } from '@shared/knowledge-c
 
 import { DEFAULT_KNOWLEDGE_COPILOT_CONFIG } from '@renderer/features/knowledge-copilot/constants/knowledge-copilot.constants';
 import { DEFAULT_SYNC_SETTINGS, type SyncProvider } from '@shared/sync.constants';
+import {
+  DEFAULT_SCHEDULED_BACKUP_CONFIG,
+  type ScheduledBackupConfig,
+} from '@shared/scheduled-backup.constants';
 import { DEFAULT_UPDATE_CHANNEL, type UpdateChannel } from '@shared/updater.constants';
 import {
   DIAGNOSTIC_EXPORT_STATUS,
@@ -205,6 +209,7 @@ export interface NoteStorageConfig {
   maxHistoryVersions: number;
   trashAutoClearDays: number;
   snapshotInterval: number;
+  scheduledBackup: ScheduledBackupConfig;
 }
 
 export interface PrivacyLogConfig {
@@ -316,6 +321,7 @@ function createDefaultNoteStorageConfig(): NoteStorageConfig {
     maxHistoryVersions: 50,
     trashAutoClearDays: 30,
     snapshotInterval: 10,
+    scheduledBackup: { ...DEFAULT_SCHEDULED_BACKUP_CONFIG },
   };
 }
 
@@ -453,6 +459,16 @@ export const useSettingsStore = defineStore('settings', () => {
     value: NoteStorageConfig[K],
   ) => {
     config.value.noteStorage[key] = value;
+    await saveSettings({});
+  };
+
+  const updateScheduledBackupSetting = async (
+    updates: Partial<ScheduledBackupConfig>,
+  ): Promise<void> => {
+    config.value.noteStorage.scheduledBackup = {
+      ...config.value.noteStorage.scheduledBackup,
+      ...updates,
+    };
     await saveSettings({});
   };
 
@@ -813,6 +829,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const noteStorage = {
     setPath: setnoteStoragePath,
     update: updateNoteStorageSetting,
+    updateScheduledBackup: updateScheduledBackupSetting,
   };
 
   const privacyLog = {
