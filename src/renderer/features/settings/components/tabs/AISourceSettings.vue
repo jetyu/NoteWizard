@@ -77,8 +77,8 @@
 
       <!-- Add Source Form (Inside Grid) -->
       <template v-if="showAddForm">
-        <div class="add-form-card">
-          <div class="source-form-group">
+        <div class="add-form-card settings-form-card">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">
               {{ t('label.sourceName') }} <span class="required-mark">{{ t('label.starSign') }}</span>
               <span class="char-counter">{{ newSource.name.length }}/20</span>
@@ -86,7 +86,7 @@
             <input v-model="newSource.name" type="text" class="settings-input" maxlength="20"
               :placeholder="t('placeholder.sourceName')" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiProvider') }}</label>
             <div ref="providerSelectRef" class="provider-select-row">
               <button ref="providerSelectButtonRef" type="button" class="provider-select-trigger"
@@ -112,25 +112,25 @@
             </div>
           </div>
 
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiBaseUrl') }} <span class="required-mark">{{ t('label.starSign')
                 }}</span></label>
             <input v-model="newSource.baseUrl" type="text" class="settings-input"
               :placeholder="aiEndpointPlaceholder" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiModel') }} <span class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <input v-model="newSource.aiModel" type="text" class="settings-input"
               :placeholder="aiModelPlaceholder" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiApiKey') }} <span v-if="requiresApiKey" class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <PasswordInput v-model="newSource.apiKey" :placeholder="t('placeholder.aiAPIKey')" autocomplete="off"
             />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiCapabilities') }}</label>
             <div class="capability-list">
               <label v-for="option in capabilityOptions" :key="option.value" class="capability-option">
@@ -140,11 +140,11 @@
               </label>
             </div>
           </div>
-          <div class="form-actions-row">
+          <div class="form-actions-row settings-form-actions-row">
             <a class="partner-docs-link" :href="AI_CONFIG_DOCS_URL" target="_blank" rel="noopener noreferrer nofollow">
               {{ t('text.aiSourcePartnerDocsLink') }}
             </a>
-            <div class="buttons">
+            <div class="buttons settings-form-actions">
               <button class="action-button secondary" @click="handleTestNewSource"
                 :disabled="!canTest || isTesting">
                 <span v-if="isTesting" class="spinner small"></span>
@@ -706,19 +706,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   height: 20px;
 }
 
-.add-form-card {
-  grid-column: 1 / -1;
-  background: var(--surface-raised);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
-}
-
 .partner-footer {
   grid-column: 1 / -1;
   display: flex;
@@ -830,12 +817,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   color: var(--text-tertiary);
 }
 
-.source-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
 .required-mark {
   color: #ef4444;
   font-weight: bold;
@@ -848,21 +829,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   font-weight: normal;
   color: #999;
   margin-top: 2px;
-}
-
-.form-actions-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.buttons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
 }
 
 .source-list {

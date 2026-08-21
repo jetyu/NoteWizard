@@ -2,7 +2,11 @@ import fs from 'node:fs/promises';
 import { dialog, ipcMain } from 'electron';
 import { z } from 'zod';
 import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
-import { ACCESS_CONTROL_TIMEOUT_OPTIONS, type AccessControlTimeout } from '../../../shared/e2ee.constants.js';
+import {
+  ACCESS_CONTROL_TIMEOUT_OPTIONS,
+  E2EE_MASTER_PASSWORD_MIN_LENGTH,
+  type AccessControlTimeout,
+} from '../../../shared/e2ee.constants.js';
 import { keyManagerService } from '../../services/key-manager.service.js';
 import { accessControlService } from '../../services/access-control.service.js';
 import { getErrorCode, getErrorMessage } from '../../services/error.service.js';
@@ -21,14 +25,15 @@ function serializeE2eeError(error: unknown): {
 }
 
 const passwordSchema = z.string().min(1);
+const newMasterPasswordSchema = z.string().min(E2EE_MASTER_PASSWORD_MIN_LENGTH);
 const changePasswordSchema = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(1),
+  newPassword: newMasterPasswordSchema,
 });
 const recoveryKeySchema = z.string().min(1);
 const resetPasswordSchema = z.object({
   recoveryKey: z.string().min(1),
-  newPassword: z.string().min(1),
+  newPassword: newMasterPasswordSchema,
 });
 const AccessControlTimeoutSchema = z.union([
   z.literal(ACCESS_CONTROL_TIMEOUT_OPTIONS.DISABLED),
@@ -77,7 +82,7 @@ export function registerE2eeHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.E2EE_SETUP_PASSWORD, async (_event, rawPassword: unknown) => {
     try {
-      const password = passwordSchema.parse(rawPassword);
+      const password = newMasterPasswordSchema.parse(rawPassword);
       const result = await keyManagerService.setupMasterPassword(password);
       return { success: true, recoveryKey: result.recoveryKey };
     } catch (error: unknown) {

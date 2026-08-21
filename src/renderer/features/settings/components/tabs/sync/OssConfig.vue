@@ -1,68 +1,44 @@
 <template>
-  <div class="settings-grid">
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.ossEndpoint') }}</p>
-        <p class="setting-description">{{ t('text.ossEndpoint') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+  <div class="settings-form-layout settings-fade-in">
+    <section class="settings-form-card">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.ossEndpoint') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.ossS3.endpoint"
           @change="handleFieldChange('endpoint', $event)" placeholder="https://oss-cn-hangzhou.aliyuncs.com" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.remotePath') }}</p>
-        <p class="setting-description">{{ t('text.remotePath') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.remotePath') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.remotePath" @change="handleRemotePathChange"
           placeholder="/Snaptium" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.ossBucket') }}</p>
-        <p class="setting-description">{{ t('text.ossBucket') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.ossBucket') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.ossS3.bucket"
           @change="handleFieldChange('bucket', $event)" placeholder="my-bucket" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.ossRegion') }}</p>
-        <p class="setting-description">{{ t('text.ossRegion') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.ossRegion') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.ossS3.region"
           @change="handleFieldChange('region', $event)" placeholder="oss-cn-hangzhou" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.ossAccessKey') }}</p>
-        <p class="setting-description">{{ t('text.ossAccessKey') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.ossAccessKey') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.ossS3.accessKeyId"
           @change="handleFieldChange('accessKeyId', $event)" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.ossSecretKey') }}</p>
-        <p class="setting-description">{{ t('text.ossSecretKey') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.ossSecretKey') }}</label>
         <PasswordInput :value="settingsStore.config.sync.ossS3.secretAccessKey" autocomplete="off"
           @change="handleFieldChange('secretAccessKey', $event)" />
+      </div>
+
+      <div class="settings-form-actions-row">
+        <slot name="actions" />
       </div>
     </section>
   </div>
@@ -89,27 +65,3 @@ const handleRemotePathChange = (event: Event) => {
   settingsStore.sync.update('remotePath', target.value);
 };
 </script>
-
-<style scoped>
-.setting-card > .setting-copy {
-  flex: 0 1 15rem;
-}
-
-.sync-input-container {
-  width: min(100%, 68rem);
-  min-width: 22rem;
-  flex: 1.6 1 44rem;
-}
-
-@media (max-width: 720px) {
-  .setting-card > .setting-copy {
-    flex: 1 1 auto;
-  }
-
-  .sync-input-container {
-    min-width: 0;
-    width: 100%;
-    flex: 1 1 auto;
-  }
-}
-</style>

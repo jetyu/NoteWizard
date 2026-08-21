@@ -2,27 +2,23 @@
   <div class="settings-subview">
     <h3 class="panel-title">{{ pageTitle }}</h3>
     <div class="settings-subview-content scrollable">
-      <component :is="currentViewComponent" :key="activeView" @edit-provider="handleEditProvider" @back="handleBack" />
-    </div>
-
-    <div v-if="activeView !== 'dashboard'" class="settings-subview-footer with-divider">
-      <div class="settings-subview-footer-buttons between">
-        <div class="settings-subview-footer-left">
-          <button class="action-button secondary" @click="handleTestConnection"
-            :disabled="syncStore.isTestingConnection">
-            <span v-if="syncStore.isTestingConnection" class="spinner small"></span>
-            {{ t('button.testConnection') }}
-          </button>
-        </div>
-        <div class="settings-subview-footer-main">
-          <button class="action-button secondary" @click="handleBack">
-            {{ t('button.cancel') }}
-          </button>
-          <button class="action-button primary" @click="handleBack">
-            {{ t('button.confirm') }}
-          </button>
-        </div>
-      </div>
+      <component :is="currentViewComponent" :key="activeView" @edit-provider="handleEditProvider" @back="handleBack">
+        <template #actions>
+          <div class="settings-form-actions">
+            <button type="button" class="action-button secondary" @click="handleTestConnection"
+              :disabled="syncStore.isTestingConnection">
+              <span v-if="syncStore.isTestingConnection" class="spinner small"></span>
+              {{ syncStore.isTestingConnection ? t('button.testing') : t('button.testConnection') }}
+            </button>
+            <button type="button" class="action-button secondary" @click="handleBack">
+              {{ t('button.cancel') }}
+            </button>
+            <button type="button" class="action-button primary" @click="handleBack">
+              {{ t('button.confirm') }}
+            </button>
+          </div>
+        </template>
+      </component>
     </div>
   </div>
 </template>

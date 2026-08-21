@@ -104,6 +104,7 @@
                   <label class="setting-label">{{ t('e2ee.enterPassword') }}</label>
                   <PasswordInput v-model="setupPassword" :placeholder="t('e2ee.enterPassword')"
                     autocomplete="new-password" />
+                  <p class="password-policy-hint">{{ t('e2ee.password.minLength') }}</p>
                 </div>
                 <div class="security-input-group">
                   <label class="setting-label">{{ t('e2ee.confirmPassword') }}</label>
@@ -137,6 +138,7 @@
                   <label class="setting-label">{{ t('e2ee.newPassword') }}</label>
                   <PasswordInput v-model="changeNewPassword" :placeholder="t('e2ee.newPassword')"
                     autocomplete="new-password" />
+                  <p class="password-policy-hint">{{ t('e2ee.password.minLength') }}</p>
                 </div>
                 <div class="security-input-group">
                   <label class="setting-label">{{ t('e2ee.confirmPassword') }}</label>
@@ -156,6 +158,7 @@
                   <label class="setting-label">{{ t('e2ee.newPassword') }}</label>
                   <PasswordInput v-model="changeNewPassword" :placeholder="t('e2ee.newPassword')"
                     autocomplete="new-password" />
+                  <p class="password-policy-hint">{{ t('e2ee.password.minLength') }}</p>
                 </div>
                 <div class="security-input-group">
                   <label class="setting-label">{{ t('e2ee.confirmPassword') }}</label>
@@ -195,6 +198,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { E2EE_MASTER_PASSWORD_MIN_LENGTH } from '@shared/e2ee.constants';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { systemDialog } from '@renderer/features/settings/services/system-dialog.service';
 import PasswordInput from '../PasswordInput.vue';
@@ -299,8 +303,8 @@ const canSubmit = computed(() => {
   switch (activeView.value) {
     case 'setup':
       return (
-        setupPassword.value.trim().length > 0
-        && setupConfirmPassword.value.trim().length > 0
+        setupPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
+        && setupConfirmPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
         && !setupPasswordMismatch.value
       );
     case 'unlock':
@@ -310,15 +314,15 @@ const canSubmit = computed(() => {
     case 'change':
       return (
         changeOldPassword.value.trim().length > 0
-        && changeNewPassword.value.trim().length > 0
-        && changeConfirmPassword.value.trim().length > 0
+        && changeNewPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
+        && changeConfirmPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
         && !changePasswordMismatch.value
       );
     case 'reset-password':
       return (
         recoveryKeyInput.value.trim().length > 0
-        && changeNewPassword.value.trim().length > 0
-        && changeConfirmPassword.value.trim().length > 0
+        && changeNewPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
+        && changeConfirmPassword.value.trim().length >= E2EE_MASTER_PASSWORD_MIN_LENGTH
         && !changePasswordMismatch.value
       );
     case 'regenerate-key':
@@ -640,6 +644,12 @@ onMounted(async () => {
 .security-input-group .setting-label {
   margin: 0;
   font-size: 0.85rem;
+}
+
+.password-policy-hint {
+  margin: -0.1rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
 }
 
 .security-unlock-layout {

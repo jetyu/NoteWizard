@@ -1,46 +1,32 @@
 <template>
-  <div class="settings-grid">
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.webdavUrl') }}</p>
-        <p class="setting-description">{{ t('text.webdavUrl') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+  <div class="settings-form-layout settings-fade-in">
+    <section class="settings-form-card">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.webdavUrl') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.webdav.url"
           @change="handleFieldChange('url', $event)" placeholder="https://example.com/dav" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.remotePath') }}</p>
-        <p class="setting-description">{{ t('text.remotePath') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.remotePath') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.remotePath" @change="handleRemotePathChange"
           placeholder="/Snaptium" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.webdavUsername') }}</p>
-        <p class="setting-description">{{ t('text.webdavUsername') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.webdavUsername') }}</label>
         <input class="settings-input" :value="settingsStore.config.sync.webdav.username"
           @change="handleFieldChange('username', $event)" />
       </div>
-    </section>
 
-    <section class="setting-card">
-      <div class="setting-copy">
-        <p class="setting-label">{{ t('label.webdavPassword') }}</p>
-        <p class="setting-description">{{ t('text.webdavPassword') }}</p>
-      </div>
-      <div class="input-container sync-input-container">
+      <div class="settings-form-group">
+        <label class="setting-label">{{ t('label.webdavPassword') }}</label>
         <PasswordInput :value="settingsStore.config.sync.webdav.password" autocomplete="off"
           @change="handleFieldChange('password', $event)" />
+      </div>
+
+      <div class="settings-form-actions-row">
+        <slot name="actions" />
       </div>
     </section>
   </div>
@@ -64,27 +50,3 @@ const handleRemotePathChange = (event: Event) => {
   settingsStore.sync.update('remotePath', target.value);
 };
 </script>
-
-<style scoped>
-.setting-card > .setting-copy {
-  flex: 0 1 15rem;
-}
-
-.sync-input-container {
-  width: min(100%, 68rem);
-  min-width: 22rem;
-  flex: 1.6 1 44rem;
-}
-
-@media (max-width: 720px) {
-  .setting-card > .setting-copy {
-    flex: 1 1 auto;
-  }
-
-  .sync-input-container {
-    min-width: 0;
-    width: 100%;
-    flex: 1 1 auto;
-  }
-}
-</style>

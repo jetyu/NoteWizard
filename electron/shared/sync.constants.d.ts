@@ -64,7 +64,7 @@ export declare const DEFAULT_SYNC_SETTINGS: {
   readonly provider: typeof SYNC_PROVIDERS.WEBDAV;
   readonly intervalMinutes: typeof SYNC_INTERVALS.MANUAL;
   readonly autoSyncOnSave: false;
-  readonly remotePath: '/snaptium';
+  readonly remotePath: '/Snaptium';
   readonly webdav: {
     readonly url: '';
     readonly username: '';
