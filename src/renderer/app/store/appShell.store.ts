@@ -26,6 +26,7 @@ export const useAppShellStore = defineStore('app-shell', () => {
   const { config } = storeToRefs(settingsStore);
 
   const activeMainView = ref<AppShellMainViewId>(APP_SHELL_DEFAULT_MAIN_VIEW);
+  const tagsViewTarget = ref<string | null>(null);
   const maxCustomModules = computed(() => APP_SHELL_MAX_CUSTOM_MODULES);
   const enabledCustomModuleIds = computed<AppShellModuleId[]>(() => {
     return sanitizeCustomModules(config.value.appShell.customSidebarModules);
@@ -70,6 +71,14 @@ export const useAppShellStore = defineStore('app-shell', () => {
     activeMainView.value = viewId;
   }
 
+  function setTagsViewTarget(tagName: string | null): void {
+    tagsViewTarget.value = tagName;
+  }
+
+  function clearTagsViewTarget(): void {
+    tagsViewTarget.value = null;
+  }
+
   async function enableCustomModule(moduleId: AppShellModuleId) {
     if (enabledCustomModuleIds.value.includes(moduleId) || hasReachedCustomModuleLimit.value) {
       return;
@@ -92,6 +101,7 @@ export const useAppShellStore = defineStore('app-shell', () => {
 
   return {
     activeMainView,
+    tagsViewTarget,
     mainViews,
     customModules,
     enabledCustomModules,
@@ -101,6 +111,8 @@ export const useAppShellStore = defineStore('app-shell', () => {
     hasReachedCustomModuleLimit,
     initializeActiveMainView,
     setActiveMainView,
+    setTagsViewTarget,
+    clearTagsViewTarget,
     enableCustomModule,
     disableCustomModule,
   };

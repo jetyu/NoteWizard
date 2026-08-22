@@ -35,8 +35,9 @@
         </button>
       </div>
 
-      <div class="tags-view__tag-list" role="list">
+      <div ref="tagListRef" class="tags-view__tag-list" role="list">
         <button v-for="tag in filteredTags" :key="tag.name" type="button" class="tags-view__tag"
+          :data-tag-name="tag.name"
           :class="{ 'is-active': selectedFilter.kind === 'tag' && selectedFilter.name === tag.name }"
           @click="selectedFilter = { kind: 'tag', name: tag.name }">
           <span class="tags-view__tag-name">#{{ tag.name }}</span>
@@ -93,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconTag, IconFileText, IconFileCheck } from '@tabler/icons-vue';
 import { formatDate } from '@renderer/core/utils/date.utils';
@@ -111,6 +112,7 @@ const appShellStore = useAppShellStore();
 const { t, locale } = useI18n();
 
 const tagQuery = ref('');
+const tagListRef = ref<HTMLElement | null>(null);
 const selectedFilter = ref<TagFilter>({ kind: 'tagged' });
 
 const taggedNotes = computed<Note[]>(() => {
@@ -188,6 +190,32 @@ watch(
     if (filter.kind === 'tag' && !tags.some((tag) => tag.name === filter.name)) {
       selectedFilter.value = tags.length > 0 ? { kind: 'tag', name: tags[0].name } : { kind: 'tagged' };
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  [() => appShellStore.tagsViewTarget, () => workspaceStore.allTags],
+  async ([targetName, tags]) => {
+    if (!targetName) {
+      return;
+    }
+
+    const normalizedTarget = targetName.toLocaleLowerCase();
+    const targetTag = tags.find((tag) => tag.name.toLocaleLowerCase() === normalizedTarget);
+    if (!targetTag) {
+      return;
+    }
+
+    tagQuery.value = '';
+    selectedFilter.value = { kind: 'tag', name: targetTag.name };
+    await nextTick();
+
+    const targetButton = Array.from(
+      tagListRef.value?.querySelectorAll<HTMLButtonElement>('.tags-view__tag') ?? []
+    ).find((button) => button.dataset.tagName === targetTag.name);
+    targetButton?.scrollIntoView({ block: 'nearest' });
+    appShellStore.clearTagsViewTarget();
   },
   { immediate: true }
 );
