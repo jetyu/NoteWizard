@@ -106,6 +106,10 @@ export const securityService = {
     };
   },
 
+  resetAccessControlIdleTimer(): void {
+    electronApi.accessControl.resetIdleTimer();
+  },
+
   async updateAccessControlConfig(config: AccessControlConfig): Promise<void> {
     const result = await electronApi.accessControl.updateConfig(config);
     assertBridgeSuccess(result);

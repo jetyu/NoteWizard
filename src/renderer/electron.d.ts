@@ -493,6 +493,7 @@ declare global {
 
       accessControl?: {
         getConfig: () => Promise<{ success: true; config: AccessControlConfig } | E2eeErrorResult>;
+        resetIdleTimer: () => void;
         updateConfig: (lockConfig: AccessControlConfig) => Promise<E2eeOperationResult | E2eeErrorResult>;
         lock: () => Promise<E2eeOperationResult>;
         unlock: (password: string) => Promise<E2eeOperationResult | E2eeErrorResult>;

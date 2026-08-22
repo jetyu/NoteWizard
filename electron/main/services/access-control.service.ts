@@ -74,12 +74,12 @@ export const accessControlService = {
       await settingsService.saveConfig({ ...preferences, accessControl: initialConfig });
     }
 
-    this.applyConfig(initialConfig);
-
-    if (config.enabled && config.lockOnStartup) {
+    if (initialConfig.enabled && initialConfig.lockOnStartup) {
       locked = true;
       logger.info('Access control locked on startup');
     }
+
+    this.applyConfig(initialConfig);
   },
 
   /**
@@ -121,7 +121,10 @@ export const accessControlService = {
         locked = false;
         notifyRendererLockState(false);
       }
+      return;
     }
+
+    startAutoLockTimer();
   },
 
   /**

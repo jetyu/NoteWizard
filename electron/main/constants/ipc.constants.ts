@@ -1,5 +1,6 @@
 export const IPC_CHANNELS = {
   ACCESS_CONTROL_GET_CONFIG: 'access-control:get-config',
+  ACCESS_CONTROL_ACTIVITY: 'access-control:activity',
   ACCESS_CONTROL_IS_LOCKED: 'access-control:is-locked',
   ACCESS_CONTROL_LOCK: 'access-control:lock',
   ACCESS_CONTROL_STATE_CHANGED: 'access-control:state-changed',

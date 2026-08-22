@@ -891,6 +891,9 @@ export const electronApi = {
     getConfig: (): Promise<AccessControlGetConfigResult> => {
       return electronApi.accessControl.getApi().getConfig();
     },
+    resetIdleTimer: (): void => {
+      electronApi.accessControl.getApi().resetIdleTimer();
+    },
     updateConfig: (lockConfig: AccessControlConfig): Promise<E2eeOperationResult | E2eeErrorResult> => {
       return electronApi.accessControl.getApi().updateConfig(lockConfig);
     },

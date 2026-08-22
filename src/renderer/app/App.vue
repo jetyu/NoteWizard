@@ -29,6 +29,7 @@ import { electronApi } from '@renderer/core/bridge/electronApi';
 import { useUpdaterStore } from '@renderer/features/updater';
 import { useAppShellStore } from './store/appShell.store';
 import { useQuickCapture } from '@renderer/features/quick-capture';
+import { useAccessControlActivity } from '@renderer/features/security/composables/useAccessControlActivity';
 
 const settingsStore = useSettingsStore();
 const appShellStore = useAppShellStore();
@@ -43,6 +44,7 @@ const quickCapture = useQuickCapture();
 
 useSettingsAppearance();
 useCommandRegistration();
+useAccessControlActivity();
 quickCapture.start();
 
 // 原生菜单（macOS/Windows）的监听器清理函数

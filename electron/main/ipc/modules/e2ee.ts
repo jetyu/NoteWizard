@@ -66,6 +66,7 @@ export function registerE2eeHandlers(): void {
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_LOCK);
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK);
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_IS_LOCKED);
+  ipcMain.removeAllListeners(IPC_CHANNELS.ACCESS_CONTROL_ACTIVITY);
 
   // ── E2EE: Key Slots Check ──────────────────────────────────────────────
 
@@ -173,6 +174,10 @@ export function registerE2eeHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.ACCESS_CONTROL_GET_CONFIG, () => {
     return { success: true, config: accessControlService.getConfig() };
+  });
+
+  ipcMain.on(IPC_CHANNELS.ACCESS_CONTROL_ACTIVITY, () => {
+    accessControlService.resetIdleTimer();
   });
 
   // ── Access Control: Update Config ───────────────────────────────────────────

@@ -340,6 +340,7 @@ const electronAPI = Object.freeze({
   }),
   accessControl: Object.freeze({
     getConfig: () => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_GET_CONFIG),
+    resetIdleTimer: () => ipcRenderer.send(IPC_CHANNELS.ACCESS_CONTROL_ACTIVITY),
     updateConfig: (lockConfig: { enabled: boolean; lockOnStartup: boolean; autoLockTimeoutMinutes: number }) =>
       ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_UPDATE_CONFIG, lockConfig),
     lock: () => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_LOCK),
