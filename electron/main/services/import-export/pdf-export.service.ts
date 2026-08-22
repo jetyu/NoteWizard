@@ -151,7 +151,10 @@ export const singleNotePdfExportService = {
         printBackground: true,
         pageSize: 'A4',
         margins: {
-          marginType: 'default',
+          top: 0.71,
+          bottom: 0.71,
+          left: 0.63,
+          right: 0.63,
         },
       });
       await fs.mkdir(path.dirname(filePath), { recursive: true });
