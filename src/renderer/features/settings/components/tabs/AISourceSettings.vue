@@ -81,9 +81,9 @@
           <div class="source-form-group settings-form-group">
             <label class="setting-label">
               {{ t('label.sourceName') }} <span class="required-mark">{{ t('label.starSign') }}</span>
-              <span class="char-counter">{{ newSource.name.length }}/20</span>
+              <span class="char-counter">{{ newSource.name.length }}/15</span>
             </label>
-            <input v-model="newSource.name" type="text" class="settings-input" maxlength="20"
+            <input v-model="newSource.name" type="text" class="settings-input" maxlength="15"
               :placeholder="t('placeholder.sourceName')" />
           </div>
           <div class="source-form-group settings-form-group">
@@ -563,119 +563,6 @@ const formatCapabilities = (capabilities: string[]): string => {
 </script>
 
 <style scoped>
-.provider-select-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.provider-select-trigger {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--settings-control-height, 32px);
-  gap: 10px;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.86rem;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-
-.provider-select-trigger:hover:not(:disabled),
-.provider-select-trigger:focus-visible {
-  border-color: var(--input-border-focus);
-  box-shadow: 0 0 0 3px var(--focus-ring);
-  outline: none;
-}
-
-.provider-select-trigger:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.provider-select-chevron {
-  margin-left: auto;
-  color: var(--text-secondary);
-}
-
-.provider-select-menu {
-  position: absolute;
-  z-index: 12;
-  top: calc(100% + 6px);
-  left: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: max(100%, 340px);
-  max-height: 320px;
-  overflow-y: auto;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--settings-card-border, var(--border-muted));
-  border-radius: 10px;
-  background: var(--panel, #ffffff);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
-}
-
-.provider-select-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 36px;
-  padding: 5px 7px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.provider-select-option span {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 0.76rem;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.provider-select-check {
-  flex: 0 0 auto;
-  margin-left: auto;
-  color: var(--accent);
-}
-
-.provider-select-option:hover,
-.provider-select-option:focus-visible,
-.provider-select-option.active {
-  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  outline: none;
-}
-
-.provider-logo {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-}
-
-.provider-logo {
-  box-sizing: border-box;
-  padding: 2px;
-  border-radius: 5px;
-  background: #fff;
-  object-fit: contain;
-}
-
 .header-actions {
   display: flex;
   justify-content: space-between;
@@ -774,19 +661,20 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .add-source-card {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 24px;
+  gap: 8px;
+  min-height: 144px;
+  padding: 20px;
   background: transparent;
   border: 1px dashed #c9d1dc;
   border-radius: 12px;
   cursor: pointer;
   color: #5f6b7a;
   transition: all 0.2s ease;
-  min-height: 156px;
 }
 
 .add-source-card:hover {
@@ -817,12 +705,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   color: var(--text-tertiary);
 }
 
-.required-mark {
-  color: #ef4444;
-  font-weight: bold;
-  margin-left: 2px;
-}
-
 .char-counter {
   float: right;
   font-size: 0.7rem;
@@ -834,19 +716,20 @@ const formatCapabilities = (capabilities: string[]): string => {
 .source-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .source-title {
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 1rem;
   margin: 0;
   color: var(--text-primary);
 }
 
 .source-card {
   box-sizing: border-box;
-  min-height: 156px;
+  min-height: 144px;
+  padding: 10px 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
@@ -862,7 +745,7 @@ const formatCapabilities = (capabilities: string[]): string => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .source-identity {
@@ -873,8 +756,8 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .source-provider-logo {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .source-heading-copy {
@@ -909,7 +792,7 @@ const formatCapabilities = (capabilities: string[]): string => {
 
 .source-provider {
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 
 .provider-picker {
@@ -958,7 +841,7 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .source-details .detail-item {
-  padding: 7px 0;
+  padding: 5px 0;
   border-top: 1px solid var(--border-color);
 }
 

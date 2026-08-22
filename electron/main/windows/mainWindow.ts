@@ -16,6 +16,13 @@ export function secureWebContents(win: BrowserWindow, isDev: boolean): void {
       'snaptium.com',
       'siliconflow.cn',
       'cloud.siliconflow.cn',
+      'help.jianguoyun.com',
+      'docs.nextcloud.com',
+      'doc.owncloud.com',
+      'help.aliyun.com',
+      'cloud.tencent.com',
+      'docs.aws.amazon.com',
+      'developers.cloudflare.com',
       'www.bing.com',
       'bing.com'
     ]);
