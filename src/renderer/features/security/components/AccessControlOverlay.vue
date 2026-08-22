@@ -23,6 +23,9 @@
               autocomplete="current-password"
               @keyup.enter="handleUnlock"
             />
+            <p v-if="unlockError" class="access-control-error" role="alert" aria-live="polite">
+              {{ unlockError }}
+            </p>
           </div>
 
           <div class="access-control-actions">
@@ -45,7 +48,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { normalizeSecurityError, securityService, type SecurityError } from '../services/security.service';
-import { systemDialog } from '@renderer/features/settings/services/system-dialog.service';
 import PasswordInput from '@renderer/features/settings/components/PasswordInput.vue';
 import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
 
@@ -53,6 +55,7 @@ const { t } = useI18n();
 
 const isVisible = ref(false);
 const password = ref('');
+const unlockError = ref('');
 const isSubmitting = ref(false);
 const overlayRef = ref<HTMLElement | null>(null);
 const dialogRef = ref<HTMLElement | null>(null);
@@ -83,6 +86,7 @@ function resolveSecurityErrorMessage(error: SecurityError): string {
 
 function resetForm(): void {
   password.value = '';
+  unlockError.value = '';
 }
 
 async function refreshLockState(): Promise<void> {
@@ -110,6 +114,7 @@ async function handleUnlock(): Promise<void> {
     return;
   }
 
+  unlockError.value = '';
   isSubmitting.value = true;
 
   try {
@@ -118,10 +123,7 @@ async function handleUnlock(): Promise<void> {
     resetForm();
   } catch (error: unknown) {
     const normalized = normalizeSecurityError(error);
-    await systemDialog.warning({
-      title: t('e2ee.accessControl.unlockTitle'),
-      message: resolveSecurityErrorMessage(normalized),
-    });
+    unlockError.value = resolveSecurityErrorMessage(normalized);
   } finally {
     isSubmitting.value = false;
   }
@@ -206,6 +208,12 @@ onUnmounted(() => {
   font-size: 0.86rem;
   font-weight: 600;
   color: #111827;
+}
+
+.access-control-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.86rem;
 }
 
 .access-control-actions {
