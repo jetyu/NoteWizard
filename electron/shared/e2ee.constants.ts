@@ -18,6 +18,8 @@ export const E2EE_KEY_SLOTS_FILE = 'key-slots.json' as const;
 
 export const E2EE_KEY_SLOTS_VERSION = 1 as const;
 
+export const E2EE_MASTER_PASSWORD_MIN_LENGTH = 6 as const;
+
 export const E2EE_ARGON2_CONFIG = {
   timeCost: 3,
   memoryCost: 65536,

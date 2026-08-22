@@ -13,7 +13,7 @@
 import { onMounted, onUnmounted } from 'vue';
 import MainLayout from './MainLayout.vue';
 import SidebarManagerDialog from './components/SidebarManagerDialog.vue';
-import { useSettingsStore } from '@renderer/features/settings';
+import { useScheduledBackupLifecycle, useSettingsStore } from '@renderer/features/settings';
 import { AboutDialog } from '@renderer/features/about';
 import { TrashDialog } from '@renderer/features/trash';
 import { useSettingsAppearance } from '@renderer/features/settings/composables/useSettingsAppearance';
@@ -29,6 +29,7 @@ import { electronApi } from '@renderer/core/bridge/electronApi';
 import { useUpdaterStore } from '@renderer/features/updater';
 import { useAppShellStore } from './store/appShell.store';
 import { useQuickCapture } from '@renderer/features/quick-capture';
+import { useAccessControlActivity } from '@renderer/features/security/composables/useAccessControlActivity';
 
 const settingsStore = useSettingsStore();
 const appShellStore = useAppShellStore();
@@ -38,10 +39,12 @@ const favoritesStore = useFavoritesStore();
 const updaterStore = useUpdaterStore();
 const { initializeKnowledgeCopilot, setupVfsAutoIndex } = useKnowledgeCopilotInitialization();
 const { initializeSync, setupAutoSync } = useSyncLifecycle();
+const { setupScheduledBackup } = useScheduledBackupLifecycle();
 const quickCapture = useQuickCapture();
 
 useSettingsAppearance();
 useCommandRegistration();
+useAccessControlActivity();
 quickCapture.start();
 
 // 原生菜单（macOS/Windows）的监听器清理函数
@@ -66,6 +69,7 @@ onMounted(async () => {
   // 设置保存时自动索引
   setupVfsAutoIndex();
   setupAutoSync();
+  setupScheduledBackup();
 
   // 注册原生菜单监听（顶部菜单栏触发）
   if (electronApi.menu.isAvailable()) {

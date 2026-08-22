@@ -48,6 +48,16 @@ export function registerSettingsIpcHandlers() {
     return await settingsService.pickDirectory();
   });
 
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_PICK_BACKUP_DIRECTORY, async () => {
+    logger.debug('Settings pick scheduled backup directory');
+    return await settingsService.pickBackupDirectory();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_OPEN_BACKUP_DIRECTORY, async () => {
+    logger.debug('Settings open scheduled backup directory');
+    return await settingsService.openBackupDirectory();
+  });
+
   /**
    * Confirm embedding source change using the native Electron dialog
    */

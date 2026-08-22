@@ -74,12 +74,12 @@ export const accessControlService = {
       await settingsService.saveConfig({ ...preferences, accessControl: initialConfig });
     }
 
-    this.applyConfig(initialConfig);
-
-    if (config.enabled && config.lockOnStartup) {
+    if (initialConfig.enabled && initialConfig.lockOnStartup) {
       locked = true;
       logger.info('Access control locked on startup');
     }
+
+    this.applyConfig(initialConfig);
   },
 
   /**
@@ -121,7 +121,10 @@ export const accessControlService = {
         locked = false;
         notifyRendererLockState(false);
       }
+      return;
     }
+
+    startAutoLockTimer();
   },
 
   /**
@@ -161,6 +164,19 @@ export const accessControlService = {
     startAutoLockTimer();
     notifyRendererLockState(false);
     logger.info('App unlocked');
+  },
+
+  /**
+   * Unlock the application with the Recovery Key.
+   * This also unlocks the DEK because access control and E2EE share the key state.
+   */
+  async unlockWithRecoveryKey(recoveryKey: string): Promise<void> {
+    await keyManagerService.unlockWithRecoveryKey(recoveryKey);
+
+    locked = false;
+    startAutoLockTimer();
+    notifyRendererLockState(false);
+    logger.info('App unlocked with Recovery Key');
   },
 
   /**

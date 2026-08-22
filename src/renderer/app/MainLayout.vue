@@ -79,7 +79,7 @@ async function openModule(moduleId: AppShellModuleId) {
       await openSearchView();
       return;
     case 'settings':
-      await showSettings('general');
+      await setActiveMainView('settings');
       return;
     case 'trash':
       await openTrash();

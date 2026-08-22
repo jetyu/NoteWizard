@@ -213,9 +213,54 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
     indexStatus.value.lastRebuildResult = null;
     indexStatus.value.rebuildReason = reason;
     indexStatus.value.skippedNotes = 0;
+    statusCache.value = null;
 
     try {
-      if (fullRebuild) {
+      const initialized = await knowledgeCopilotService.initialize();
+      if (!initialized.success) {
+        throw new Error(initialized.error || 'Failed to initialize knowledge index');
+      }
+
+      let effectiveFullRebuild = fullRebuild;
+      if (!fullRebuild) {
+        const actualStatus = await knowledgeCopilotService.getStatus();
+        const actualTotalChunks = Number(actualStatus.totalChunks);
+        const signatureNoteIds = Object.keys(previousSignatures);
+        const chunkCountNoteIds = Object.keys(previousChunkCounts);
+        const expectedTotalChunks = signatureNoteIds.reduce(
+          (total, noteId) => total + Number(previousChunkCounts[noteId] || 0),
+          0,
+        );
+        const signatureNoteIdSet = new Set(signatureNoteIds);
+        const hasIncompleteMetadata = signatureNoteIds.some(
+          noteId => !Object.prototype.hasOwnProperty.call(previousChunkCounts, noteId),
+        ) || chunkCountNoteIds.some(noteId => !signatureNoteIdSet.has(noteId));
+        const hasInvalidUnchangedNote = notes.some((note) => {
+          if (!note.content.trim()) {
+            return false;
+          }
+          const signature = buildIndexSignature(note, chunkSize, chunkOverlap, embeddingModel);
+          return previousSignatures[note.id] === signature
+            && Number(previousChunkCounts[note.id] || 0) <= 0;
+        });
+        const hasInvalidStatus = !actualStatus.success
+          || Boolean(actualStatus.error)
+          || !Number.isFinite(actualTotalChunks)
+          || actualTotalChunks < 0;
+
+        effectiveFullRebuild = hasInvalidStatus
+          || hasIncompleteMetadata
+          || hasInvalidUnchangedNote
+          || actualTotalChunks !== expectedTotalChunks;
+
+        if (effectiveFullRebuild) {
+          knowledgeCopilotLogger.warn(
+            `Incremental index metadata is inconsistent; falling back to a full rebuild: actual=${actualTotalChunks}, expected=${expectedTotalChunks}, invalidStatus=${hasInvalidStatus}, incompleteMetadata=${hasIncompleteMetadata}, invalidUnchangedNote=${hasInvalidUnchangedNote}`,
+          );
+        }
+      }
+
+      if (effectiveFullRebuild) {
         const cleared = await knowledgeCopilotService.clearIndex();
         if (!cleared.success) {
           throw new Error(cleared.error || 'Failed to clear index');
@@ -227,7 +272,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         currentById.set(note.id, note);
       }
 
-      const staleNoteIds = fullRebuild
+      const staleNoteIds = effectiveFullRebuild
         ? []
         : Object.keys(previousSignatures).filter((noteId) => !currentById.has(noteId));
       if (staleNoteIds.length > 0) {
@@ -248,9 +293,9 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         const signature = buildIndexSignature(note, chunkSize, chunkOverlap, embeddingModel);
         nextSignatures[note.id] = signature;
 
-        const previousSignature = fullRebuild ? undefined : previousSignatures[note.id];
-        const previousCount = fullRebuild ? 0 : Number(previousChunkCounts[note.id] || 0);
-        if (!fullRebuild && previousSignature === signature) {
+        const previousSignature = effectiveFullRebuild ? undefined : previousSignatures[note.id];
+        const previousCount = effectiveFullRebuild ? 0 : Number(previousChunkCounts[note.id] || 0);
+        if (!effectiveFullRebuild && previousSignature === signature) {
           nextChunkCounts[note.id] = previousCount;
           cachedTotalChunks += previousCount;
         }
@@ -258,7 +303,7 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
 
       const notesToReindex = notes.filter((note) => {
         const signature = nextSignatures[note.id];
-        if (fullRebuild) {
+        if (effectiveFullRebuild) {
           return true;
         }
         return previousSignatures[note.id] !== signature;
@@ -300,12 +345,8 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
             successCounter.value += 1;
           } catch (error) {
             failCounter.value += 1;
-            nextSignatures[note.id] = previousSignatures[note.id] || '';
-            if (previousChunkCounts[note.id] !== undefined) {
-              const fallbackCount = Number(previousChunkCounts[note.id] || 0);
-              nextChunkCounts[note.id] = fallbackCount;
-              cachedTotalChunks += fallbackCount;
-            }
+            delete nextSignatures[note.id];
+            delete nextChunkCounts[note.id];
             knowledgeCopilotLogger.error(`Failed to index note ${note.id}: ${getErrorMessage(error)}`);
           } finally {
             processedCounter.value += 1;
@@ -315,17 +356,28 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         rebuildConcurrency,
       );
 
-      const failedNoteIds = Object.keys(nextSignatures).filter((noteId) => !nextSignatures[noteId]);
-      for (const noteId of failedNoteIds) {
-        delete nextSignatures[noteId];
-        delete nextChunkCounts[noteId];
+      const actualStatus = await knowledgeCopilotService.getStatus();
+      const actualTotalChunks = Number(actualStatus.totalChunks);
+      if (!actualStatus.success || actualStatus.error) {
+        throw new Error(actualStatus.error || 'Failed to verify rebuilt index');
+      }
+      if (!Number.isFinite(actualTotalChunks) || actualTotalChunks < 0) {
+        throw new Error('Knowledge index returned an invalid chunk count');
+      }
+      if (actualTotalChunks !== cachedTotalChunks) {
+        throw new Error(
+          `Knowledge index chunk count mismatch: actual=${actualTotalChunks}, expected=${cachedTotalChunks}`,
+        );
+      }
+      if (failCounter.value === 0 && actualTotalChunks === 0 && notes.some(note => note.content.trim())) {
+        throw new Error('Knowledge index rebuild produced no chunks for non-empty notes');
       }
 
       const lastIndexedDate = Date.now();
       const rebuildDurationMs = Math.max(0, lastIndexedDate - rebuildStartedAt);
       indexStatus.value.lastIndexedAt = lastIndexedDate;
       indexStatus.value.lastRebuildDurationMs = rebuildDurationMs;
-      indexStatus.value.totalChunks = cachedTotalChunks;
+      indexStatus.value.totalChunks = actualTotalChunks;
       indexStatus.value.progress = 100;
 
       await settingsStore.persistence.save({
@@ -335,14 +387,15 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
           lastRebuildDurationMs: rebuildDurationMs,
           indexSignatures: nextSignatures,
           indexChunkCounts: nextChunkCounts,
-          cachedTotalChunks,
+          cachedTotalChunks: actualTotalChunks,
         },
       });
 
       statusCache.value = {
         timestamp: Date.now(),
-        isInitialized: true,
-        totalChunks: cachedTotalChunks,
+        isInitialized: Boolean(actualStatus.isInitialized),
+        totalChunks: actualTotalChunks,
+        tableName: actualStatus.tableName,
       };
 
       indexStatus.value.lastRebuildResult = failCounter.value === 0
@@ -350,13 +403,14 @@ export const useKnowledgeCopilotStore = defineStore('knowledgeCopilot', () => {
         : (successCounter.value > 0 || indexStatus.value.skippedNotes > 0 ? 'partial-failure' : 'failure');
 
       knowledgeCopilotLogger.info(
-        `${fullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}, concurrency=${rebuildConcurrency}`,
+        `${effectiveFullRebuild ? 'Full' : 'Incremental'} index sync finished: changed=${totalWork}, success=${successCounter.value}, failed=${failCounter.value}, skipped=${notes.length - totalWork}, concurrency=${rebuildConcurrency}`,
       );
     } catch (error) {
       const rebuildDurationMs = Math.max(0, Date.now() - rebuildStartedAt);
       indexStatus.value.error = getErrorMessage(error);
       indexStatus.value.lastRebuildDurationMs = rebuildDurationMs;
       indexStatus.value.lastRebuildResult = 'failure';
+      statusCache.value = null;
       try {
         await settingsStore.persistence.save({
           knowledgeCopilot: {

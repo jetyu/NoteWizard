@@ -1246,6 +1246,7 @@ watch(
   () => {
     void scrollActiveEntryIntoView();
   },
+  { immediate: true },
 );
 
 const selectedEntries = computed(() => {

@@ -1,8 +1,9 @@
 <template>
-  <div class="note-storage-settings">
-    <h3 class="panel-title">{{ t('pref.pane.noteStorage') }}</h3>
+  <div class="settings-subview note-storage-settings">
+    <h3 class="panel-title">{{ pageTitle }}</h3>
 
-    <div class="settings-grid">
+    <div class="settings-subview-content scrollable">
+      <div v-if="activeView === 'dashboard'" class="settings-grid">
       <section class="setting-card">
         <div class="setting-copy">
           <p class="setting-label">{{ t('label.noteStorageLocation') }}</p>
@@ -12,6 +13,16 @@
         <button type="button" class="action-button secondary" @click="handlePickPath">
           {{ t('button.browse') }}
         </button>
+      </section>
+
+      <section class="setting-card">
+        <div class="setting-copy">
+          <p class="setting-label">{{ t('label.scheduledBackup') }}</p>
+          <p class="setting-description">{{ scheduledBackupSummary }}</p>
+        </div>
+          <button type="button" class="action-button secondary" @click="openScheduledBackupSettings">
+            {{ t('button.settings') }}
+          </button>
       </section>
 
       <section class="setting-card">
@@ -114,6 +125,17 @@
           </button>
         </div>
       </section>
+      </div>
+
+      <ScheduledBackupSettings v-else />
+    </div>
+
+    <div v-if="activeView === 'scheduled-backup'" class="settings-subview-footer with-divider">
+      <div class="settings-subview-footer-buttons">
+        <button type="button" class="action-button secondary" @click="handleBack">
+          {{ t('button.back') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -132,16 +154,52 @@ import type {
   SppxExportResult,
   SppxImportResult,
 } from '@renderer/core/bridge/electronApi';
+import ScheduledBackupSettings from './ScheduledBackupSettings.vue';
 
 type BusyAction = 'exportSppx' | 'importSppx' | 'importMarkdown' | 'exportMarkdown' | null;
+type NoteStorageView = 'dashboard' | 'scheduled-backup';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const settingsStore = useSettingsStore();
 const workspaceStore = useWorkspaceStore();
 
 const busyAction = ref<BusyAction>(null);
+const activeView = ref<NoteStorageView>('dashboard');
 
 const isBusy = computed(() => busyAction.value !== null);
+const pageTitle = computed(() => activeView.value === 'scheduled-backup'
+  ? t('label.scheduledBackup')
+  : t('pref.pane.noteStorage'));
+
+const scheduledBackupSummary = computed(() => {
+  const scheduledBackup = settingsStore.config.noteStorage.scheduledBackup;
+  if (!scheduledBackup.enabled) {
+    return t('scheduledBackup.summary.disabled');
+  }
+
+  const frequency = scheduledBackup.intervalHours === 24
+    ? t('scheduledBackup.frequency.daily')
+    : t(`scheduledBackup.frequency.hour${scheduledBackup.intervalHours}`);
+  const lastBackup = scheduledBackup.lastBackupAt === null
+    ? t('scheduledBackup.never')
+    : new Intl.DateTimeFormat(locale.value, {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(scheduledBackup.lastBackupAt);
+
+  return t('scheduledBackup.summary.enabled', {
+    frequency,
+    time: lastBackup,
+  });
+});
+
+const openScheduledBackupSettings = (): void => {
+  activeView.value = 'scheduled-backup';
+};
+
+const handleBack = (): void => {
+  activeView.value = 'dashboard';
+};
 
 const maxHistoryVersions = computed({
   get: () => settingsStore.config.noteStorage.maxHistoryVersions ?? 50,

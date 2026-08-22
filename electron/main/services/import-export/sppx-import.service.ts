@@ -9,7 +9,7 @@ import { vfsService } from '../vfs.service.js';
 import { knowledgeCopilotIndexService } from '../knowledge-copilot/knowledge-copilot-index.service.js';
 import { syncStateService } from '../sync/state.service.js';
 import { extractZipArchiveToDirectory } from '../../utils/zip.utils.js';
-import { createSecureTempDirectory } from './temp-directory.utils.js';
+import { createSecureTempDirectory } from '../../utils/temp-directory.utils.js';
 import { getErrorCode, getErrorMessage } from '../../services/error.service.js';
 
 const logger = loggerService.createLogger('Main:SPPX Import Service');
