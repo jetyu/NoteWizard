@@ -1,10 +1,17 @@
 ### v2.2.7 - 2026-08-23 
-This update optimizes details and user experience.
-#### New
-* Added support for scheduled backup of workspace data to a user-specified directory.
+This update primarily optimizes data backup, cloud synchronization, and user interface experience, and fixes several known issues.
+#### New 
+* Supports scheduled data backup to a specified directory
+* Comprehensive upgrade of cloud synchronization service provider configuration
+#### Improvements
+* Improved user interface experience
 #### Fixes
-* Fixed an issue with the availability status of the official AI service in certain scenarios.
-* Fixed an issue where the Knowledge Assistant's quick index rebuild failed in certain situations.
+* Fixed an issue where the official AI service availability was abnormal in certain scenarios
+* Fixed an issue where the knowledge assistant's quick index rebuild failed in certain scenarios
+* Fixed an issue with the Microsoft Store version icon rendering distortion
+* Fixed an issue with automatic locking in certain scenarios
+* Fixed an issue with switching preferences pages in certain scenarios
+* Fixed an issue with the note list displaying abnormally in tabs
 
 ### v2.2.6 - 2026-08-20 
 This update optimizes details and user experience.
