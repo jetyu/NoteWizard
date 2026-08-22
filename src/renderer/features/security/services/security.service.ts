@@ -125,6 +125,11 @@ export const securityService = {
     assertBridgeSuccess(result);
   },
 
+  async unlockAccessControlWithRecovery(recoveryKey: string): Promise<void> {
+    const result = await electronApi.accessControl.unlockWithRecovery(recoveryKey);
+    assertBridgeSuccess(result);
+  },
+
   onAccessControlStateChanged(callback: (payload: AccessControlStatePayload) => void): (() => void) | null {
     if (!electronApi.accessControl.isAvailable()) {
       return null;

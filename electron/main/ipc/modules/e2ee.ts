@@ -65,6 +65,7 @@ export function registerE2eeHandlers(): void {
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_UPDATE_CONFIG);
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_LOCK);
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK);
+  ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK_RECOVERY);
   ipcMain.removeHandler(IPC_CHANNELS.ACCESS_CONTROL_IS_LOCKED);
   ipcMain.removeAllListeners(IPC_CHANNELS.ACCESS_CONTROL_ACTIVITY);
 
@@ -205,6 +206,16 @@ export function registerE2eeHandlers(): void {
     try {
       const password = passwordSchema.parse(rawPassword);
       await accessControlService.unlock(password);
+      return { success: true };
+    } catch (error: unknown) {
+      return serializeE2eeError(error);
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK_RECOVERY, async (_event, rawKey: unknown) => {
+    try {
+      const key = recoveryKeySchema.parse(rawKey);
+      await accessControlService.unlockWithRecoveryKey(key);
       return { success: true };
     } catch (error: unknown) {
       return serializeE2eeError(error);

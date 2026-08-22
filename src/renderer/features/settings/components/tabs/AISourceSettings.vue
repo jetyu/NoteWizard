@@ -27,9 +27,9 @@
                 </div>
               </div>
               <div v-if="isBuiltInAiSource(source)" class="source-header-badges">
-                <span class="source-rate-limit-badge" :title="t('builtInAi.rateLimit.tooltip')"
+                <span class="source-rate-limit-icon" :title="t('builtInAi.rateLimit.tooltip')"
                   :aria-label="t('builtInAi.rateLimit.tooltip')">
-                  {{ t('builtInAi.rateLimit.badge') }}
+                  <IconInfoTriangle :size="14" stroke="1.8" aria-hidden="true" />
                 </span>
               </div>
               <div v-if="!isBuiltInAiSource(source)" class="settings-card-actions">
@@ -232,6 +232,7 @@ import {
   IconBulb,
   IconCheck,
   IconChevronDown,
+  IconInfoTriangle,
   IconPencil,
   IconPlus,
   IconTrash,
@@ -774,20 +775,19 @@ const formatCapabilities = (capabilities: string[]): string => {
   margin-left: auto;
 }
 
-.source-rate-limit-badge {
+.source-rate-limit-icon {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  min-height: 22px;
-  padding: 2px 9px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   border: 1px solid var(--status-info-border);
   border-radius: var(--radius-sm);
   background: var(--status-info-bg);
   color: var(--status-info-text);
-  font-size: 0.72rem;
-  font-weight: 650;
-  line-height: 1;
   cursor: help;
+  line-height: 0;
 }
 
 .source-provider {

@@ -903,6 +903,9 @@ export const electronApi = {
     unlock: (password: string): Promise<E2eeOperationResult | E2eeErrorResult> => {
       return electronApi.accessControl.getApi().unlock(password);
     },
+    unlockWithRecovery: (recoveryKey: string): Promise<E2eeOperationResult | E2eeErrorResult> => {
+      return electronApi.accessControl.getApi().unlockWithRecovery(recoveryKey);
+    },
     isLocked: (): Promise<AccessControlIsLockedResult> => {
       return electronApi.accessControl.getApi().isLocked();
     },

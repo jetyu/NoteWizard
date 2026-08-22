@@ -5,6 +5,7 @@ export const IPC_CHANNELS = {
   ACCESS_CONTROL_LOCK: 'access-control:lock',
   ACCESS_CONTROL_STATE_CHANGED: 'access-control:state-changed',
   ACCESS_CONTROL_UNLOCK: 'access-control:unlock',
+  ACCESS_CONTROL_UNLOCK_RECOVERY: 'access-control:unlock-recovery',
   ACCESS_CONTROL_UPDATE_CONFIG: 'access-control:update-config',
   AI_CHAT_GENERATE: 'ai-chat:generate',
   AI_CHAT_GENERATE_COMPLETION: 'ai-chat:generate-completion',

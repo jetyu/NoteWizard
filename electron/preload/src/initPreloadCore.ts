@@ -345,6 +345,7 @@ const electronAPI = Object.freeze({
       ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_UPDATE_CONFIG, lockConfig),
     lock: () => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_LOCK),
     unlock: (password: string) => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK, password),
+    unlockWithRecovery: (key: string) => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_UNLOCK_RECOVERY, key),
     isLocked: () => ipcRenderer.invoke(IPC_CHANNELS.ACCESS_CONTROL_IS_LOCKED),
     onStateChanged: (callback: DataCallback) => {
       const subscription = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data);

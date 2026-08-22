@@ -67,7 +67,7 @@
       </div>
       <button type="button" class="action-button secondary" :disabled="!scheduledBackup.directoryPath"
         @click="handleOpenBackupDirectory">
-        {{ t('button.openBackupLocation') }}
+        {{ t('button.backupLocation') }}
       </button>
     </section>
   </div>

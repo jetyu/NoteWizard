@@ -167,6 +167,19 @@ export const accessControlService = {
   },
 
   /**
+   * Unlock the application with the Recovery Key.
+   * This also unlocks the DEK because access control and E2EE share the key state.
+   */
+  async unlockWithRecoveryKey(recoveryKey: string): Promise<void> {
+    await keyManagerService.unlockWithRecoveryKey(recoveryKey);
+
+    locked = false;
+    startAutoLockTimer();
+    notifyRendererLockState(false);
+    logger.info('App unlocked with Recovery Key');
+  },
+
+  /**
    * Returns whether the app is currently locked.
    */
   isLocked(): boolean {

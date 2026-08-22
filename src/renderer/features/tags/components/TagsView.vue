@@ -406,7 +406,11 @@ watch(
 }
 
 .tags-view__notes-pane {
+  flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .tags-view__heading {
@@ -486,6 +490,7 @@ watch(
   overflow: hidden;
   color: var(--text-muted);
   display: -webkit-box;
+  line-clamp: 1;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   font-size: 0.82rem;

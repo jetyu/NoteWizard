@@ -497,6 +497,7 @@ declare global {
         updateConfig: (lockConfig: AccessControlConfig) => Promise<E2eeOperationResult | E2eeErrorResult>;
         lock: () => Promise<E2eeOperationResult>;
         unlock: (password: string) => Promise<E2eeOperationResult | E2eeErrorResult>;
+        unlockWithRecovery: (key: string) => Promise<E2eeOperationResult | E2eeErrorResult>;
         isLocked: () => Promise<{ success: true; isLocked: boolean } | E2eeErrorResult>;
         onStateChanged: (callback: (payload: { locked: boolean }) => void) => () => void;
       };
