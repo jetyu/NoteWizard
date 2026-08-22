@@ -11,6 +11,8 @@ import {
 import { enexImportService } from './enex-import.service.js';
 import { nwpImportService } from './nwp-import.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
+import { scheduledBackupService } from './scheduled-backup.service.js';
+import type { ScheduledBackupRunPayload } from '../../../shared/scheduled-backup.constants.js';
 
 const logger = loggerService.createLogger('Main:Import Export Service');
 type AppSettings = Awaited<ReturnType<typeof settingsService.loadConfig>>;
@@ -24,6 +26,10 @@ async function saveSettingsPartial(
 }
 
 export const importExportService = {
+  async createScheduledBackup(payload: ScheduledBackupRunPayload) {
+    return await scheduledBackupService.createBackup(payload);
+  },
+
   async exportSppxPackage() {
     const result = await sppxExportService.exportPackage();
     return result;

@@ -7,6 +7,7 @@ import { loggerService } from '../log/logger.service.js';
 import { vfsService } from '../vfs.service.js';
 import { createZipArchiveFromDirectory } from '../../utils/zip.utils.js';
 import { getErrorMessage } from '../../services/error.service.js';
+import { buildSppxBackupFileName } from '../../../shared/scheduled-backup.constants.js';
 
 const logger = loggerService.createLogger('Main:SPPX Export Service');
 const PACKAGE_EXTENSIONS = new Set(['.nwp', '.sppx']);
@@ -21,22 +22,6 @@ interface SppxExportResult {
 
 function getFocusedWindow(): BrowserWindow | null {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null;
-}
-
-function formatDatePart(date: number): string {
-  const value = Number(date);
-  return value < 10 ? `0${value}` : String(value);
-}
-
-function buildDefaultPackageName(timestamp = Date.now()) {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = formatDatePart(date.getMonth() + 1);
-  const day = formatDatePart(date.getDate());
-  const hour = formatDatePart(date.getHours());
-  const minute = formatDatePart(date.getMinutes());
-  const second = formatDatePart(date.getSeconds());
-  return `SnaptiumBakcup-${year}${month}${day}-${hour}${minute}${second}${DEFAULT_EXTENSION}`;
 }
 
 function normalizeSavePath(filePath: string): string {
@@ -63,20 +48,42 @@ async function pathExists(targetPath: string): Promise<boolean> {
 }
 
 export const sppxExportService = {
-  async exportPackage(): Promise<SppxExportResult> {
-    const workspaceRoot = await vfsService.ensureInitialized().catch(() => null);
-    if (!workspaceRoot) {
+  async createPackageAtPath(targetPackagePath: string, workspaceRoot?: string): Promise<void> {
+    const resolvedWorkspaceRoot = workspaceRoot
+      ?? await vfsService.ensureInitialized().catch(() => null);
+    if (!resolvedWorkspaceRoot) {
       throw new Error($t('dataTransfer.error.workspaceUnavailable'));
     }
 
-    const databasePath = path.join(workspaceRoot, VFS_CONSTANTS.DATABASE_FOLDER);
+    const databasePath = path.join(resolvedWorkspaceRoot, VFS_CONSTANTS.DATABASE_FOLDER);
     const databaseStat = await fs.stat(databasePath).catch(() => null);
 
     if (!databaseStat?.isDirectory()) {
       throw new Error($t('dataTransfer.error.databaseNotFound'));
     }
 
-    const defaultPath = path.join(app.getPath('desktop'), buildDefaultPackageName());
+    try {
+      await createZipArchiveFromDirectory({
+        sourceDirectoryPath: databasePath,
+        targetArchivePath: targetPackagePath,
+        rootDirectoryName: VFS_CONSTANTS.DATABASE_FOLDER,
+      });
+    } catch (error) {
+      if (await pathExists(targetPackagePath)) {
+        await fs.unlink(targetPackagePath).catch(() => undefined);
+      }
+      logger.error(`Failed to create SPPX package: ${getErrorMessage(error)}`);
+      throw error;
+    }
+  },
+
+  async exportPackage(): Promise<SppxExportResult> {
+    const workspaceRoot = await vfsService.ensureInitialized().catch(() => null);
+    if (!workspaceRoot) {
+      throw new Error($t('dataTransfer.error.workspaceUnavailable'));
+    }
+
+    const defaultPath = path.join(app.getPath('desktop'), buildSppxBackupFileName());
     const focusedWindow = getFocusedWindow();
     const saveDialogOptions = {
       title: $t('dataTransfer.sppxExport.dialogTitle'),
@@ -97,19 +104,7 @@ export const sppxExportService = {
     }
 
     const targetPackagePath = normalizeSavePath(dialogResult.filePath);
-    try {
-      await createZipArchiveFromDirectory({
-        sourceDirectoryPath: databasePath,
-        targetArchivePath: targetPackagePath,
-        rootDirectoryName: VFS_CONSTANTS.DATABASE_FOLDER,
-      });
-    } catch (error) {
-      if (await pathExists(targetPackagePath)) {
-        await fs.unlink(targetPackagePath).catch(() => undefined);
-      }
-      logger.error(`Failed to export package: ${getErrorMessage(error)}`);
-      throw error;
-    }
+    await this.createPackageAtPath(targetPackagePath, workspaceRoot);
 
     return {
       success: true,

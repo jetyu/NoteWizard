@@ -6,6 +6,7 @@ export const BUILT_IN_AI_BASE_URL = 'https://newapi.snaptium.com/v1' as const;
 export const BUILT_IN_AI_PERF_METRICS_URL = 'https://newapi.snaptium.com/api/perf-metrics' as const;
 export const BUILT_IN_AI_HEALTH_STATUS = {
   UNKNOWN: 'unknown',
+  NO_DATA: 'no-data',
   HEALTHY: 'healthy',
   DEGRADED: 'degraded',
   UNAVAILABLE: 'unavailable',

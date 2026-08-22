@@ -11,25 +11,47 @@
         <div ref="dialogRef" class="access-control-panel" :style="dialogStyle" @click.stop>
           <div ref="dragHandleRef" class="access-control-header dialog-drag-handle" @pointerdown="onDragHandlePointerDown">
             <h2 class="access-control-title">{{ t('e2ee.accessControl.unlockTitle') }}</h2>
-            <p class="access-control-description">{{ t('e2ee.accessControl.unlockDescription') }}</p>
+            <p class="access-control-description">
+              {{ unlockMode === 'password' ? t('e2ee.accessControl.unlockDescription') : t('e2ee.recoveryKey.description') }}
+            </p>
           </div>
 
           <div class="dialog-form-group">
-            <label>{{ t('e2ee.accessControl.unlockPassword') }}</label>
+            <label>
+              {{ unlockMode === 'password' ? t('e2ee.accessControl.unlockPassword') : t('e2ee.recoveryKey.title') }}
+            </label>
             <PasswordInput
+              v-if="unlockMode === 'password'"
               ref="passwordInputRef"
               v-model="password"
               :placeholder="t('e2ee.accessControl.unlockPassword')"
               autocomplete="current-password"
               @keyup.enter="handleUnlock"
             />
+            <input
+              v-else
+              ref="recoveryKeyInputRef"
+              v-model="recoveryKey"
+              type="text"
+              class="settings-input access-control-recovery-input"
+              autocomplete="off"
+              spellcheck="false"
+              @keyup.enter="handleUnlock"
+            />
+            <p v-if="unlockError" class="access-control-error" role="alert" aria-live="polite">
+              {{ unlockError }}
+            </p>
           </div>
+
+          <button type="button" class="access-control-mode-button" :disabled="isSubmitting" @click="toggleUnlockMode">
+            {{ unlockMode === 'password' ? t('e2ee.unlockRecoveryLink') : t('e2ee.usePassword') }}
+          </button>
 
           <div class="access-control-actions">
             <button
               type="button"
               class="action-button primary"
-              :disabled="isSubmitting || password.trim().length === 0"
+              :disabled="isSubmitting || unlockCredential.trim().length === 0"
               @click="handleUnlock"
             >
               {{ t('e2ee.accessControl.unlock') }}
@@ -45,7 +67,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { normalizeSecurityError, securityService, type SecurityError } from '../services/security.service';
-import { systemDialog } from '@renderer/features/settings/services/system-dialog.service';
 import PasswordInput from '@renderer/features/settings/components/PasswordInput.vue';
 import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
 
@@ -53,11 +74,15 @@ const { t } = useI18n();
 
 const isVisible = ref(false);
 const password = ref('');
+const recoveryKey = ref('');
+const unlockMode = ref<'password' | 'recovery'>('password');
+const unlockError = ref('');
 const isSubmitting = ref(false);
 const overlayRef = ref<HTMLElement | null>(null);
 const dialogRef = ref<HTMLElement | null>(null);
 const dragHandleRef = ref<HTMLElement | null>(null);
 const passwordInputRef = ref<{ focus: () => void } | null>(null);
+const recoveryKeyInputRef = ref<HTMLInputElement | null>(null);
 const { dialogStyle, onDragHandlePointerDown } = useDraggableDialog({
   isOpen: isVisible,
   overlayRef,
@@ -68,6 +93,9 @@ const { dialogStyle, onDragHandlePointerDown } = useDraggableDialog({
 let removeListener: (() => void) | null = null;
 
 const isAccessControlAvailable = computed(() => securityService.isAccessControlAvailable());
+const unlockCredential = computed(() => (
+  unlockMode.value === 'password' ? password.value : recoveryKey.value
+));
 
 function resolveSecurityErrorMessage(error: SecurityError): string {
   const keyByCode: Record<string, string> = {
@@ -83,6 +111,25 @@ function resolveSecurityErrorMessage(error: SecurityError): string {
 
 function resetForm(): void {
   password.value = '';
+  recoveryKey.value = '';
+  unlockMode.value = 'password';
+  unlockError.value = '';
+}
+
+function toggleUnlockMode(): void {
+  unlockMode.value = unlockMode.value === 'password' ? 'recovery' : 'password';
+  password.value = '';
+  recoveryKey.value = '';
+  unlockError.value = '';
+
+  void nextTick(() => {
+    if (unlockMode.value === 'password') {
+      passwordInputRef.value?.focus();
+      return;
+    }
+
+    recoveryKeyInputRef.value?.focus();
+  });
 }
 
 async function refreshLockState(): Promise<void> {
@@ -106,22 +153,24 @@ async function refreshLockState(): Promise<void> {
 }
 
 async function handleUnlock(): Promise<void> {
-  if (isSubmitting.value || password.value.trim().length === 0) {
+  if (isSubmitting.value || unlockCredential.value.trim().length === 0) {
     return;
   }
 
+  unlockError.value = '';
   isSubmitting.value = true;
 
   try {
-    await securityService.unlockAccessControl(password.value);
+    if (unlockMode.value === 'password') {
+      await securityService.unlockAccessControl(password.value);
+    } else {
+      await securityService.unlockAccessControlWithRecovery(recoveryKey.value);
+    }
     await refreshLockState();
     resetForm();
   } catch (error: unknown) {
     const normalized = normalizeSecurityError(error);
-    await systemDialog.warning({
-      title: t('e2ee.accessControl.unlockTitle'),
-      message: resolveSecurityErrorMessage(normalized),
-    });
+    unlockError.value = resolveSecurityErrorMessage(normalized);
   } finally {
     isSubmitting.value = false;
   }
@@ -206,6 +255,35 @@ onUnmounted(() => {
   font-size: 0.86rem;
   font-weight: 600;
   color: #111827;
+}
+
+.access-control-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.86rem;
+}
+
+.access-control-recovery-input {
+  box-sizing: border-box;
+}
+
+.access-control-mode-button {
+  align-self: flex-start;
+  border: 0;
+  padding: 0;
+  color: #2563eb;
+  background: transparent;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.access-control-mode-button:hover {
+  text-decoration: underline;
+}
+
+.access-control-mode-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .access-control-actions {

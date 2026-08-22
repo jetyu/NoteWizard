@@ -245,14 +245,14 @@
               </span>
               {{ t('workbench.sidebar.activeTags') }}
             </h3>
-            <button type="button" class="side-card__link" @click="openTagsView">
+            <button type="button" class="side-card__link" @click="openTagsView()">
               {{ t('workbench.action.viewAllTags') }}
             </button>
           </header>
 
           <div v-if="activeTagEntries.length > 0" class="active-tag-list">
             <button v-for="entry in activeTagEntries" :key="entry.name" type="button" class="active-tag-row"
-              :title="entry.name" @click="openTagsView">
+              :title="entry.name" @click="openTagsView(entry.name)">
               <span class="active-tag-row__main">
                 <span class="active-tag-row__name">#{{ entry.name }}</span>
                 <span class="active-tag-row__meta">
@@ -885,7 +885,8 @@ async function openNoteInWorkspace(noteId: string): Promise<void> {
   await appShellStore.setActiveMainView('workspace');
 }
 
-async function openTagsView(): Promise<void> {
+async function openTagsView(tagName?: string): Promise<void> {
+  appShellStore.setTagsViewTarget(tagName ?? null);
   await appShellStore.setActiveMainView('tags');
 }
 

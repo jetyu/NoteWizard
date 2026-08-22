@@ -1,5 +1,5 @@
 <template>
-  <div class="settings-grid">
+  <div class="settings-grid settings-fade-in">
     <section class="setting-card">
       <div class="setting-copy">
         <p class="setting-label">{{ t('label.knowledgeCopilotAutoIndex') }}</p>
@@ -48,7 +48,7 @@
         </p>
       </div>
       <label class="select-shell" :class="{ disabled: !settingsStore.config.knowledgeCopilot.enabled }">
-        <select class="settings-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
+        <select class="settings-select small-select" :value="settingsStore.config.knowledgeCopilot.rebuildConcurrency"
           @change="emit('number-update', 'rebuildConcurrency', $event)"
           :disabled="!settingsStore.config.knowledgeCopilot.enabled">
           <option v-for="value in rebuildConcurrencyOptions" :key="value" :value="value">

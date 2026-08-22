@@ -30,7 +30,7 @@
       </section>
 
       <section v-if="subNotebooks.length > 0" class="notebooks-section">
-        <h2>{{ $t("notebookDashboardSubNotebooks") }}</h2>
+        <h2>{{ $t("workspace.dashboard.subNotebooksList") }}</h2>
         <div class="notebooks-grid">
           <div v-for="nb in subNotebooks" :key="nb.id" class="notebook-card icon-text" @click="selectNotebook(nb.id)">
             <NotebookVisualIcon :icon-color="nb.iconColor" :icon-size="13" :box-size="18" />
