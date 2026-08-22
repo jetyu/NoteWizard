@@ -106,6 +106,10 @@ export const securityService = {
     };
   },
 
+  resetAccessControlIdleTimer(): void {
+    electronApi.accessControl.resetIdleTimer();
+  },
+
   async updateAccessControlConfig(config: AccessControlConfig): Promise<void> {
     const result = await electronApi.accessControl.updateConfig(config);
     assertBridgeSuccess(result);
@@ -118,6 +122,11 @@ export const securityService = {
 
   async unlockAccessControl(password: string): Promise<void> {
     const result = await electronApi.accessControl.unlock(password);
+    assertBridgeSuccess(result);
+  },
+
+  async unlockAccessControlWithRecovery(recoveryKey: string): Promise<void> {
+    const result = await electronApi.accessControl.unlockWithRecovery(recoveryKey);
     assertBridgeSuccess(result);
   },
 

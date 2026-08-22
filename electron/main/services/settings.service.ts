@@ -1,4 +1,4 @@
-import { app, dialog, BrowserWindow } from 'electron';
+import { app, dialog, BrowserWindow, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { $t } from '../utils/i18n.js';
@@ -26,6 +26,10 @@ import { isBuiltInAiSourceId } from '../../shared/built-in-ai.constants.js';
 import { normalizeKnowledgeCopilotRebuildConcurrency } from '../../shared/knowledge-copilot.constants.js';
 import { normalizeTrustedRemoteImageHosts } from '../../shared/preview-security.constants.js';
 import { DEFAULT_SYNC_SETTINGS, SYNC_INTERVALS, SYNC_PROVIDERS } from '../../shared/sync.constants.js';
+import {
+  normalizeScheduledBackupConfig,
+  type ScheduledBackupConfig,
+} from '../../shared/scheduled-backup.constants.js';
 import { normalizeUpdateChannel, type UpdateChannel } from '../../shared/updater.constants.js';
 import { getErrorCode, getErrorMessage } from '../../shared/utils/error.utils.js';
 import {
@@ -160,6 +164,7 @@ export interface NoteStorageConfig {
   maxHistoryVersions: number;
   trashAutoClearDays: number;
   snapshotInterval: number;
+  scheduledBackup: ScheduledBackupConfig;
 }
 
 export interface PrivacyLogConfig {
@@ -539,6 +544,7 @@ export function normalizeNoteStorageConfig(
     maxHistoryVersions: normalizeAllowedInteger(config.maxHistoryVersions, [0, 10, 20, 50, 100], 50),
     trashAutoClearDays: normalizeAllowedInteger(config.trashAutoClearDays, [0, 7, 30], 30),
     snapshotInterval: normalizeAllowedInteger(config.snapshotInterval, [5, 10, 15, 30], 10),
+    scheduledBackup: normalizeScheduledBackupConfig(config.scheduledBackup),
   };
 }
 
@@ -779,6 +785,37 @@ export const settingsService = {
     }
 
     return result.filePaths[0];
+  },
+
+  async pickBackupDirectory(): Promise<string | null> {
+    const focusedWindow = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null;
+
+    const result = await dialog.showOpenDialog(focusedWindow, {
+      properties: ['openDirectory', 'createDirectory'],
+      title: $t('scheduledBackup.dialog.selectDirectory'),
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+
+    return result.filePaths[0];
+  },
+
+  async openBackupDirectory(): Promise<boolean> {
+    const settings = await this.loadConfig();
+    const directoryPath = settings.noteStorage.scheduledBackup.directoryPath.trim();
+    if (!directoryPath) {
+      return false;
+    }
+
+    const errorMessage = await shell.openPath(directoryPath);
+    if (errorMessage) {
+      logger.error('Failed to open scheduled backup directory', { error: errorMessage });
+      return false;
+    }
+
+    return true;
   },
 
   async showMessage(options: Partial<SettingsMessageOptions> = {}): Promise<boolean> {

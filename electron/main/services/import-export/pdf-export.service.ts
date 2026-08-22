@@ -4,7 +4,7 @@ import { BrowserWindow, dialog, type SaveDialogOptions } from 'electron';
 import { $t } from '../../utils/i18n.js';
 import { getErrorMessage } from '../error.service.js';
 import { loggerService } from '../log/logger.service.js';
-import { sanitizeFsName } from './markdown.utils.js';
+import { sanitizeFsName } from '../../utils/markdown.utils.js';
 
 const logger = loggerService.createLogger('Main:Single Note PDF Export Service');
 
@@ -151,7 +151,10 @@ export const singleNotePdfExportService = {
         printBackground: true,
         pageSize: 'A4',
         margins: {
-          marginType: 'default',
+          top: 0.71,
+          bottom: 0.71,
+          left: 0.63,
+          right: 0.63,
         },
       });
       await fs.mkdir(path.dirname(filePath), { recursive: true });

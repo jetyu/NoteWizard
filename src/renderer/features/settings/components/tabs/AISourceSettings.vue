@@ -27,9 +27,9 @@
                 </div>
               </div>
               <div v-if="isBuiltInAiSource(source)" class="source-header-badges">
-                <span class="source-rate-limit-badge" :title="t('builtInAi.rateLimit.tooltip')"
+                <span class="source-rate-limit-icon" :title="t('builtInAi.rateLimit.tooltip')"
                   :aria-label="t('builtInAi.rateLimit.tooltip')">
-                  {{ t('builtInAi.rateLimit.badge') }}
+                  <IconInfoTriangle :size="14" stroke="1.8" aria-hidden="true" />
                 </span>
               </div>
               <div v-if="!isBuiltInAiSource(source)" class="settings-card-actions">
@@ -77,16 +77,16 @@
 
       <!-- Add Source Form (Inside Grid) -->
       <template v-if="showAddForm">
-        <div class="add-form-card">
-          <div class="source-form-group">
+        <div class="add-form-card settings-form-card">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">
               {{ t('label.sourceName') }} <span class="required-mark">{{ t('label.starSign') }}</span>
-              <span class="char-counter">{{ newSource.name.length }}/20</span>
+              <span class="char-counter">{{ newSource.name.length }}/15</span>
             </label>
-            <input v-model="newSource.name" type="text" class="settings-input" maxlength="20"
+            <input v-model="newSource.name" type="text" class="settings-input" maxlength="15"
               :placeholder="t('placeholder.sourceName')" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiProvider') }}</label>
             <div ref="providerSelectRef" class="provider-select-row">
               <button ref="providerSelectButtonRef" type="button" class="provider-select-trigger"
@@ -112,25 +112,25 @@
             </div>
           </div>
 
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiBaseUrl') }} <span class="required-mark">{{ t('label.starSign')
                 }}</span></label>
             <input v-model="newSource.baseUrl" type="text" class="settings-input"
               :placeholder="aiEndpointPlaceholder" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiModel') }} <span class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <input v-model="newSource.aiModel" type="text" class="settings-input"
               :placeholder="aiModelPlaceholder" />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiApiKey') }} <span v-if="requiresApiKey" class="required-mark">{{ t('label.starSign')
             }}</span></label>
             <PasswordInput v-model="newSource.apiKey" :placeholder="t('placeholder.aiAPIKey')" autocomplete="off"
             />
           </div>
-          <div class="source-form-group">
+          <div class="source-form-group settings-form-group">
             <label class="setting-label">{{ t('label.aiCapabilities') }}</label>
             <div class="capability-list">
               <label v-for="option in capabilityOptions" :key="option.value" class="capability-option">
@@ -140,11 +140,11 @@
               </label>
             </div>
           </div>
-          <div class="form-actions-row">
+          <div class="form-actions-row settings-form-actions-row">
             <a class="partner-docs-link" :href="AI_CONFIG_DOCS_URL" target="_blank" rel="noopener noreferrer nofollow">
               {{ t('text.aiSourcePartnerDocsLink') }}
             </a>
-            <div class="buttons">
+            <div class="buttons settings-form-actions">
               <button class="action-button secondary" @click="handleTestNewSource"
                 :disabled="!canTest || isTesting">
                 <span v-if="isTesting" class="spinner small"></span>
@@ -232,6 +232,7 @@ import {
   IconBulb,
   IconCheck,
   IconChevronDown,
+  IconInfoTriangle,
   IconPencil,
   IconPlus,
   IconTrash,
@@ -315,7 +316,13 @@ const getBuiltInHealthTooltip = (capability: AiCapability): string => {
   }
 
   const result = getBuiltInModelHealth(capability);
-  if (!result || result.status === BUILT_IN_AI_HEALTH_STATUS.UNKNOWN || result.observedAt === null) {
+  if (!result || result.status === BUILT_IN_AI_HEALTH_STATUS.UNKNOWN) {
+    return t('builtInAi.health.tooltip.checkFailed', { model });
+  }
+  if (result.status === BUILT_IN_AI_HEALTH_STATUS.NO_DATA) {
+    return t('builtInAi.health.tooltip.noData', { model });
+  }
+  if (result.observedAt === null) {
     return t('builtInAi.health.tooltip.checkFailed', { model });
   }
 
@@ -557,119 +564,6 @@ const formatCapabilities = (capabilities: string[]): string => {
 </script>
 
 <style scoped>
-.provider-select-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.provider-select-trigger {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: var(--settings-control-height, 32px);
-  gap: 10px;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.86rem;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-
-.provider-select-trigger:hover:not(:disabled),
-.provider-select-trigger:focus-visible {
-  border-color: var(--input-border-focus);
-  box-shadow: 0 0 0 3px var(--focus-ring);
-  outline: none;
-}
-
-.provider-select-trigger:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.provider-select-chevron {
-  margin-left: auto;
-  color: var(--text-secondary);
-}
-
-.provider-select-menu {
-  position: absolute;
-  z-index: 12;
-  top: calc(100% + 6px);
-  left: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: max(100%, 340px);
-  max-height: 320px;
-  overflow-y: auto;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--settings-card-border, var(--border-muted));
-  border-radius: 10px;
-  background: var(--panel, #ffffff);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
-}
-
-.provider-select-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 36px;
-  padding: 5px 7px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.provider-select-option span {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 0.76rem;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.provider-select-check {
-  flex: 0 0 auto;
-  margin-left: auto;
-  color: var(--accent);
-}
-
-.provider-select-option:hover,
-.provider-select-option:focus-visible,
-.provider-select-option.active {
-  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  outline: none;
-}
-
-.provider-logo {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-}
-
-.provider-logo {
-  box-sizing: border-box;
-  padding: 2px;
-  border-radius: 5px;
-  background: #fff;
-  object-fit: contain;
-}
-
 .header-actions {
   display: flex;
   justify-content: space-between;
@@ -698,19 +592,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   flex: 0 0 auto;
   width: auto;
   height: 20px;
-}
-
-.add-form-card {
-  grid-column: 1 / -1;
-  background: var(--surface-raised);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
 }
 
 .partner-footer {
@@ -781,19 +662,20 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .add-source-card {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 24px;
+  gap: 8px;
+  min-height: 144px;
+  padding: 20px;
   background: transparent;
   border: 1px dashed #c9d1dc;
   border-radius: 12px;
   cursor: pointer;
   color: #5f6b7a;
   transition: all 0.2s ease;
-  min-height: 156px;
 }
 
 .add-source-card:hover {
@@ -824,18 +706,6 @@ const formatCapabilities = (capabilities: string[]): string => {
   color: var(--text-tertiary);
 }
 
-.source-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.required-mark {
-  color: #ef4444;
-  font-weight: bold;
-  margin-left: 2px;
-}
-
 .char-counter {
   float: right;
   font-size: 0.7rem;
@@ -844,37 +714,23 @@ const formatCapabilities = (capabilities: string[]): string => {
   margin-top: 2px;
 }
 
-.form-actions-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.buttons {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-}
-
 .source-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .source-title {
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 1rem;
   margin: 0;
   color: var(--text-primary);
 }
 
 .source-card {
   box-sizing: border-box;
-  min-height: 156px;
+  min-height: 144px;
+  padding: 10px 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
@@ -890,7 +746,7 @@ const formatCapabilities = (capabilities: string[]): string => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .source-identity {
@@ -901,8 +757,8 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .source-provider-logo {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .source-heading-copy {
@@ -919,25 +775,24 @@ const formatCapabilities = (capabilities: string[]): string => {
   margin-left: auto;
 }
 
-.source-rate-limit-badge {
+.source-rate-limit-icon {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  min-height: 22px;
-  padding: 2px 9px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   border: 1px solid var(--status-info-border);
   border-radius: var(--radius-sm);
   background: var(--status-info-bg);
   color: var(--status-info-text);
-  font-size: 0.72rem;
-  font-weight: 650;
-  line-height: 1;
   cursor: help;
+  line-height: 0;
 }
 
 .source-provider {
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 
 .provider-picker {
@@ -986,7 +841,7 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .source-details .detail-item {
-  padding: 7px 0;
+  padding: 5px 0;
   border-top: 1px solid var(--border-color);
 }
 
@@ -1024,6 +879,14 @@ const formatCapabilities = (capabilities: string[]): string => {
   color: var(--status-success-text);
 }
 
+.model-health-icon.unknown {
+  color: var(--status-danger-text);
+}
+
+.model-health-icon.no-data {
+  color: var(--text-tertiary);
+}
+
 .model-health-icon.degraded {
   color: var(--status-warning-text);
 }
@@ -1033,6 +896,7 @@ const formatCapabilities = (capabilities: string[]): string => {
 }
 
 .model-health-icon.checking {
+  color: var(--text-tertiary);
   animation: model-health-pulse 1.2s ease-in-out infinite;
 }
 

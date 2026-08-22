@@ -66,7 +66,7 @@ export const DEFAULT_SYNC_SETTINGS = Object.freeze({
   provider: SYNC_PROVIDERS.WEBDAV,
   intervalMinutes: SYNC_INTERVALS.MANUAL,
   autoSyncOnSave: false,
-  remotePath: '/snaptium',
+  remotePath: '/Snaptium',
   webdav: Object.freeze({
     url: '',
     username: '',

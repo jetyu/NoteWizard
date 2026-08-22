@@ -2,6 +2,8 @@ export { };
 
 type NotebookIconColor = import('@shared/notebook-icon.constants').NotebookIconColor;
 type DiagnosticLogExportResult = import('@shared/diagnostic-log.constants').DiagnosticLogExportResult;
+type ScheduledBackupRunPayload = import('@shared/scheduled-backup.constants').ScheduledBackupRunPayload;
+type ScheduledBackupRunResult = import('@shared/scheduled-backup.constants').ScheduledBackupRunResult;
 
 interface WorkspaceNodePayload {
   id: string;
@@ -353,6 +355,8 @@ declare global {
         getConfig: () => Promise<JsonObject>;
         saveConfig: (config: JsonObject) => Promise<JsonObject>;
         setStartup: (enabled: boolean) => Promise<{ enabled: boolean; supported: boolean }>;
+        openBackupDirectory: () => Promise<boolean>;
+        pickBackupDirectory: () => Promise<string | null>;
         pickDirectory: () => Promise<string | null>;
         confirmEmbeddingSourceChange: () => Promise<boolean>;
         confirmKnowledgeCopilotChunkRebuild: () => Promise<boolean>;
@@ -372,6 +376,7 @@ declare global {
       };
 
       dataTransfer?: {
+        createScheduledBackup: (payload: ScheduledBackupRunPayload) => Promise<ScheduledBackupRunResult>;
         exportSppx: () => Promise<{
           success: boolean;
           cancelled?: boolean;
@@ -488,9 +493,11 @@ declare global {
 
       accessControl?: {
         getConfig: () => Promise<{ success: true; config: AccessControlConfig } | E2eeErrorResult>;
+        resetIdleTimer: () => void;
         updateConfig: (lockConfig: AccessControlConfig) => Promise<E2eeOperationResult | E2eeErrorResult>;
         lock: () => Promise<E2eeOperationResult>;
         unlock: (password: string) => Promise<E2eeOperationResult | E2eeErrorResult>;
+        unlockWithRecovery: (key: string) => Promise<E2eeOperationResult | E2eeErrorResult>;
         isLocked: () => Promise<{ success: true; isLocked: boolean } | E2eeErrorResult>;
         onStateChanged: (callback: (payload: { locked: boolean }) => void) => () => void;
       };

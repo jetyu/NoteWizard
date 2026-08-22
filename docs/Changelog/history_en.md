@@ -1,10 +1,37 @@
+### v2.2.7 - 2026-08-23 
+This update primarily optimizes data backup, cloud synchronization, and user interface experience, and fixes several known issues.
+#### New 
+* Supports scheduled data backup to a specified directory
+* Comprehensive upgrade of cloud synchronization service provider configuration
+#### Improvements
+* Improved user interface experience
+#### Fixes
+* Fixed an issue where the official AI service availability was abnormal in certain scenarios
+* Fixed an issue where the knowledge assistant's quick index rebuild failed in certain scenarios
+* Fixed an issue with the Microsoft Store version icon rendering distortion
+* Fixed an issue with automatic locking in certain scenarios
+* Fixed an issue with switching preferences pages in certain scenarios
+* Fixed an issue with the note list displaying abnormally in tabs
+
+### v2.2.6 - 2026-08-20 
+This update optimizes details and user experience.
+#### New
+* Added Knowledge Assistant message operation functionality.
+#### Improvements
+* Improved the Knowledge Assistant user experience.
+* Improved the display of the official AI service's availability status.
+* Improved the Microsoft Store version icon.
+#### Fixes
+* Fixed an issue where the workspace notebook status was not saved correctly.
+* Fixed known issues with the Knowledge Assistant function.
+
 ### v2.2.5 - 2026-08-17 
 This update adds service provider support and optimizes and fixes issues related to the Knowledge Assistant, application updates, and overall user experience.
 #### New
 * Added Anthropic (Claude) AI service provider configuration support
 * Added display of official AI service availability status
 #### Improvements
-* Optimized the Knowledge Assistant's question-and-answer experience, improving dialogue interaction and content presentation.
+* Improved the Knowledge Assistant's question-and-answer experience, improving dialogue interaction and content presentation.
 #### Fixes
 * Fixed an issue with the tray function malfunctioning during application updates.
 * Fixed an issue with abnormal display of Knowledge Assistant dialogue content in some scenarios.

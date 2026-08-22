@@ -1,8 +1,9 @@
 <template>
-  <div class="knowledge-copilot-settings">
+  <div class="settings-subview knowledge-copilot-settings">
     <h3 class="panel-title">{{ pageTitle }}</h3>
 
-    <div v-if="activeView === 'dashboard'" class="settings-grid">
+    <div class="settings-subview-content scrollable">
+      <div v-if="activeView === 'dashboard'" class="settings-grid">
       <section class="setting-card">
         <div class="setting-copy">
           <p class="setting-label">{{ t('label.knowledgeCopilot') }}</p>
@@ -123,9 +124,11 @@
           </div>
         </div>
       </section>
-    </div>
+      </div>
 
-    <KnowledgeCopilotIndexSettings v-else @toggle="handleToggle" @number-update="handleKnowledgeCopilotNumberUpdate" />
+      <KnowledgeCopilotIndexSettings v-else @toggle="handleToggle"
+        @number-update="handleKnowledgeCopilotNumberUpdate" />
+    </div>
 
     <div v-if="activeView === 'knowledgeCopilot-index-settings'" class="settings-subview-footer with-divider">
       <div class="settings-subview-footer-buttons">
@@ -356,12 +359,12 @@ const indexStateText = computed(() => {
     return t('label.knowledgeCopilotIndexStatePartialFailure');
   }
 
-  if (indexStatus.value.lastRebuildResult === 'success') {
-    return t('label.knowledgeCopilotIndexStateSucceeded');
-  }
-
   if (!settingsStore.config.knowledgeCopilot.lastIndexedAt || Number(indexStatus.value.totalChunks || 0) === 0) {
     return t('label.knowledgeCopilotIndexStateEmpty');
+  }
+
+  if (indexStatus.value.lastRebuildResult === 'success') {
+    return t('label.knowledgeCopilotIndexStateSucceeded');
   }
 
   return t('label.knowledgeCopilotIndexStateIdle');
@@ -373,6 +376,13 @@ const indexStateToneClass = computed(() => {
   }
 
   if (!settingsStore.config.knowledgeCopilot.enabled || !isConfigured.value) {
+    return '';
+  }
+
+  if (indexStatus.value.lastRebuildResult !== 'failure'
+    && indexStatus.value.lastRebuildResult !== 'partial-failure'
+    && (!settingsStore.config.knowledgeCopilot.lastIndexedAt
+      || Number(indexStatus.value.totalChunks || 0) === 0)) {
     return '';
   }
 
