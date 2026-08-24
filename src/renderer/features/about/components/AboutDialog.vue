@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="isOpen" class="about-overlay" @keydown.esc="closeAbout" tabindex="0" ref="overlayRef">
-        <div ref="dialogRef" class="about-modal" :style="dialogStyle" @click.stop>
+        <div class="about-modal" @click.stop>
           <div class="about-close-btn-wrapper">
             <button @click="closeAbout" class="about-close-btn dialog-close-button" :aria-label="t('button.close')">
               <IconX :size="16" />
@@ -10,7 +10,7 @@
           </div>
 
           <div class="about-content">
-            <header ref="dragHandleRef" class="about-hero dialog-drag-handle" @pointerdown="onDragHandlePointerDown">
+            <header class="about-hero">
               <img src="@assets/logo/app-logo-512.png" :alt="appName" class="about-logo" />
 
               <div class="about-identity">
@@ -110,7 +110,6 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import { electronApi } from '@renderer/core/bridge/electronApi';
-import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
 
 const { t } = useI18n();
 const {
@@ -126,18 +125,9 @@ const {
 } = useAbout();
 
 const overlayRef = ref<HTMLElement | null>(null);
-const dialogRef = ref<HTMLElement | null>(null);
-const dragHandleRef = ref<HTMLElement | null>(null);
 const isDiagnosticCopied = ref(false);
 let removeListener: (() => void) | null = null;
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
-const { dialogStyle, onDragHandlePointerDown } = useDraggableDialog({
-  isOpen,
-  overlayRef,
-  dialogRef,
-  handleRef: dragHandleRef,
-});
-
 watch(isOpen, async (newVal) => {
   if (!newVal) {
     resetCopyFeedback();

@@ -8,8 +8,8 @@
         tabindex="0"
         @keydown.esc.prevent
       >
-        <div ref="dialogRef" class="access-control-panel" :style="dialogStyle" @click.stop>
-          <div ref="dragHandleRef" class="access-control-header dialog-drag-handle" @pointerdown="onDragHandlePointerDown">
+        <div class="access-control-panel" @click.stop>
+          <div class="access-control-header">
             <h2 class="access-control-title">{{ t('e2ee.accessControl.unlockTitle') }}</h2>
             <p class="access-control-description">
               {{ unlockMode === 'password' ? t('e2ee.accessControl.unlockDescription') : t('e2ee.recoveryKey.description') }}
@@ -68,7 +68,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { normalizeSecurityError, securityService, type SecurityError } from '../services/security.service';
 import PasswordInput from '@renderer/features/settings/components/PasswordInput.vue';
-import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
 
 const { t } = useI18n();
 
@@ -79,16 +78,8 @@ const unlockMode = ref<'password' | 'recovery'>('password');
 const unlockError = ref('');
 const isSubmitting = ref(false);
 const overlayRef = ref<HTMLElement | null>(null);
-const dialogRef = ref<HTMLElement | null>(null);
-const dragHandleRef = ref<HTMLElement | null>(null);
 const passwordInputRef = ref<{ focus: () => void } | null>(null);
 const recoveryKeyInputRef = ref<HTMLInputElement | null>(null);
-const { dialogStyle, onDragHandlePointerDown } = useDraggableDialog({
-  isOpen: isVisible,
-  overlayRef,
-  dialogRef,
-  handleRef: dragHandleRef,
-});
 
 let removeListener: (() => void) | null = null;
 
