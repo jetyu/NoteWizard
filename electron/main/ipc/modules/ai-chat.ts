@@ -98,6 +98,8 @@ export function registerAIChatHandlers(): void {
               assistantConfig.uiLanguage,
               userInput,
               promptPreset,
+              assistantConfig.writingStyle,
+              assistantConfig.writingScenario,
               targetLanguage ?? undefined,
             ),
           });

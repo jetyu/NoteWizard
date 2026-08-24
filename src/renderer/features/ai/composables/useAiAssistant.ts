@@ -40,6 +40,10 @@ interface AiAssistantRuntimeConfig {
   };
 }
 
+function isAutoContinueEnabled(config: AiAssistantRuntimeConfig): boolean {
+  return config.aiAssistant?.enabled === true && config.aiAssistant.autoContinue === true;
+}
+
 function isMeaningfulInput(context: string): boolean {
   const trimmed = context.trim();
   if (!trimmed) {
@@ -126,7 +130,7 @@ export function useAiAssistant() {
   };
 
   const requestCompletion = async (editorView: EditorView, config: AiAssistantRuntimeConfig) => {
-    if (!config?.aiAssistant?.enabled || state.value.isSuspended || state.value.isProcessing) {
+    if (!isAutoContinueEnabled(config) || state.value.isSuspended || state.value.isProcessing) {
       return;
     }
 
@@ -188,17 +192,18 @@ export function useAiAssistant() {
   };
 
   const handleTyping = (editorView: EditorView, config: AiAssistantRuntimeConfig, isAutoContinue = false) => {
-    if (!config?.aiAssistant?.enabled || state.value.isSuspended) {
+    if (!isAutoContinueEnabled(config) || state.value.isSuspended) {
       return;
     }
 
     const editorState = editorView.state;
     const doc = editorState.doc;
     const pos = editorState.selection.main.head;
-    const mode = (config.aiAssistant.triggerMode || 'standard') as AiWritingMode;
+    const mode = (config.aiAssistant?.triggerMode || 'standard') as AiWritingMode;
     const modeConfig = AI_WRITING_MODE_CONFIG[mode] || AI_WRITING_MODE_CONFIG.standard;
 
     const checkForbidden = (): boolean => {
+      if (!isAutoContinueEnabled(config)) return false;
       if (state.value.isSuspended) return false;
       if (hasSuggestion(editorState)) return false;
       if (!editorState.selection.main.empty) return false;

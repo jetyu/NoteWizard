@@ -31,6 +31,8 @@ export interface AssistantPromptContext extends PromptLanguageContext {
 export interface EditorPromptContext extends PromptLanguageContext {
   preset: AiPromptPreset;
   targetLanguage?: AiTranslationTargetLanguage;
+  writingStyle: AiWritingStyle;
+  writingScenario: AiWritingScenario;
 }
 
 function chooseBuilder<TContext>(
@@ -114,6 +116,8 @@ export function buildEditorSystemPrompt(
   uiLanguage: string,
   inputText: string,
   preset: EditorPromptContext['preset'],
+  writingStyle: EditorPromptContext['writingStyle'],
+  writingScenario: EditorPromptContext['writingScenario'],
   targetLanguage?: EditorPromptContext['targetLanguage'],
 ): string {
   const language = resolvePromptLanguage(uiLanguage, inputText);
@@ -123,6 +127,8 @@ export function buildEditorSystemPrompt(
     inputLanguage: language.inputLanguage,
     fallbackLanguage: language.fallbackLanguage,
     preset,
+    writingStyle,
+    writingScenario,
     targetLanguage,
   };
 

@@ -44,6 +44,10 @@ const aiAssistant = useAiAssistant();
 const { activeNote } = storeToRefs(workspaceStore);
 const { config } = storeToRefs(settingsStore);
 const isActiveNoteReadMode = computed(() => Boolean(activeNote.value?.locked));
+const isAutoContinueEnabled = computed(() => (
+  config.value.aiAssistant?.enabled === true
+  && config.value.aiAssistant.autoContinue === true
+));
 
 const editorHost = ref<HTMLElement | null>(null);
 const editorAiOperationPopover = ref<HTMLElement | null>(null);
@@ -348,14 +352,10 @@ onMounted(() => {
       // 触发AI助手
       if (
         editorApi?.view
-        && config.value.aiAssistant?.enabled
+        && isAutoContinueEnabled.value
         && !hasActiveAiOperation.value
       ) {
-        if (!isAiCompletion) {
-          aiAssistant.handleTyping(editorApi.view, config.value);
-        } else if (config.value.aiAssistant.autoContinue) {
-          aiAssistant.handleTyping(editorApi.view, config.value, true);
-        }
+        aiAssistant.handleTyping(editorApi.view, config.value, isAiCompletion);
       }
 
       editorContextMenu.syncAiOperationState();
@@ -378,7 +378,7 @@ onMounted(() => {
   editorResizeObserver.observe(editorHost.value);
 
   // 设置AI助手状态
-  aiAssistant.setEnabled(config.value.aiAssistant?.enabled ?? false);
+  aiAssistant.setEnabled(isAutoContinueEnabled.value);
 });
 
 watch(
@@ -489,9 +489,9 @@ watch(
 );
 
 watch(
-  () => config.value.aiAssistant?.enabled,
+  isAutoContinueEnabled,
   (enabled) => {
-    aiAssistant.setEnabled(enabled ?? false);
+    aiAssistant.setEnabled(enabled);
   }
 );
 
