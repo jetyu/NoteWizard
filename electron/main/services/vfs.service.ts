@@ -17,6 +17,13 @@ import { historyService } from './history.service.js';
 import { settingsService } from './settings.service.js';
 import { getErrorMessage } from '../services/error.service.js';
 import {
+  extractMarkdownImageReferences,
+  isExternalResourcePath,
+  isPathInside,
+  isRelativeResourcePath,
+  type MarkdownImageReference,
+} from '../utils/markdown.utils.js';
+import {
   isNotebookIconColor,
   type NotebookIconColor,
 } from '../../shared/notebook-icon.constants.js';
@@ -44,6 +51,49 @@ interface SaveImagePayload {
   fileName?: string;
   mimeType: string;
   dataBase64: string;
+}
+
+export const NOTE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+
+export const NOTE_IMAGE_UNAVAILABLE_REASONS = {
+  EXTERNAL: 'external',
+  UNSAFE_PATH: 'unsafe-path',
+  OUTSIDE_NOTE_IMAGES: 'outside-note-images',
+  MISSING: 'missing',
+  UNSUPPORTED_TYPE: 'unsupported-type',
+  NOT_FILE: 'not-file',
+  TOO_LARGE: 'too-large',
+  UNREADABLE: 'unreadable',
+} as const satisfies Record<string, string>;
+
+export type NoteImageUnavailableReason =
+  typeof NOTE_IMAGE_UNAVAILABLE_REASONS[keyof typeof NOTE_IMAGE_UNAVAILABLE_REASONS];
+
+export interface NoteImageManifestEntry {
+  imageIndex: number;
+  altText: string;
+  available: boolean;
+  mediaType?: NoteImageMediaType;
+  byteSize?: number;
+  unavailableReason?: NoteImageUnavailableReason;
+}
+
+export type NoteImageMediaType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
+
+export interface ResolvedNoteImage {
+  noteId: string;
+  imageIndex: number;
+  altText: string;
+  mediaType: NoteImageMediaType;
+  byteSize: number;
+  data: Buffer;
+}
+
+export class NoteImageAccessError extends Error {
+  constructor(readonly reason: NoteImageUnavailableReason | 'note-unavailable' | 'image-index-changed') {
+    super(reason);
+    this.name = 'NoteImageAccessError';
+  }
 }
 
 const workspaceState = {
@@ -246,6 +296,136 @@ const IMAGE_MIME_EXTENSIONS: Readonly<Record<string, string>> = Object.freeze({
   'image/bmp': '.bmp',
   'image/svg+xml': '.svg',
 });
+
+const NOTE_IMAGE_MEDIA_TYPES: Readonly<Record<string, NoteImageMediaType>> = Object.freeze({
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+});
+
+interface NoteImageInspection {
+  entry: NoteImageManifestEntry;
+  realPath?: string;
+}
+
+async function hasExpectedImageSignature(
+  filePath: string,
+  mediaType: NoteImageMediaType,
+): Promise<boolean> {
+  const header = Buffer.alloc(12);
+  const file = await fs.open(filePath, 'r');
+  try {
+    const { bytesRead } = await file.read(header, 0, header.length, 0);
+    if (mediaType === 'image/png') {
+      return bytesRead >= 8 && header.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    }
+    if (mediaType === 'image/jpeg') {
+      return bytesRead >= 3 && header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+    }
+    if (mediaType === 'image/gif') {
+      const signature = header.subarray(0, 6).toString('ascii');
+      return bytesRead >= 6 && (signature === 'GIF87a' || signature === 'GIF89a');
+    }
+    return bytesRead >= 12
+      && header.subarray(0, 4).toString('ascii') === 'RIFF'
+      && header.subarray(8, 12).toString('ascii') === 'WEBP';
+  } finally {
+    await file.close();
+  }
+}
+
+function createUnavailableNoteImageEntry(
+  reference: MarkdownImageReference,
+  unavailableReason: NoteImageUnavailableReason,
+): NoteImageManifestEntry {
+  return {
+    imageIndex: reference.imageIndex,
+    altText: reference.altText,
+    available: false,
+    unavailableReason,
+  };
+}
+
+async function inspectNoteImageReference(
+  root: string,
+  contentId: string,
+  reference: MarkdownImageReference,
+): Promise<NoteImageInspection> {
+  if (isExternalResourcePath(reference.destination)) {
+    return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.EXTERNAL) };
+  }
+  if (!isRelativeResourcePath(reference.destination)) {
+    return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.UNSAFE_PATH) };
+  }
+
+  const imageDirectory = getContentImagesDir(root, contentId);
+  const candidatePath = path.resolve(objectsDir(root), reference.destination);
+  if (!isPathInside(imageDirectory, candidatePath)) {
+    return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.OUTSIDE_NOTE_IMAGES) };
+  }
+
+  const mediaType = NOTE_IMAGE_MEDIA_TYPES[path.extname(candidatePath).toLowerCase()];
+  if (!mediaType) {
+    return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.UNSUPPORTED_TYPE) };
+  }
+
+  try {
+    const [realImageDirectory, realCandidatePath] = await Promise.all([
+      fs.realpath(imageDirectory),
+      fs.realpath(candidatePath),
+    ]);
+    if (!isPathInside(realImageDirectory, realCandidatePath)) {
+      return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.OUTSIDE_NOTE_IMAGES) };
+    }
+
+    const stat = await fs.stat(realCandidatePath);
+    if (!stat.isFile()) {
+      return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.NOT_FILE) };
+    }
+    if (stat.size > NOTE_IMAGE_MAX_BYTES) {
+      return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.TOO_LARGE) };
+    }
+    if (!(await hasExpectedImageSignature(realCandidatePath, mediaType))) {
+      return { entry: createUnavailableNoteImageEntry(reference, NOTE_IMAGE_UNAVAILABLE_REASONS.UNSUPPORTED_TYPE) };
+    }
+
+    return {
+      entry: {
+        imageIndex: reference.imageIndex,
+        altText: reference.altText,
+        available: true,
+        mediaType,
+        byteSize: stat.size,
+      },
+      realPath: realCandidatePath,
+    };
+  } catch (error) {
+    return {
+      entry: createUnavailableNoteImageEntry(
+        reference,
+        isEnoentError(error)
+          ? NOTE_IMAGE_UNAVAILABLE_REASONS.MISSING
+          : NOTE_IMAGE_UNAVAILABLE_REASONS.UNREADABLE,
+      ),
+    };
+  }
+}
+
+function getActiveNoteForImage(noteId: string): WorkspaceNode & { contentId: string } {
+  const normalizedNoteId = assertNonEmptyString(noteId, VFS_CONSTANTS.FIELD_NODE_ID);
+  const node = workspaceState.nodes.get(normalizedNoteId);
+  if (
+    !node
+    || node.type !== VFS_CONSTANTS.NODE_TYPE_FILE
+    || node.trashed
+    || typeof node.contentId !== 'string'
+  ) {
+    throw new NoteImageAccessError('note-unavailable');
+  }
+  return { ...node, contentId: node.contentId };
+}
 
 function sanitizeAssetBaseName(fileName: unknown): string {
   const sanitizedCharacters = Array.from(String(fileName ?? '').trim(), (character) => {
@@ -717,6 +897,60 @@ export const vfsService = {
       logger.error(`Failed to read content ${contentId}: ${error}`);
       throw error;
     }
+  },
+
+  async getNoteImageManifest(noteId: string): Promise<NoteImageManifestEntry[]> {
+    const root = await this.ensureInitialized();
+    const node = getActiveNoteForImage(noteId);
+    const content = await this.readContent(node.contentId);
+    const references = extractMarkdownImageReferences(content);
+    const inspections = await Promise.all(
+      references.map((reference) => inspectNoteImageReference(root, node.contentId, reference)),
+    );
+    return inspections.map((inspection) => inspection.entry);
+  },
+
+  async readNoteImage(noteId: string, imageIndex: number): Promise<ResolvedNoteImage> {
+    const root = await this.ensureInitialized();
+    const node = getActiveNoteForImage(noteId);
+    const safeImageIndex = assertNonNegativeInteger(imageIndex, 'imageIndex');
+    const contentId = node.contentId;
+    const content = await this.readContent(contentId);
+    const reference = extractMarkdownImageReferences(content)[safeImageIndex];
+    if (!reference) {
+      throw new NoteImageAccessError('image-index-changed');
+    }
+
+    const inspection = await inspectNoteImageReference(root, contentId, reference);
+    if (
+      !inspection.entry.available
+      || !inspection.entry.mediaType
+      || inspection.entry.byteSize === undefined
+      || !inspection.realPath
+    ) {
+      throw new NoteImageAccessError(
+        inspection.entry.unavailableReason ?? NOTE_IMAGE_UNAVAILABLE_REASONS.UNREADABLE,
+      );
+    }
+
+    let data: Buffer;
+    try {
+      data = await fs.readFile(inspection.realPath);
+    } catch {
+      throw new NoteImageAccessError(NOTE_IMAGE_UNAVAILABLE_REASONS.UNREADABLE);
+    }
+    if (data.length > NOTE_IMAGE_MAX_BYTES) {
+      throw new NoteImageAccessError(NOTE_IMAGE_UNAVAILABLE_REASONS.TOO_LARGE);
+    }
+
+    return {
+      noteId: node.id,
+      imageIndex: safeImageIndex,
+      altText: reference.altText,
+      mediaType: inspection.entry.mediaType,
+      byteSize: data.length,
+      data,
+    };
   },
 
   async writeContent(contentId: string, text: string): Promise<boolean> {

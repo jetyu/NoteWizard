@@ -2,10 +2,23 @@ import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import type { EditorView } from '@codemirror/view';
 import { ref, shallowRef } from 'vue';
-import { clearAiSuggestion, getLastSuggestionClearTime, hasSuggestion, showAiSuggestion } from '@renderer/core/ai/wordsAutoCompletion';
+import {
+  clearAiSuggestion,
+  getLastSuggestionClearTime,
+  hasSuggestion,
+  showAiSuggestion,
+} from '@renderer/core/ai/wordsAutoCompletion';
+import {
+  EDITOR_CHANGE_ORIGIN,
+  type EditorChangeOrigin,
+} from '@renderer/core/editor/createCodeEditor';
 import { createLogger } from '@renderer/features/logger';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { aiService } from '../services/ai.service';
+import {
+  buildAiCompletionContext,
+  sanitizeAiCompletionSuggestion,
+} from '../services/aiCompletion.service';
 import { AI_ASSISTANT_DEFAULTS, AI_WRITING_MODE_CONFIG, type AiWritingMode } from '../constants/ai.constants';
 
 const aiAssistantLogger = createLogger('AiAssistant');
@@ -38,6 +51,19 @@ interface AiAssistantRuntimeConfig {
     triggerMode?: AiWritingMode;
     autoContinue?: boolean;
   };
+}
+
+export interface AiAssistantDocumentContext {
+  noteId: string | null;
+  noteTitle?: string;
+  suggestionHint?: string;
+}
+
+interface CompletionSnapshot {
+  requestId: number;
+  noteId: string | null;
+  documentText: string;
+  cursorPosition: number;
 }
 
 function isAutoContinueEnabled(config: AiAssistantRuntimeConfig): boolean {
@@ -117,143 +143,189 @@ export function useAiAssistant() {
 
   const editorViewRef = shallowRef<EditorView | null>(null);
   let typingTimer: ReturnType<typeof setTimeout> | null = null;
-  let abortController: AbortController | null = null;
   let requestSequence = 0;
+  let documentContext: AiAssistantDocumentContext = { noteId: null };
+  let hasShownSuggestionHint = false;
 
-  const cancelRequest = () => {
+  const invalidatePendingWork = (clearSuggestion: boolean) => {
     requestSequence += 1;
-    if (abortController) {
-      abortController.abort();
-      abortController = null;
+    if (typingTimer) {
+      clearTimeout(typingTimer);
+      typingTimer = null;
     }
     state.value.isProcessing = false;
+
+    if (clearSuggestion && editorViewRef.value) {
+      clearAiSuggestion(editorViewRef.value);
+    }
   };
 
-  const requestCompletion = async (editorView: EditorView, config: AiAssistantRuntimeConfig) => {
-    if (!isAutoContinueEnabled(config) || state.value.isSuspended || state.value.isProcessing) {
+  const isSnapshotCurrent = (editorView: EditorView, snapshot: CompletionSnapshot): boolean => {
+    if (snapshot.requestId !== requestSequence || editorViewRef.value !== editorView) {
+      return false;
+    }
+    if (documentContext.noteId !== snapshot.noteId) {
+      return false;
+    }
+
+    const selection = editorView.state.selection.main;
+    return selection.empty
+      && selection.head === snapshot.cursorPosition
+      && editorView.state.doc.toString() === snapshot.documentText;
+  };
+
+  const isEligibleForCompletion = (
+    editorView: EditorView,
+    config: AiAssistantRuntimeConfig,
+    continuous: boolean,
+  ): boolean => {
+    if (!isAutoContinueEnabled(config) || state.value.isSuspended) return false;
+
+    const editorState = editorView.state;
+    if (hasSuggestion(editorState)) return false;
+    if (!editorState.selection.main.empty) return false;
+    if (editorState.readOnly) return false;
+
+    const mode = (config.aiAssistant?.triggerMode || 'standard') as AiWritingMode;
+    const modeConfig = AI_WRITING_MODE_CONFIG[mode] || AI_WRITING_MODE_CONFIG.standard;
+    if (!continuous) {
+      const timeSinceClear = Date.now() - getLastSuggestionClearTime();
+      if (timeSinceClear < modeConfig.cooldown) return false;
+    }
+
+    const documentText = editorState.doc.toString();
+    if (!isDocumentMeaningful(documentText)) return false;
+
+    const promptContext = buildAiCompletionContext({
+      documentText,
+      cursorPosition: editorState.selection.main.head,
+      noteTitle: documentContext.noteTitle,
+    });
+    if (!isMeaningfulInput(promptContext.context)) return false;
+    if (isStructuredCursorPosition(editorView)) return false;
+
+    return true;
+  };
+
+  const requestCompletion = async (
+    editorView: EditorView,
+    config: AiAssistantRuntimeConfig,
+    continuous = false,
+  ) => {
+    if (!isEligibleForCompletion(editorView, config, continuous)) {
       return;
     }
 
-    const doc = editorView.state.doc;
-    const cursorPos = editorView.state.selection.main.head;
-    const context = doc.sliceString(Math.max(0, cursorPos - AI_ASSISTANT_DEFAULTS.CONTEXT_LENGTH), cursorPos);
+    const editorState = editorView.state;
+    const documentText = editorState.doc.toString();
+    const cursorPosition = editorState.selection.main.head;
+    const promptContext = buildAiCompletionContext({
+      documentText,
+      cursorPosition,
+      noteTitle: documentContext.noteTitle,
+    });
+    const requestId = requestSequence + 1;
+    requestSequence = requestId;
+    const snapshot: CompletionSnapshot = {
+      requestId,
+      noteId: documentContext.noteId,
+      documentText,
+      cursorPosition,
+    };
 
-    if (!isMeaningfulInput(context)) {
-      return;
-    }
-
-    cancelRequest();
-    const requestId = requestSequence;
     state.value.isProcessing = true;
     state.value.lastError = null;
 
-    const requestController = new AbortController();
-    abortController = requestController;
-    const timeoutId = setTimeout(() => {
-      requestController.abort();
-    }, AI_ASSISTANT_DEFAULTS.REQUEST_TIMEOUT);
-
     try {
-      const result = await aiService.generateCompletion({ context });
-      if (requestId !== requestSequence || state.value.isSuspended) {
+      const result = await aiService.generateCompletion(promptContext);
+      if (!isSnapshotCurrent(editorView, snapshot) || state.value.isSuspended) {
         return;
       }
 
       if (result.success && result.answer) {
-        const suggestion = result.answer.trim();
-        if (isMeaningfulInput(suggestion)) {
-          showAiSuggestion(editorView, suggestion);
+        const suggestion = sanitizeAiCompletionSuggestion(promptContext, result.answer);
+        if (suggestion) {
+          const suggestionHint = hasShownSuggestionHint
+            ? undefined
+            : documentContext.suggestionHint;
+          if (suggestionHint) {
+            hasShownSuggestionHint = true;
+            showAiSuggestion(editorView, suggestion, suggestionHint);
+          } else {
+            showAiSuggestion(editorView, suggestion);
+          }
         }
       } else {
         state.value.lastError = result.error || 'Completion failed';
         aiAssistantLogger.warn(`Completion failed: ${result.error || 'Unknown failure'}`);
       }
     } catch (error) {
-      if (requestId !== requestSequence || state.value.isSuspended) {
-        return;
-      }
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        aiAssistantLogger.debug('Request cancelled');
+      if (!isSnapshotCurrent(editorView, snapshot) || state.value.isSuspended) {
         return;
       }
 
       state.value.lastError = getErrorMessage(error);
       aiAssistantLogger.error(`Error: ${getErrorMessage(error)}`);
     } finally {
-      clearTimeout(timeoutId);
       if (requestId === requestSequence) {
-        if (abortController === requestController) {
-          abortController = null;
-        }
         state.value.isProcessing = false;
       }
     }
   };
 
-  const handleTyping = (editorView: EditorView, config: AiAssistantRuntimeConfig, isAutoContinue = false) => {
-    if (!isAutoContinueEnabled(config) || state.value.isSuspended) {
+  const scheduleCompletion = (
+    editorView: EditorView,
+    config: AiAssistantRuntimeConfig,
+    continuous: boolean,
+  ) => {
+    if (!isEligibleForCompletion(editorView, config, continuous)) {
       return;
     }
 
-    const editorState = editorView.state;
-    const doc = editorState.doc;
-    const pos = editorState.selection.main.head;
     const mode = (config.aiAssistant?.triggerMode || 'standard') as AiWritingMode;
     const modeConfig = AI_WRITING_MODE_CONFIG[mode] || AI_WRITING_MODE_CONFIG.standard;
-
-    const checkForbidden = (): boolean => {
-      if (!isAutoContinueEnabled(config)) return false;
-      if (state.value.isSuspended) return false;
-      if (hasSuggestion(editorState)) return false;
-      if (!editorState.selection.main.empty) return false;
-      if (editorState.readOnly) return false;
-      if (state.value.isProcessing) return false;
-
-      if (!isAutoContinue) {
-        const timeSinceClear = Date.now() - getLastSuggestionClearTime();
-        if (timeSinceClear < modeConfig.cooldown) return false;
-      }
-
-      const docText = doc.toString();
-      if (!isDocumentMeaningful(docText)) return false;
-
-      const context = doc.sliceString(Math.max(0, pos - AI_ASSISTANT_DEFAULTS.CONTEXT_LENGTH), pos);
-      if (!isMeaningfulInput(context)) return false;
-      if (isStructuredCursorPosition(editorView)) return false;
-
-      return true;
-    };
-
-    if (!checkForbidden()) {
-      clearAiSuggestion(editorView);
-      return;
-    }
-
-    clearAiSuggestion(editorView);
-    if (typingTimer) {
-      clearTimeout(typingTimer);
-      typingTimer = null;
-    }
-
-    const delay = isAutoContinue ? AI_ASSISTANT_DEFAULTS.CONTINUOUS_COMPLETION_DELAY : modeConfig.delay;
+    const delay = continuous
+      ? Math.max(
+          AI_ASSISTANT_DEFAULTS.MIN_CONTINUOUS_COMPLETION_DELAY,
+          Math.round(modeConfig.delay * AI_ASSISTANT_DEFAULTS.CONTINUOUS_COMPLETION_DELAY_RATIO),
+        )
+      : modeConfig.delay;
+    const scheduledSequence = requestSequence;
     typingTimer = setTimeout(() => {
-      if (!checkForbidden()) return;
-      void requestCompletion(editorView, config);
+      typingTimer = null;
+      if (scheduledSequence !== requestSequence || !isEligibleForCompletion(editorView, config, continuous)) {
+        return;
+      }
+      void requestCompletion(editorView, config, continuous);
     }, delay);
   };
 
+  const handleDocumentChange = (
+    editorView: EditorView,
+    config: AiAssistantRuntimeConfig,
+    origin: EditorChangeOrigin,
+  ) => {
+    const preserveSuggestion = origin === EDITOR_CHANGE_ORIGIN.AI_PARTIAL_ACCEPT;
+    invalidatePendingWork(!preserveSuggestion);
+
+    if (!isAutoContinueEnabled(config) || state.value.isSuspended) {
+      return;
+    }
+    if (origin === EDITOR_CHANGE_ORIGIN.TYPING) {
+      scheduleCompletion(editorView, config, false);
+      return;
+    }
+    if (origin === EDITOR_CHANGE_ORIGIN.AI_COMPLETE_ACCEPT) {
+      scheduleCompletion(editorView, config, true);
+    }
+  };
+
+  const handleSelectionChange = () => {
+    invalidatePendingWork(true);
+  };
+
   const cleanup = () => {
-    if (typingTimer) {
-      clearTimeout(typingTimer);
-      typingTimer = null;
-    }
-
-    cancelRequest();
-
-    if (editorViewRef.value) {
-      clearAiSuggestion(editorViewRef.value);
-    }
+    invalidatePendingWork(true);
   };
 
   const setEnabled = (enabled: boolean) => {
@@ -278,14 +350,26 @@ export function useAiAssistant() {
     editorViewRef.value = view;
   };
 
+  const setDocumentContext = (nextContext: AiAssistantDocumentContext) => {
+    if (
+      documentContext.noteId !== nextContext.noteId
+      || documentContext.noteTitle !== nextContext.noteTitle
+    ) {
+      invalidatePendingWork(true);
+    }
+    documentContext = nextContext;
+  };
+
   return {
     state,
     requestCompletion,
-    handleTyping,
+    handleDocumentChange,
+    handleSelectionChange,
     cleanup,
     setEnabled,
     setSuspended,
     setEditorView,
-    cancelRequest,
+    setDocumentContext,
+    cancelRequest: () => invalidatePendingWork(false),
   };
 }

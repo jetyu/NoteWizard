@@ -49,6 +49,12 @@ const isAutoContinueEnabled = computed(() => (
   && config.value.aiAssistant.autoContinue === true
 ));
 
+const getAiDocumentContext = () => ({
+  noteId: activeNote.value?.id ?? null,
+  noteTitle: activeNote.value?.title,
+  suggestionHint: t('text.aiAutoContinueSuggestionHint'),
+});
+
 const editorHost = ref<HTMLElement | null>(null);
 const editorAiOperationPopover = ref<HTMLElement | null>(null);
 const editorAiOperationPopoverStyle = ref<CSSProperties>({
@@ -342,9 +348,9 @@ onMounted(() => {
     bracketMatching: config.value.editor.bracketMatching,
     autoCloseBrackets: config.value.editor.autoCloseBrackets,
     autoIndent: config.value.editor.autoIndent,
-    onChange: (value, isAiCompletion) => {
+    onChange: (change) => {
       syncingFromEditor = true;
-      emit('update:modelValue', value);
+      emit('update:modelValue', change.value);
       queueMicrotask(() => {
         syncingFromEditor = false;
       });
@@ -355,14 +361,17 @@ onMounted(() => {
         && isAutoContinueEnabled.value
         && !hasActiveAiOperation.value
       ) {
-        aiAssistant.handleTyping(editorApi.view, config.value, isAiCompletion);
+        aiAssistant.handleDocumentChange(editorApi.view, config.value, change.origin);
       }
 
       editorContextMenu.syncAiOperationState();
       scheduleAiOperationCardPosition();
     },
-    onSelectionChange: (selection) => {
+    onSelectionChange: (selection, selectionOnly) => {
       emit('selection-change', selection);
+      if (selectionOnly) {
+        aiAssistant.handleSelectionChange();
+      }
     },
   });
 
@@ -370,6 +379,7 @@ onMounted(() => {
   if (editorApi?.view) {
     setEditorView(editorApi.view);
     aiAssistant.setEditorView(editorApi.view);
+    aiAssistant.setDocumentContext(getAiDocumentContext());
     editorApi.view.scrollDOM.addEventListener('scroll', scheduleAiOperationCardPosition, { passive: true });
   }
 
@@ -410,10 +420,12 @@ watch(
 );
 
 watch(
-  () => activeNote.value?.id ?? null,
+  () => [activeNote.value?.id ?? null, activeNote.value?.title ?? ''] as const,
   () => {
+    aiAssistant.setDocumentContext(getAiDocumentContext());
     editorContextMenu.discardAiOperation();
   },
+  { flush: 'sync' },
 );
 
 watch(
@@ -507,6 +519,7 @@ onBeforeUnmount(() => {
   setEditorView(null);
   // 清理AI助手
   aiAssistant.cleanup();
+  aiAssistant.setEditorView(null);
   editorApi?.destroy();
 });
 </script>

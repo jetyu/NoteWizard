@@ -1,9 +1,15 @@
-import { electronApi, type AppDistribution, type AppEnvVersion } from '@renderer/core/bridge/electronApi';
+import {
+  electronApi,
+  type AppDistribution,
+  type AppEnvVersion,
+  type AppSystemInfo,
+} from '@renderer/core/bridge/electronApi';
 
 export interface AboutInfo {
   appName: string;
   appVersion: string;
   envVersion: AppEnvVersion;
+  systemInfo: AppSystemInfo;
   distribution: AppDistribution;
 }
 
@@ -21,6 +27,13 @@ function normalizeEnvVersion(envVersion: AppEnvVersion): AppEnvVersion {
   };
 }
 
+function normalizeSystemInfo(systemInfo: AppSystemInfo): AppSystemInfo {
+  return {
+    operatingSystem: normalizeText(systemInfo.operatingSystem, 'unknown'),
+    architecture: normalizeText(systemInfo.architecture, 'unknown'),
+  };
+}
+
 class AboutService {
   onOpenAbout(callback: () => void): () => void {
     return electronApi.menu.onOpenAbout(() => {
@@ -29,10 +42,11 @@ class AboutService {
   }
 
   async loadAboutInfo(): Promise<AboutInfo> {
-    const [appVersion, appName, envVersion, distribution] = await Promise.all([
+    const [appVersion, appName, envVersion, systemInfo, distribution] = await Promise.all([
       electronApi.app.getVersion(),
       electronApi.app.getName(),
       electronApi.app.getEnvVersion(),
+      electronApi.app.getSystemInfo(),
       electronApi.app.getDistribution(),
     ]);
 
@@ -40,6 +54,7 @@ class AboutService {
       appName: normalizeText(appName, 'Unknown App'),
       appVersion: normalizeText(appVersion, '0.0.0'),
       envVersion: normalizeEnvVersion(envVersion),
+      systemInfo: normalizeSystemInfo(systemInfo),
       distribution,
     };
   }
@@ -48,6 +63,8 @@ class AboutService {
     const diagnosticInfo = [
       `${info.appName} ${info.appVersion}`,
       `Distribution: ${info.distribution}`,
+      `Operating system: ${info.systemInfo.operatingSystem}`,
+      `CPU architecture: ${info.systemInfo.architecture}`,
       `Electron: ${info.envVersion.electron}`,
       `Node.js: ${info.envVersion.node}`,
       `Chromium: ${info.envVersion.chrome}`,

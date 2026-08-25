@@ -37,14 +37,19 @@
               </div>
             </header>
 
-            <details class="technical-details">
-              <summary class="technical-summary">
-                <span>{{ t('noteProperties.technicalInfo') }}</span>
-                <IconChevronRight class="technical-chevron" :size="16" aria-hidden="true" />
-              </summary>
+            <section class="technical-details" :aria-label="t('noteProperties.technicalInfo')">
+              <h2 class="technical-heading">{{ t('noteProperties.technicalInfo') }}</h2>
 
               <dl class="runtime-grid">
                 <div class="runtime-item">
+                  <dt>{{ t('about.operatingSystem') }}</dt>
+                  <dd>{{ systemInfo.operatingSystem }}</dd>
+                </div>
+                <div class="runtime-item">
+                  <dt>{{ t('about.cpuArchitecture') }}</dt>
+                  <dd>{{ systemInfo.architecture }}</dd>
+                </div>
+                <div class="runtime-item runtime-item--group-start">
                   <dt>{{ t('about.electron') }}</dt>
                   <dd>{{ envVersion.electron }}</dd>
                 </div>
@@ -70,7 +75,7 @@
                   <span>{{ isDiagnosticCopied ? t('preview.codeCopied') : t('noteProperties.copyInfo') }}</span>
                 </button>
               </div>
-            </details>
+            </section>
 
             <footer class="about-footer">
               <div class="about-footer-meta">
@@ -104,7 +109,6 @@ import { useI18n } from 'vue-i18n';
 import { useAbout } from '../composables/useAbout';
 import {
   IconCheck,
-  IconChevronRight,
   IconCopy,
   IconExternalLink,
   IconX,
@@ -117,6 +121,7 @@ const {
   appVersion,
   appName,
   envVersion,
+  systemInfo,
   isMicrosoftStoreDistribution,
   closeAbout,
   loadVersionInfo,
@@ -222,7 +227,10 @@ function clearCopyFeedbackTimer(): void {
 }
 
 .about-content {
+  box-sizing: border-box;
+  max-height: calc(100vh - 32px);
   padding: 28px;
+  overflow-y: auto;
 }
 
 .about-hero {
@@ -344,8 +352,7 @@ function clearCopyFeedbackTimer(): void {
 }
 
 .store-badge:focus-visible,
-.website-link:focus-visible,
-.technical-summary:focus-visible {
+.website-link:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
@@ -358,77 +365,74 @@ function clearCopyFeedbackTimer(): void {
   overflow: hidden;
 }
 
-.technical-summary {
+.technical-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 42px;
+  min-height: 36px;
+  margin: 0;
   padding: 0 14px;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-}
-
-.technical-summary::-webkit-details-marker {
-  display: none;
-}
-
-.technical-details[open] .technical-summary {
   border-bottom: 1px solid var(--border-muted);
-}
-
-.technical-chevron {
-  flex: 0 0 auto;
-  color: var(--text-tertiary);
-  transition: transform 0.16s ease;
-}
-
-.technical-details[open] .technical-chevron {
-  transform: rotate(90deg);
+  color: var(--text-secondary);
+  font-size: 0.775rem;
+  font-weight: 600;
 }
 
 .runtime-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
   margin: 0;
-  padding: 12px;
+  padding: 9px;
 }
 
 .runtime-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  padding: 9px 10px;
+  padding: 6px 9px;
   border: 1px solid var(--border-muted);
   border-radius: 8px;
   background: var(--surface-raised);
 }
 
+.runtime-item--group-start {
+  position: relative;
+  margin-top: 5px;
+}
+
+.runtime-item--group-start::before {
+  position: absolute;
+  top: -6px;
+  right: 9px;
+  left: 9px;
+  height: 1px;
+  background: var(--border-muted);
+  content: '';
+}
+
 .runtime-item dt {
-  margin: 0 0 5px;
+  margin: 0;
   color: var(--text-tertiary);
-  font-size: 0.72rem;
+  font-size: 0.675rem;
   font-weight: 500;
 }
 
 .runtime-item dd {
   margin: 0;
-  overflow: hidden;
   color: var(--text-primary);
   font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
-  font-size: 0.775rem;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.725rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .diagnostic-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 0 12px 12px;
+  padding: 0 9px 9px;
 }
 
 .copy-diagnostic-button {
@@ -504,8 +508,5 @@ function clearCopyFeedbackTimer(): void {
     justify-content: center;
   }
 
-  .runtime-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

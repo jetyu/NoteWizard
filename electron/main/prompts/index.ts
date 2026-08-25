@@ -1,9 +1,12 @@
 import type {
+  AiCompletionIntent,
+  AiCompletionPromptContext,
   AiPromptPreset,
   AiTranslationTargetLanguage,
   AiWritingScenario,
   AiWritingStyle,
 } from '../../shared/ai.constants.js';
+import { AI_COMPLETION_INTENT } from '../../shared/ai.constants.js';
 import type { PromptLanguageContext, PromptTemplateLanguage } from './language.js';
 import { buildAgentPromptEnUs } from './agent/en-US.js';
 import { buildAgentPromptZhCn } from './agent/zh-CN.js';
@@ -26,6 +29,7 @@ export interface KnowledgeAnswerPromptContext extends PromptLanguageContext {
 export interface AssistantPromptContext extends PromptLanguageContext {
   writingStyle: AiWritingStyle;
   writingScenario: AiWritingScenario;
+  intent: AiCompletionIntent;
 }
 
 export interface EditorPromptContext extends PromptLanguageContext {
@@ -98,6 +102,7 @@ export function buildAssistantSystemPrompt(
   inputText: string,
   writingStyle: AssistantPromptContext['writingStyle'],
   writingScenario: AssistantPromptContext['writingScenario'],
+  intent: AssistantPromptContext['intent'] = AI_COMPLETION_INTENT.CONTINUE_SENTENCE,
 ): string {
   const language = resolvePromptLanguage(uiLanguage, inputText);
   const builder = chooseBuilder(language.effectiveLanguage, buildAssistantPromptZhCn, buildAssistantPromptEnUs);
@@ -107,6 +112,7 @@ export function buildAssistantSystemPrompt(
     fallbackLanguage: language.fallbackLanguage,
     writingStyle,
     writingScenario,
+    intent,
   };
 
   return builder(context);
@@ -133,4 +139,14 @@ export function buildEditorSystemPrompt(
   };
 
   return builder(context);
+}
+
+export function buildAssistantUserPrompt(context: AiCompletionPromptContext): string {
+  return JSON.stringify({
+    noteTitle: context.noteTitle ?? '',
+    sectionHeading: context.sectionHeading ?? '',
+    beforeCursor: context.context,
+    cursor: '<cursor>',
+    afterCursor: context.contextAfter ?? '',
+  });
 }

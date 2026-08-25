@@ -1,6 +1,10 @@
 import { electronApi } from '@renderer/core/bridge/electronApi';
 import { createLogger } from '@renderer/features/logger';
-import type { AiPromptPreset, AiTranslationTargetLanguage } from '@shared/ai.constants';
+import type {
+  AiCompletionPromptContext,
+  AiPromptPreset,
+  AiTranslationTargetLanguage,
+} from '@shared/ai.constants';
 import { getErrorMessage } from '@shared/utils/error.utils';
 import { AI_ERROR_MESSAGES } from '../constants/ai.constants';
 
@@ -47,21 +51,17 @@ export const aiService = {
   /**
    * Specialized writing completion (Assistant) - Orchestration Layer
    */
-  async generateCompletion(params: {
-    context: string;
+  async generateCompletion(params: AiCompletionPromptContext & {
     systemPrompt?: string;
   }): Promise<{ success: boolean; answer?: string; error?: string }> {
-    const { context, systemPrompt } = params;
+    const { context } = params;
 
     try {
       if (!context.trim()) {
         return { success: false, error: AI_ERROR_MESSAGES.INVALID_CONTEXT };
       }
 
-      return await electronApi.aiChat.generateCompletion({
-        context,
-        systemPrompt,
-      });
+      return await electronApi.aiChat.generateCompletion(params);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       aiLogger.error('Completion generation failed', { error: message });

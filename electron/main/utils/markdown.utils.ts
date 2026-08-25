@@ -16,6 +16,10 @@ export interface MarkdownImageReplacerPayload {
   rawMatch: string;
 }
 
+export interface MarkdownImageReference extends MarkdownImageReplacerPayload {
+  imageIndex: number;
+}
+
 interface ParsedImageDestination {
   destination: string;
   leadingWhitespace: string;
@@ -168,6 +172,20 @@ export function replaceMarkdownImageDestinations(
       return `![${altText}](${parsed.leadingWhitespace}${renderedDestination}${parsed.trailing})`;
     },
   );
+}
+
+export function extractMarkdownImageReferences(
+  markdownContent: string | null | undefined,
+): MarkdownImageReference[] {
+  const references: MarkdownImageReference[] = [];
+  replaceMarkdownImageDestinations(markdownContent, (reference) => {
+    references.push({
+      ...reference,
+      imageIndex: references.length,
+    });
+    return reference.destination;
+  });
+  return references;
 }
 
 export function isPathInside(basePath: string, candidatePath: string): boolean {

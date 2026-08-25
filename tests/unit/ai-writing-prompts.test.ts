@@ -1,10 +1,12 @@
 import {
+  AI_COMPLETION_INTENT,
   AI_PROMPT_PRESETS,
   AI_WRITING_SCENARIO,
   AI_WRITING_STYLE,
 } from '@shared/ai.constants';
 import {
   buildAssistantSystemPrompt,
+  buildAssistantUserPrompt,
   buildEditorSystemPrompt,
 } from '../../electron/main/prompts/index';
 
@@ -40,6 +42,46 @@ describe('global Smart Writing preferences', () => {
       expect(prompt).toContain('写作场景：内容创作');
     }
     expect(rewritePrompt).toContain('在不违背当前操作目标、原意、输出格式和语言要求的前提下');
+  });
+
+  it('uses position-aware continuation length and treats preferences as secondary', () => {
+    const paragraphPrompt = buildAssistantSystemPrompt(
+      'zh-CN',
+      '李白，中国著名诗人。',
+      AI_WRITING_STYLE.VIVID,
+      AI_WRITING_SCENARIO.CONTENT_CREATION,
+      AI_COMPLETION_INTENT.CONTINUE_PARAGRAPH,
+    );
+    const bridgePrompt = buildAssistantSystemPrompt(
+      'zh-CN',
+      '李白，中国著名诗人',
+      AI_WRITING_STYLE.PROFESSIONAL,
+      AI_WRITING_SCENARIO.GENERAL,
+      AI_COMPLETION_INTENT.BRIDGE_TEXT,
+    );
+
+    expect(paragraphPrompt).toContain('一至两句话');
+    expect(paragraphPrompt).toContain('次要偏好');
+    expect(bridgePrompt).toContain('同时与 beforeCursor 和 afterCursor 自然衔接');
+    expect(bridgePrompt).toContain('错误输出是“李白，中国著名诗人');
+  });
+
+  it('serializes title, section, and both cursor sides as writing context', () => {
+    const userPrompt = buildAssistantUserPrompt({
+      context: '李白，中国著名诗人',
+      contextAfter: '其作品流传至今。',
+      noteTitle: '李白简介',
+      sectionHeading: '生平',
+      intent: AI_COMPLETION_INTENT.BRIDGE_TEXT,
+    });
+
+    expect(JSON.parse(userPrompt)).toEqual({
+      noteTitle: '李白简介',
+      sectionHeading: '生平',
+      beforeCursor: '李白，中国著名诗人',
+      cursor: '<cursor>',
+      afterCursor: '其作品流传至今。',
+    });
   });
 
   it('applies English writing preferences to editor operations', () => {

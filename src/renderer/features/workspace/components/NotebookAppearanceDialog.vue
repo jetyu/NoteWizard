@@ -65,7 +65,7 @@ import {
 import NotebookVisualIcon from './NotebookVisualIcon.vue';
 import { WORKSPACE_CONSTANTS } from '../constants/workspace.constants';
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean;
   notebookName: string;
   iconColor?: NotebookIconColor;

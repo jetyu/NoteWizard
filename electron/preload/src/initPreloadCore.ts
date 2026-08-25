@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../../main/constants/ipc.constants.js';
 import type { DiagnosticLogExportResult } from '../../shared/diagnostic-log.constants.js';
 import type { BuiltInAiHealthSnapshot } from '../../shared/built-in-ai.constants.js';
+import type { AiCompletionPromptContext } from '../../shared/ai.constants.js';
 import type {
   ScheduledBackupRunPayload,
   ScheduledBackupRunResult,
@@ -39,6 +40,7 @@ interface SyncRunPayload { config: JsonObject; trigger: 'manual' | 'timer' | 'sa
 interface ShortcutKeybindingPayload { commandId: string; key: string; when?: string | null; }
 type KnowledgeCopilotQueryPayload = JsonObject;
 type AiChatPayload = JsonObject;
+type AiCompletionPayload = AiCompletionPromptContext & { systemPrompt?: string };
 
 const electronAPI = Object.freeze({
   openFile: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_FILE),
@@ -54,6 +56,7 @@ const electronAPI = Object.freeze({
     getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),
     getDistribution: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_DISTRIBUTION),
     getEnvVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_ENV_VERSION),
+    getSystemInfo: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_SYSTEM_INFO),
     getName: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_NAME),
     openStorePage: () => ipcRenderer.invoke(IPC_CHANNELS.APP_OPEN_STORE_PAGE),
   }),
@@ -273,7 +276,7 @@ const electronAPI = Object.freeze({
   }),
   aiChat: Object.freeze({
     generate: (payload: AiChatPayload) => ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_GENERATE, payload),
-    generateCompletion: (payload: AiChatPayload) => ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_GENERATE_COMPLETION, payload),
+    generateCompletion: (payload: AiCompletionPayload) => ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_GENERATE_COMPLETION, payload),
   }),
   updater: Object.freeze({
     check: (silent: boolean) => ipcRenderer.invoke(IPC_CHANNELS.UPDATER_CHECK, silent),
