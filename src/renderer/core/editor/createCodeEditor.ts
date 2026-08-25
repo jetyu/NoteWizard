@@ -1,4 +1,4 @@
-import { EditorState, Compartment, StateEffect, type Range } from '@codemirror/state';
+import { Annotation, EditorState, Compartment, StateEffect, type Range, type Transaction } from '@codemirror/state';
 import {
   EditorView,
   keymap,
@@ -27,8 +27,65 @@ export interface CreateCodeEditorOptions {
   bracketMatching?: boolean;
   autoCloseBrackets?: boolean;
   autoIndent?: boolean;
-  onChange: (value: string, isAiCompletion?: boolean) => void;
-  onSelectionChange?: (selection: { line: number; column: number; selectedText: string }) => void;
+  onChange: (change: EditorDocumentChange) => void;
+  onSelectionChange?: (
+    selection: { line: number; column: number; selectedText: string },
+    selectionOnly: boolean,
+  ) => void;
+}
+
+export const EDITOR_CHANGE_ORIGIN = {
+  TYPING: 'typing',
+  PASTE: 'paste',
+  HISTORY: 'history',
+  FORMAT: 'format',
+  EXTERNAL: 'external',
+  AI_PARTIAL_ACCEPT: 'ai-partial-accept',
+  AI_COMPLETE_ACCEPT: 'ai-complete-accept',
+  OTHER: 'other',
+} as const;
+
+export type EditorChangeOrigin = (typeof EDITOR_CHANGE_ORIGIN)[keyof typeof EDITOR_CHANGE_ORIGIN];
+
+export interface EditorDocumentChange {
+  value: string;
+  origin: EditorChangeOrigin;
+}
+
+const externalEditorChangeAnnotation = Annotation.define<boolean>();
+
+export function classifyEditorChange(transactions: readonly Transaction[]): EditorChangeOrigin {
+  for (const transaction of transactions) {
+    const acceptance = transaction.annotation(acceptedSuggestionAnnotation);
+    if (acceptance === 'complete') {
+      return EDITOR_CHANGE_ORIGIN.AI_COMPLETE_ACCEPT;
+    }
+    if (acceptance === 'partial') {
+      return EDITOR_CHANGE_ORIGIN.AI_PARTIAL_ACCEPT;
+    }
+  }
+
+  if (transactions.some((transaction) => transaction.annotation(externalEditorChangeAnnotation))) {
+    return EDITOR_CHANGE_ORIGIN.EXTERNAL;
+  }
+  if (transactions.some((transaction) => transaction.isUserEvent('input.paste') || transaction.isUserEvent('input.drop'))) {
+    return EDITOR_CHANGE_ORIGIN.PASTE;
+  }
+  if (transactions.some((transaction) => transaction.isUserEvent('undo') || transaction.isUserEvent('redo'))) {
+    return EDITOR_CHANGE_ORIGIN.HISTORY;
+  }
+  if (transactions.some((transaction) => (
+    transaction.isUserEvent('input.format')
+    || transaction.isUserEvent('input.indent')
+    || transaction.isUserEvent('indent')
+  ))) {
+    return EDITOR_CHANGE_ORIGIN.FORMAT;
+  }
+  if (transactions.some((transaction) => transaction.isUserEvent('input') || transaction.isUserEvent('delete'))) {
+    return EDITOR_CHANGE_ORIGIN.TYPING;
+  }
+
+  return EDITOR_CHANGE_ORIGIN.OTHER;
 }
 
 export function createCodeEditor({
@@ -56,10 +113,10 @@ export function createCodeEditor({
 
   const updateListener = EditorView.updateListener.of((update) => {
     if (update.docChanged) {
-      const isAiCompletion = update.transactions.some(tr =>
-        tr.annotation(acceptedSuggestionAnnotation)
-      );
-      onChange(update.state.doc.toString(), isAiCompletion);
+      onChange({
+        value: update.state.doc.toString(),
+        origin: classifyEditorChange(update.transactions),
+      });
     }
 
     if (onSelectionChange && (update.selectionSet || update.docChanged)) {
@@ -74,7 +131,7 @@ export function createCodeEditor({
         line: line.number,
         column: pos - line.from + 1,
         selectedText,
-      });
+      }, update.selectionSet && !update.docChanged);
     }
   });
 
@@ -114,6 +171,7 @@ export function createCodeEditor({
 
       view.dispatch({
         changes: { from: 0, to: view.state.doc.length, insert: nextValue },
+        annotations: externalEditorChangeAnnotation.of(true),
       });
     },
     jumpToLine(lineNumber: number, searchText?: string) {

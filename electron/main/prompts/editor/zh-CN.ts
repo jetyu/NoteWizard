@@ -1,5 +1,6 @@
 import type { EditorPromptContext } from '../index.js';
 import { AI_TRANSLATION_TARGETS } from '../../../shared/ai.constants.js';
+import { buildWritingPreferencesPromptZhCn } from '../writing-preferences.js';
 
 const EDITOR_PROMPTS = {
   'editor-default': '请处理以下文本。',
@@ -27,5 +28,7 @@ export function buildEditorPromptZhCn(context: EditorPromptContext): string {
     `检测到的输入语言：${context.inputLanguage ?? 'unknown'}。`,
     `回退语言：${context.fallbackLanguage}。`,
     outputLanguageRule,
+    '在不违背当前操作目标、原意、输出格式和语言要求的前提下，遵循以下全局写作偏好：',
+    buildWritingPreferencesPromptZhCn(context.writingStyle, context.writingScenario),
   ].join('\n');
 }

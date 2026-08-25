@@ -1,3 +1,15 @@
+### v2.2.8 - 2026-08-28 
+This update optimizes details and user experience.
+#### Improvements
+* Improved the Knowledge Copilot user experience
+* Improved the Smart Writing function
+* Improved the Auto-Continue Writing function
+* Improved the Diagnostic Tool user experience
+#### Fixes
+* Fixed an issue where writing preferences were not working in certain scenarios
+* Fixed an issue where OCR recognition of images in notes might fail
+* Fixed an issue where automatic task execution failed in Knowledge Copilot Agent mode
+
 ### v2.2.7 - 2026-08-23 
 This update primarily optimizes data backup, cloud synchronization, and user interface experience, and fixes several known issues.
 #### New 
@@ -7,7 +19,7 @@ This update primarily optimizes data backup, cloud synchronization, and user int
 * Improved user interface experience
 #### Fixes
 * Fixed an issue where the official AI service availability was abnormal in certain scenarios
-* Fixed an issue where the knowledge assistant's quick index rebuild failed in certain scenarios
+* Fixed an issue where the Knowledge Copilot's quick index rebuild failed in certain scenarios
 * Fixed an issue with the Microsoft Store version icon rendering distortion
 * Fixed an issue with automatic locking in certain scenarios
 * Fixed an issue with switching preferences pages in certain scenarios
@@ -16,25 +28,25 @@ This update primarily optimizes data backup, cloud synchronization, and user int
 ### v2.2.6 - 2026-08-20 
 This update optimizes details and user experience.
 #### New
-* Added Knowledge Assistant message operation functionality.
+* Added Knowledge Copilot message operation functionality.
 #### Improvements
-* Improved the Knowledge Assistant user experience.
+* Improved the Knowledge Copilot user experience.
 * Improved the display of the official AI service's availability status.
 * Improved the Microsoft Store version icon.
 #### Fixes
 * Fixed an issue where the workspace notebook status was not saved correctly.
-* Fixed known issues with the Knowledge Assistant function.
+* Fixed known issues with the Knowledge Copilot function.
 
 ### v2.2.5 - 2026-08-17 
-This update adds service provider support and optimizes and fixes issues related to the Knowledge Assistant, application updates, and overall user experience.
+This update adds service provider support and optimizes and fixes issues related to the Knowledge Copilot, application updates, and overall user experience.
 #### New
 * Added Anthropic (Claude) AI service provider configuration support
 * Added display of official AI service availability status
 #### Improvements
-* Improved the Knowledge Assistant's question-and-answer experience, improving dialogue interaction and content presentation.
+* Improved the Knowledge Copilot's question-and-answer experience, improving dialogue interaction and content presentation.
 #### Fixes
 * Fixed an issue with the tray function malfunctioning during application updates.
-* Fixed an issue with abnormal display of Knowledge Assistant dialogue content in some scenarios.
+* Fixed an issue with abnormal display of Knowledge Copilot dialogue content in some scenarios.
 
 ### v2.2.4 - 2026-08-12
 This update optimizes details and the user experience.
@@ -49,7 +61,7 @@ This update optimizes details and the user experience.
 * Added translation capabilities to Smart Writing (Simplified Chinese, English, Japanese, Korean, Traditional Chinese)
 #### Improvements
 * Improved interaction experience for the Preferences interface
-* Improved interaction experience for the Knowledge Assistant settings interface
+* Improved interaction experience for the Knowledge Copilot settings interface
 * Improved interaction experience for Smart Writing
 #### Fixes
 * Fixed known issues

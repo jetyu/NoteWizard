@@ -76,11 +76,11 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
           USE_HARD_LINKS: false
-          STORE_IDENTITY_NAME: ${{ secrets.STORE_IDENTITY_NAME }}
-          STORE_PUBLISHER: ${{ secrets.STORE_PUBLISHER }}
-          STORE_PUBLISHER_DISPLAY_NAME: ${{ secrets.STORE_PUBLISHER_DISPLAY_NAME }}
-          STORE_DISPLAY_NAME: ${{ secrets.STORE_DISPLAY_NAME }}
-          STORE_APPLICATION_ID: ${{ secrets.STORE_APPLICATION_ID }}
+          STORE_IDENTITY_NAME: ${{ vars.STORE_IDENTITY_NAME }}
+          STORE_PUBLISHER: ${{ vars.STORE_PUBLISHER }}
+          STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.STORE_PUBLISHER_DISPLAY_NAME }}
+          STORE_DISPLAY_NAME: ${{ vars.STORE_DISPLAY_NAME }}
+          STORE_APPLICATION_ID: ${{ vars.STORE_APPLICATION_ID }}
         run: |
           $ErrorActionPreference = 'Stop'
 
