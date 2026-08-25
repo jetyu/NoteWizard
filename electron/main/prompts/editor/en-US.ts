@@ -1,5 +1,6 @@
 import type { EditorPromptContext } from '../index.js';
 import { AI_TRANSLATION_TARGETS } from '../../../shared/ai.constants.js';
+import { buildWritingPreferencesPromptEnUs } from '../writing-preferences.js';
 
 const EDITOR_PROMPTS = {
   'editor-default': 'Please process the following text.',
@@ -27,5 +28,7 @@ export function buildEditorPromptEnUs(context: EditorPromptContext): string {
     `Detected input language: ${context.inputLanguage ?? 'unknown'}.`,
     `Fallback language: ${context.fallbackLanguage}.`,
     outputLanguageRule,
+    'Follow these global writing preferences only when they do not conflict with the operation, source meaning, output format, or language requirements:',
+    buildWritingPreferencesPromptEnUs(context.writingStyle, context.writingScenario),
   ].join('\n');
 }

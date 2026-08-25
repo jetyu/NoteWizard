@@ -28,6 +28,22 @@ export const AI_WRITING_MODE = {
 
 export type AiWritingMode = (typeof AI_WRITING_MODE)[keyof typeof AI_WRITING_MODE];
 
+export const AI_COMPLETION_INTENT = {
+  CONTINUE_SENTENCE: 'continue-sentence',
+  CONTINUE_PARAGRAPH: 'continue-paragraph',
+  BRIDGE_TEXT: 'bridge-text',
+} as const;
+
+export type AiCompletionIntent = (typeof AI_COMPLETION_INTENT)[keyof typeof AI_COMPLETION_INTENT];
+
+export interface AiCompletionPromptContext {
+  context: string;
+  contextAfter?: string;
+  noteTitle?: string;
+  sectionHeading?: string;
+  intent?: AiCompletionIntent;
+}
+
 export const AI_WRITING_DEFAULTS = {
   MODE: AI_WRITING_MODE.STANDARD,
   STYLE: AI_WRITING_STYLE.CONCISE,
@@ -69,6 +85,7 @@ export const AI_TRANSLATION_TARGET_ORDER = [
 const AI_WRITING_STYLE_VALUES = new Set<AiWritingStyle>(Object.values(AI_WRITING_STYLE));
 const AI_WRITING_SCENARIO_VALUES = new Set<AiWritingScenario>(Object.values(AI_WRITING_SCENARIO));
 const AI_WRITING_MODE_VALUES = new Set<AiWritingMode>(Object.values(AI_WRITING_MODE));
+const AI_COMPLETION_INTENT_VALUES = new Set<AiCompletionIntent>(Object.values(AI_COMPLETION_INTENT));
 const AI_PROMPT_PRESET_VALUES = new Set<AiPromptPreset>(Object.values(AI_PROMPT_PRESETS));
 
 export function isValidAiWritingStyle(value: unknown): value is AiWritingStyle {
@@ -81,6 +98,10 @@ export function isValidAiWritingScenario(value: unknown): value is AiWritingScen
 
 export function isValidAiWritingMode(value: unknown): value is AiWritingMode {
   return AI_WRITING_MODE_VALUES.has(value as AiWritingMode);
+}
+
+export function isValidAiCompletionIntent(value: unknown): value is AiCompletionIntent {
+  return AI_COMPLETION_INTENT_VALUES.has(value as AiCompletionIntent);
 }
 
 export function isValidAiPromptPreset(value: unknown): value is AiPromptPreset {

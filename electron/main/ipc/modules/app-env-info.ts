@@ -18,6 +18,10 @@ export function registerAppEnvInfoIpcHandlers() {
     logger.debug('Getting environment version...');
     return appEnvInfoService.getEnvVersion();
   });
+  ipcMain.handle(IPC_CHANNELS.APP_GET_SYSTEM_INFO, () => {
+    logger.debug('Getting system info...');
+    return appEnvInfoService.getSystemInfo();
+  });
   ipcMain.handle(IPC_CHANNELS.APP_GET_NAME, () => {
     logger.debug('Getting app name...');
     return appEnvInfoService.getAppName();

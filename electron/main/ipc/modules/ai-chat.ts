@@ -6,11 +6,16 @@ import { IPC_CHANNELS } from '../../constants/ipc.constants.js';
 import { loggerService } from '../../services/log/logger.service.js';
 import { getErrorMessage } from '../../services/error.service.js';
 import {
+  AI_COMPLETION_INTENT,
   AI_PROMPT_PRESETS,
   isValidAiPromptPreset,
   isValidAiTranslationTargetLanguage,
 } from '../../../shared/ai.constants.js';
-import { buildAssistantSystemPrompt, buildEditorSystemPrompt } from '../../prompts/index.js';
+import {
+  buildAssistantSystemPrompt,
+  buildAssistantUserPrompt,
+  buildEditorSystemPrompt,
+} from '../../prompts/index.js';
 import type { AiProvider } from '../../../shared/ai-provider.constants.js';
 
 const logger = loggerService.createLogger('Electron:AI Chat IPC');
@@ -26,7 +31,15 @@ const AiChatGenerateSchema = z.object({
 });
 
 const AiCompletionSchema = z.object({
-  context: z.string().min(1),
+  context: z.string().min(1).max(10000),
+  contextAfter: z.string().max(2000).optional(),
+  noteTitle: z.string().max(500).optional(),
+  sectionHeading: z.string().max(500).optional(),
+  intent: z.enum([
+    AI_COMPLETION_INTENT.CONTINUE_SENTENCE,
+    AI_COMPLETION_INTENT.CONTINUE_PARAGRAPH,
+    AI_COMPLETION_INTENT.BRIDGE_TEXT,
+  ]).optional(),
   systemPrompt: z.string().optional(),
 });
 
@@ -98,6 +111,8 @@ export function registerAIChatHandlers(): void {
               assistantConfig.uiLanguage,
               userInput,
               promptPreset,
+              assistantConfig.writingStyle,
+              assistantConfig.writingScenario,
               targetLanguage ?? undefined,
             ),
           });
@@ -129,14 +144,19 @@ export function registerAIChatHandlers(): void {
     try {
       const validatedPayload: AiCompletionPayload = AiCompletionSchema.parse(payload);
       const assistantConfig = await aiConfigService.resolveAssistantConfig();
-      const systemPrompt = validatedPayload.systemPrompt?.trim()
-        || assistantConfig.customSystemPrompt
+      const customSystemPrompt = validatedPayload.systemPrompt?.trim()
+        || assistantConfig.customSystemPrompt;
+      const systemPrompt = customSystemPrompt
         || buildAssistantSystemPrompt(
           assistantConfig.uiLanguage,
           validatedPayload.context,
           assistantConfig.writingStyle,
           assistantConfig.writingScenario,
+          validatedPayload.intent,
         );
+      const userPrompt = customSystemPrompt
+        ? validatedPayload.context
+        : buildAssistantUserPrompt(validatedPayload);
       const answer = await generateAIResponse({
         provider: assistantConfig.provider,
         endpoint: assistantConfig.endpoint,
@@ -144,7 +164,7 @@ export function registerAIChatHandlers(): void {
         model: assistantConfig.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: validatedPayload.context },
+          { role: 'user', content: userPrompt },
         ],
       });
 

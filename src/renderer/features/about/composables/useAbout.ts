@@ -21,6 +21,10 @@ export function useAbout() {
     chrome: '',
     v8: ''
   });
+  const systemInfo = ref<AboutInfo['systemInfo']>({
+    operatingSystem: '',
+    architecture: '',
+  });
 
   const isMicrosoftStoreDistribution = computed(() => distribution.value === APP_DISTRIBUTIONS.MICROSOFT_STORE);
 
@@ -30,6 +34,7 @@ export function useAbout() {
       appVersion.value = aboutInfo.appVersion;
       appName.value = aboutInfo.appName;
       envVersion.value = aboutInfo.envVersion;
+      systemInfo.value = aboutInfo.systemInfo;
       distribution.value = aboutInfo.distribution;
     } catch (error) {
       aboutLogger.error(`Failed to load version info: ${getErrorMessage(error)}`);
@@ -42,6 +47,7 @@ export function useAbout() {
         appName: appName.value,
         appVersion: appVersion.value,
         envVersion: envVersion.value,
+        systemInfo: systemInfo.value,
         distribution: distribution.value,
       });
       return true;
@@ -62,6 +68,7 @@ export function useAbout() {
     appVersion,
     appName,
     envVersion,
+    systemInfo,
     isMicrosoftStoreDistribution,
     openAbout: aboutStore.openAbout,
     closeAbout: aboutStore.closeAbout,

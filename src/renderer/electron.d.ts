@@ -70,6 +70,11 @@ interface AppEnvVersion {
   v8: string;
 }
 
+interface AppSystemInfo {
+  operatingSystem: string;
+  architecture: string;
+}
+
 interface WindowStatePayload {
   isMaximized: boolean;
 }
@@ -102,10 +107,9 @@ interface AiSourceConfig {
   capabilities: string[];
 }
 
-interface AiCompletePayload {
-  context: string;
+type AiCompletePayload = import('@shared/ai.constants').AiCompletionPromptContext & {
   systemPrompt?: string;
-}
+};
 
 type AiPromptPreset = import('@shared/ai.constants').AiPromptPreset;
 
@@ -269,6 +273,7 @@ declare global {
         getVersion: () => Promise<string>;
         getDistribution: () => Promise<AppDistribution>;
         getEnvVersion: () => Promise<AppEnvVersion>;
+        getSystemInfo: () => Promise<AppSystemInfo>;
         getName: () => Promise<string>;
         openStorePage: () => Promise<void>;
       };
@@ -632,7 +637,6 @@ declare global {
             | 'tool-call-limit'
             | 'iteration-limit'
             | 'runtime-limit'
-            | 'tool-failure-limit'
             | 'weak-search-limit'
             | 'cancelled';
           error?: string;

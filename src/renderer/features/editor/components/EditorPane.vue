@@ -44,6 +44,16 @@ const aiAssistant = useAiAssistant();
 const { activeNote } = storeToRefs(workspaceStore);
 const { config } = storeToRefs(settingsStore);
 const isActiveNoteReadMode = computed(() => Boolean(activeNote.value?.locked));
+const isAutoContinueEnabled = computed(() => (
+  config.value.aiAssistant?.enabled === true
+  && config.value.aiAssistant.autoContinue === true
+));
+
+const getAiDocumentContext = () => ({
+  noteId: activeNote.value?.id ?? null,
+  noteTitle: activeNote.value?.title,
+  suggestionHint: t('text.aiAutoContinueSuggestionHint'),
+});
 
 const editorHost = ref<HTMLElement | null>(null);
 const editorAiOperationPopover = ref<HTMLElement | null>(null);
@@ -338,9 +348,9 @@ onMounted(() => {
     bracketMatching: config.value.editor.bracketMatching,
     autoCloseBrackets: config.value.editor.autoCloseBrackets,
     autoIndent: config.value.editor.autoIndent,
-    onChange: (value, isAiCompletion) => {
+    onChange: (change) => {
       syncingFromEditor = true;
-      emit('update:modelValue', value);
+      emit('update:modelValue', change.value);
       queueMicrotask(() => {
         syncingFromEditor = false;
       });
@@ -348,21 +358,20 @@ onMounted(() => {
       // 触发AI助手
       if (
         editorApi?.view
-        && config.value.aiAssistant?.enabled
+        && isAutoContinueEnabled.value
         && !hasActiveAiOperation.value
       ) {
-        if (!isAiCompletion) {
-          aiAssistant.handleTyping(editorApi.view, config.value);
-        } else if (config.value.aiAssistant.autoContinue) {
-          aiAssistant.handleTyping(editorApi.view, config.value, true);
-        }
+        aiAssistant.handleDocumentChange(editorApi.view, config.value, change.origin);
       }
 
       editorContextMenu.syncAiOperationState();
       scheduleAiOperationCardPosition();
     },
-    onSelectionChange: (selection) => {
+    onSelectionChange: (selection, selectionOnly) => {
       emit('selection-change', selection);
+      if (selectionOnly) {
+        aiAssistant.handleSelectionChange();
+      }
     },
   });
 
@@ -370,6 +379,7 @@ onMounted(() => {
   if (editorApi?.view) {
     setEditorView(editorApi.view);
     aiAssistant.setEditorView(editorApi.view);
+    aiAssistant.setDocumentContext(getAiDocumentContext());
     editorApi.view.scrollDOM.addEventListener('scroll', scheduleAiOperationCardPosition, { passive: true });
   }
 
@@ -378,7 +388,7 @@ onMounted(() => {
   editorResizeObserver.observe(editorHost.value);
 
   // 设置AI助手状态
-  aiAssistant.setEnabled(config.value.aiAssistant?.enabled ?? false);
+  aiAssistant.setEnabled(isAutoContinueEnabled.value);
 });
 
 watch(
@@ -410,10 +420,12 @@ watch(
 );
 
 watch(
-  () => activeNote.value?.id ?? null,
+  () => [activeNote.value?.id ?? null, activeNote.value?.title ?? ''] as const,
   () => {
+    aiAssistant.setDocumentContext(getAiDocumentContext());
     editorContextMenu.discardAiOperation();
   },
+  { flush: 'sync' },
 );
 
 watch(
@@ -489,9 +501,9 @@ watch(
 );
 
 watch(
-  () => config.value.aiAssistant?.enabled,
+  isAutoContinueEnabled,
   (enabled) => {
-    aiAssistant.setEnabled(enabled ?? false);
+    aiAssistant.setEnabled(enabled);
   }
 );
 
@@ -507,6 +519,7 @@ onBeforeUnmount(() => {
   setEditorView(null);
   // 清理AI助手
   aiAssistant.cleanup();
+  aiAssistant.setEditorView(null);
   editorApi?.destroy();
 });
 </script>

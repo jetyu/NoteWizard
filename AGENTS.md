@@ -23,6 +23,7 @@ Do not copy the full contents of those files here. Read them when the task touch
 * Do not refactor unrelated code.
 * Do not reformat unrelated files.
 * Match the existing style of the touched files.
+* Hard constraint: only use file naming and layering patterns already established in this repository. Do not invent a file type, suffix, or architectural layer that is neither defined by the project rules nor demonstrated by an existing repository precedent.
 * Remove only unused code introduced by your own changes.
 
 ## Snaptium architecture rules

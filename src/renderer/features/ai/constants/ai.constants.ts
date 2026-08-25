@@ -100,14 +100,17 @@ export const AI_ASSISTANT_DEFAULTS = {
   /** 最小输入长度（字符） - 触发补全所需的最小字符数 */
   MIN_INPUT_LENGTH: 10,
   
-  /** 上下文长度（字符） - 发送给AI的上下文字符数 */
-  CONTEXT_LENGTH: 500,
+  /** 光标前上下文长度（字符） */
+  CONTEXT_LENGTH: 2000,
+
+  /** 光标后上下文长度（字符） */
+  CONTEXT_AFTER_LENGTH: 500,
   
-  /** 请求超时（毫秒） - AI请求的最大等待时间 */
-  REQUEST_TIMEOUT: 30000,
-  
-  /** 连续补全延迟（毫秒） - 接受建议后触发下一次补全的延迟 */
-  CONTINUOUS_COMPLETION_DELAY: 300,
+  /** 连续补全延迟相对普通模式的比例 */
+  CONTINUOUS_COMPLETION_DELAY_RATIO: 0.6,
+
+  /** 连续补全观察期下限（毫秒） */
+  MIN_CONTINUOUS_COMPLETION_DELAY: 500,
   
   /** 最大上下文长度（字符） - 防止发送过长的上下文 */
   MAX_CONTEXT_LENGTH: 10000,
