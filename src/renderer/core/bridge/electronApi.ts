@@ -1,6 +1,7 @@
 import type { KnowledgeCopilotConversationContext } from '@shared/knowledge-copilot.constants';
 import type { DiagnosticLogExportResult } from '@shared/diagnostic-log.constants';
 import type { BuiltInAiHealthSnapshot } from '@shared/built-in-ai.constants';
+import type { AiCompletionPromptContext } from '@shared/ai.constants';
 import type {
   ScheduledBackupRunPayload,
   ScheduledBackupRunResult,
@@ -167,8 +168,7 @@ export interface AiChatGeneratePayload {
   targetLanguage?: import('@shared/ai.constants').AiTranslationTargetLanguage;
 }
 
-export interface AiChatGenerateCompletionPayload {
-  context: string;
+export interface AiChatGenerateCompletionPayload extends AiCompletionPromptContext {
   // Optional explicit override for advanced callers. Default system prompts are built in main.
   systemPrompt?: string;
 }
@@ -184,6 +184,11 @@ export interface AppEnvVersion {
   node: string;
   chrome: string;
   v8: string;
+}
+
+export interface AppSystemInfo {
+  operatingSystem: string;
+  architecture: string;
 }
 
 export interface WindowStatePayload {
@@ -483,7 +488,6 @@ export interface KnowledgeCopilotTaskResult {
     | 'tool-call-limit'
     | 'iteration-limit'
     | 'runtime-limit'
-    | 'tool-failure-limit'
     | 'weak-search-limit'
     | 'cancelled';
   error?: string;
@@ -688,6 +692,7 @@ export const electronApi = {
     getDistribution: () => electronApi.app.getApi().getDistribution(),
     getName: () => electronApi.app.getApi().getName(),
     getEnvVersion: () => electronApi.app.getApi().getEnvVersion(),
+    getSystemInfo: () => electronApi.app.getApi().getSystemInfo(),
     openStorePage: () => electronApi.app.getApi().openStorePage(),
   },
 

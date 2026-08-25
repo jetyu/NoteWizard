@@ -1,9 +1,9 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="modelValue" ref="overlayRef" class="appearance-overlay" @click.self="closeDialog">
-        <section ref="dialogRef" class="appearance-dialog" :style="dialogStyle" @click.stop>
-          <header ref="dragHandleRef" class="appearance-dialog__header dialog-drag-handle" @pointerdown="onDragHandlePointerDown">
+      <div v-if="modelValue" class="appearance-overlay" @click.self="closeDialog">
+        <section class="appearance-dialog" @click.stop>
+          <header class="appearance-dialog__header">
             <div class="appearance-dialog__title-wrap">
               <NotebookVisualIcon
                 :icon-color="iconColor"
@@ -56,9 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue';
 import { IconX } from '@tabler/icons-vue';
-import { useDraggableDialog } from '@renderer/core/composables/useDraggableDialog';
 import {
   NOTEBOOK_ICON_COLORS,
   NOTEBOOK_ICON_COLOR_VALUES,
@@ -67,7 +65,7 @@ import {
 import NotebookVisualIcon from './NotebookVisualIcon.vue';
 import { WORKSPACE_CONSTANTS } from '../constants/workspace.constants';
 
-const props = defineProps<{
+defineProps<{
   modelValue: boolean;
   notebookName: string;
   iconColor?: NotebookIconColor;
@@ -79,15 +77,6 @@ const emit = defineEmits<{
 }>();
 
 const notebookColors = NOTEBOOK_ICON_COLOR_VALUES as readonly NotebookIconColor[];
-const overlayRef = ref<HTMLElement | null>(null);
-const dialogRef = ref<HTMLElement | null>(null);
-const dragHandleRef = ref<HTMLElement | null>(null);
-const { dialogStyle, onDragHandlePointerDown } = useDraggableDialog({
-  isOpen: toRef(props, 'modelValue'),
-  overlayRef,
-  dialogRef,
-  handleRef: dragHandleRef,
-});
 
 const colorLabelKeyMap = {
   [NOTEBOOK_ICON_COLORS.SLATE]: WORKSPACE_CONSTANTS.MENU.NOTEBOOK_ICON_COLOR_SLATE,

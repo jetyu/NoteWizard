@@ -367,6 +367,7 @@ import { resolveAiSourceModel } from '@shared/ai-provider.constants';
 import type {
   KnowledgeCopilotExecutedWrite,
   KnowledgeCopilotPendingAction,
+  KnowledgeCopilotTaskResult,
   KnowledgeAnswerStage,
   KnowledgeCopilotStep,
   KnowledgeCopilotTraceEvent,
@@ -1525,6 +1526,71 @@ function getPendingActions(question: WorkbenchQuestionEntry): KnowledgeCopilotPe
   return getAgentMetadata(question)?.pendingActions ?? [];
 }
 
+async function applyResumedAgentTaskResult(
+  question: WorkbenchQuestionEntry,
+  previousMetadata: AgentTaskMetadata,
+  result: KnowledgeCopilotTaskResult,
+): Promise<void> {
+  const previousWriteIds = new Set(previousMetadata.executedWrites.map((write) => write.id));
+  const hasNewExecutedWrite = result.executedWrites.some((write) => !previousWriteIds.has(write.id));
+  const metadata: AgentTaskMetadata = {
+    writeMode: result.writeMode,
+    steps: result.steps,
+    traceEvents: result.traceEvents,
+    pendingWrites: result.pendingWrites,
+    executedWrites: result.executedWrites,
+    dismissedWriteIds: previousMetadata.dismissedWriteIds,
+    createdWriteIds: previousMetadata.createdWriteIds,
+    conversationId: result.conversationId,
+    pendingActions: result.pendingActions,
+  };
+
+  if (
+    !result.cancelled
+    && (result.conversationSummary !== undefined || result.conversationSummaryUpToQuestionId !== undefined)
+  ) {
+    await workbenchStore.updateConversationSummary(
+      question.threadId,
+      result.conversationSummary,
+      result.conversationSummaryUpToQuestionId,
+    );
+  }
+
+  updateActiveRun(question.threadId, { sources: result.sources });
+  const sources = buildQuestionSources(result.sources);
+  const updatedQuestion = await workbenchStore.recordQuestion({
+    query: question.query,
+    threadId: question.threadId,
+    mode: 'agent-task',
+    agentWriteMode: metadata.writeMode,
+    askedAt: question.askedAt,
+    answeredAt: Date.now(),
+    responseTimeMs: question.responseTimeMs,
+    generationStatus: result.cancelled ? 'stopped' : result.success ? 'completed' : 'failed',
+    error: result.error,
+    answer: result.finalAnswer ?? getQuestionAnswer(question),
+    sourceNoteIds: sources.map((source) => source.noteId),
+    sources,
+    agentSteps: metadata.steps,
+    agentTraceEvents: metadata.traceEvents,
+    pendingWrites: metadata.pendingWrites,
+    executedWrites: metadata.executedWrites,
+    dismissedWriteIds: metadata.dismissedWriteIds,
+    createdWriteIds: metadata.createdWriteIds,
+  });
+
+  const questionId = updatedQuestion?.id ?? question.id;
+  setAgentTaskMetadata(questionId, metadata);
+  if (updatedQuestion && selectedQuestion.value?.id === question.id) {
+    selectedQuestion.value = updatedQuestion;
+  }
+  clearQuestionTransientState(questionId);
+
+  if (hasNewExecutedWrite) {
+    await initializeWorkspace();
+  }
+}
+
 async function editAndResumeAgentAction(question: WorkbenchQuestionEntry, action: KnowledgeCopilotPendingAction, actionIndex: number): Promise<void> {
   const editedJson = window.prompt(t('search.agentTaskEditActionPrompt'), JSON.stringify(action.args, null, 2));
   if (editedJson === null) return;
@@ -1552,14 +1618,7 @@ async function editAndResumeAgentAction(question: WorkbenchQuestionEntry, action
     };
     try {
       const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode, requestId);
-      setAgentTaskMetadata(question.id, {
-        ...metadata,
-        steps: [...metadata.steps, ...result.steps],
-        traceEvents: [...metadata.traceEvents, ...result.traceEvents],
-        executedWrites: [...result.executedWrites, ...metadata.executedWrites],
-        pendingActions: result.pendingActions,
-        conversationId: result.conversationId,
-      });
+      await applyResumedAgentTaskResult(question, metadata, result);
     } finally {
       removeActiveRun(question.threadId, requestId);
     }
@@ -1590,14 +1649,9 @@ async function resumeAgentAction(question: WorkbenchQuestionEntry, decision: 'ap
     : ({ type: 'reject' as const, message: 'User rejected this action' }));
   try {
     const result = await resumeTask(metadata.conversationId || question.threadId, decisions, metadata.writeMode, requestId);
-    setAgentTaskMetadata(question.id, {
-      ...metadata,
-      steps: [...metadata.steps, ...result.steps],
-      traceEvents: [...metadata.traceEvents, ...result.traceEvents],
-      executedWrites: [...result.executedWrites, ...metadata.executedWrites],
-      pendingActions: result.pendingActions,
-      conversationId: result.conversationId,
-    });
+    await applyResumedAgentTaskResult(question, metadata, result);
+  } catch (error) {
+    activeQuestionErrors.value = { ...activeQuestionErrors.value, [question.id]: getErrorMessage(error) };
   } finally {
     removeActiveRun(question.threadId, requestId);
   }

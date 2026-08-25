@@ -1,12 +1,19 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
-import { StateField, StateEffect, EditorState, Annotation } from '@codemirror/state';
+import { StateField, StateEffect, EditorState, Annotation, Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 
+interface AiSuggestionValue {
+  text: string;
+  hint?: string;
+}
+
+export type AiSuggestionAcceptance = 'partial' | 'complete';
+
 // 定义补全建议的状态效果
-const setSuggestion = StateEffect.define<string | null>();
+const setSuggestion = StateEffect.define<AiSuggestionValue | null>();
 
 // 定义标记：表示这是接受AI建议的操作
-export const acceptedSuggestionAnnotation = Annotation.define<boolean>();
+export const acceptedSuggestionAnnotation = Annotation.define<AiSuggestionAcceptance>();
 
 // 记录最近一次建议被清除（无论是被接受、拒绝还是用户打字覆盖）的时间戳
 let lastSuggestionClearTime = 0;
@@ -16,45 +23,53 @@ export function getLastSuggestionClearTime(): number {
 }
 
 // 补全建议的状态字段
-const suggestionState = StateField.define<string | null>({
+const suggestionState = StateField.define<AiSuggestionValue | null>({
   create: () => null,
   update(value, tr) {
     let nextValue = value;
+    let hasSuggestionEffect = false;
     for (const effect of tr.effects) {
       if (effect.is(setSuggestion)) {
         nextValue = effect.value;
+        hasSuggestionEffect = true;
       }
     }
-    // 如果文档发生变化（用户输入），清除建议
-    if (tr.docChanged && nextValue !== null) {
+
+    // 内容或选择变化时清除旧建议；部分接受会通过 effect 显式保留剩余文本。
+    if ((tr.docChanged || tr.selection) && nextValue !== null && !hasSuggestionEffect) {
       nextValue = null;
     }
-    
-    // 如果发生状态翻转（从有建议变为无建议），重置冷却时间
+
     if (value !== null && nextValue === null) {
       lastSuggestionClearTime = Date.now();
     }
-    
+
     return nextValue;
   },
 });
 
 // Ghost text widget - 显示灰色的补全建议
 class SuggestionWidget extends WidgetType {
-  constructor(readonly suggestion: string) {
+  constructor(readonly suggestion: AiSuggestionValue) {
     super();
   }
 
   toDOM() {
     const span = document.createElement('span');
-    span.textContent = this.suggestion;
     span.className = 'cm-ai-suggestion';
-    span.style.cssText = 'color: #888; opacity: 0.6; pointer-events: none; user-select: none;';
+    span.append(document.createTextNode(this.suggestion.text));
+    if (this.suggestion.hint) {
+      const hint = document.createElement('span');
+      hint.className = 'cm-ai-suggestion-hint';
+      hint.textContent = this.suggestion.hint;
+      span.append(hint);
+    }
     return span;
   }
 
   eq(other: SuggestionWidget) {
-    return this.suggestion === other.suggestion;
+    return this.suggestion.text === other.suggestion.text
+      && this.suggestion.hint === other.suggestion.hint;
   }
 
   ignoreEvent() {
@@ -96,25 +111,74 @@ const suggestionDecorations = ViewPlugin.fromClass(
   }
 );
 
-// 接受补全的命令
-function acceptSuggestion(view: EditorView): boolean {
+function acceptSuggestionRange(view: EditorView, acceptedLength: number): boolean {
   const suggestion = view.state.field(suggestionState);
   if (!suggestion) {
-    return false; // 返回 false 让 Tab 键继续执行默认行为（缩进）
+    return false;
   }
 
+  const acceptedText = suggestion.text.slice(0, acceptedLength);
+  if (!acceptedText) {
+    return false;
+  }
+
+  const remainingText = suggestion.text.slice(acceptedText.length);
   const pos = view.state.selection.main.head;
   view.dispatch({
-    changes: { from: pos, insert: suggestion },
-    selection: { anchor: pos + suggestion.length },
-    effects: setSuggestion.of(null),
-    annotations: [acceptedSuggestionAnnotation.of(true)],
+    changes: { from: pos, insert: acceptedText },
+    selection: { anchor: pos + acceptedText.length },
+    effects: setSuggestion.of(remainingText
+      ? { ...suggestion, text: remainingText }
+      : null),
+    annotations: [acceptedSuggestionAnnotation.of(remainingText ? 'partial' : 'complete')],
   });
 
-  return true; // 返回 true 表示已处理，阻止默认行为
+  return true;
 }
 
-// 拒绝补全的命令
+function fallbackWordLength(text: string): number {
+  const match = text.match(/^[\s\p{P}\p{S}]*(?:[\p{L}\p{N}_]+|[\u3400-\u9fff])/u);
+  return match?.[0].length ?? Array.from(text)[0]?.length ?? 0;
+}
+
+function nextWordLength(text: string): number {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+  let end = 0;
+  for (const segment of segmenter.segment(text)) {
+    end = segment.index + segment.segment.length;
+    if (segment.isWordLike) {
+      return end;
+    }
+  }
+  return end || fallbackWordLength(text);
+}
+
+function nextSentenceLength(text: string): number {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'sentence' });
+  const firstSegment = segmenter.segment(text)[Symbol.iterator]().next();
+  if (!firstSegment.done) {
+    return firstSegment.value.segment.length;
+  }
+
+  const fallback = text.match(/^.*?[。！？.!?]+[”’"'）】]?/u);
+  return fallback?.[0].length ?? text.length;
+}
+
+export function acceptSuggestion(view: EditorView): boolean {
+  const suggestion = view.state.field(suggestionState);
+  return suggestion ? acceptSuggestionRange(view, suggestion.text.length) : false;
+}
+
+export function acceptNextWordSuggestion(view: EditorView): boolean {
+  const suggestion = view.state.field(suggestionState);
+  return suggestion ? acceptSuggestionRange(view, nextWordLength(suggestion.text)) : false;
+}
+
+export function acceptNextSentenceSuggestion(view: EditorView): boolean {
+  const suggestion = view.state.field(suggestionState);
+  return suggestion ? acceptSuggestionRange(view, nextSentenceLength(suggestion.text)) : false;
+}
+
 function rejectSuggestion(view: EditorView): boolean {
   const suggestion = view.state.field(suggestionState);
   if (!suggestion) {
@@ -128,10 +192,15 @@ function rejectSuggestion(view: EditorView): boolean {
   return true;
 }
 
-// 键盘快捷键
-// Tab 键：有建议时接受，无建议时执行默认缩进
-// Escape 键：拒绝建议
-const suggestionKeymap = keymap.of([
+const suggestionKeymap = Prec.highest(keymap.of([
+  {
+    key: 'Ctrl-Shift-ArrowRight',
+    run: acceptNextSentenceSuggestion,
+  },
+  {
+    key: 'Ctrl-ArrowRight',
+    run: acceptNextWordSuggestion,
+  },
   {
     key: 'Tab',
     run: acceptSuggestion,
@@ -140,45 +209,34 @@ const suggestionKeymap = keymap.of([
     key: 'Escape',
     run: rejectSuggestion,
   },
-]);
+]));
 
-/**
- * 显示AI补全建议
- */
-export function showAiSuggestion(view: EditorView, suggestion: string) {
+export function showAiSuggestion(view: EditorView, suggestion: string, hint?: string) {
   if (!suggestion) return;
 
   view.dispatch({
-    effects: setSuggestion.of(suggestion),
+    effects: setSuggestion.of({ text: suggestion, hint }),
   });
 }
 
-/**
- * 清除AI补全建议
- */
 export function clearAiSuggestion(view: EditorView) {
   view.dispatch({
     effects: setSuggestion.of(null),
   });
 }
 
-/**
- * 获取当前的补全建议
- */
 export function getCurrentSuggestion(state: EditorState): string | null {
-  return state.field(suggestionState, false) || null;
+  return state.field(suggestionState, false)?.text || null;
 }
 
-/**
- * 检查是否有活动的补全建议
- */
+export function getCurrentSuggestionHint(state: EditorState): string | null {
+  return state.field(suggestionState, false)?.hint || null;
+}
+
 export function hasSuggestion(state: EditorState): boolean {
   return getCurrentSuggestion(state) !== null;
 }
 
-/**
- * AI补全插件扩展
- */
 export const aiCompletionPlugin = [
   suggestionState,
   suggestionDecorations,
