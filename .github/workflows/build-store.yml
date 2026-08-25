@@ -71,7 +71,6 @@ jobs:
           npm version $targetVersion --no-git-tag-version
 
       - name: Build Microsoft Store AppX package
-        shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
@@ -81,32 +80,7 @@ jobs:
           STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.STORE_PUBLISHER_DISPLAY_NAME }}
           STORE_DISPLAY_NAME: ${{ vars.STORE_DISPLAY_NAME }}
           STORE_APPLICATION_ID: ${{ vars.STORE_APPLICATION_ID }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          $builderArgs = @(
-            '--win',
-            'appx',
-            '--x64',
-            '--publish',
-            'never',
-            '--config.directories.output=dist/store'
-          )
-
-          function Add-BuilderConfigArg($name, $value) {
-            if ($value) {
-              $script:builderArgs += "--config.$name=$value"
-            }
-          }
-
-          Add-BuilderConfigArg 'appx.identityName' $env:STORE_IDENTITY_NAME
-          Add-BuilderConfigArg 'appx.publisher' $env:STORE_PUBLISHER
-          Add-BuilderConfigArg 'appx.publisherDisplayName' $env:STORE_PUBLISHER_DISPLAY_NAME
-          Add-BuilderConfigArg 'appx.displayName' $env:STORE_DISPLAY_NAME
-          Add-BuilderConfigArg 'appx.applicationId' $env:STORE_APPLICATION_ID
-
-          npm run build
-          npx electron-builder @builderArgs
+        run: npm run dist:winstore
 
       - name: Upload Microsoft Store package artifacts
         uses: actions/upload-artifact@v6

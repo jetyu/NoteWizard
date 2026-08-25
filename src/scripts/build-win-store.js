@@ -20,9 +20,15 @@ const command = resolve(
 );
 const outputDir = 'dist/store';
 const staleUnpackedTmpDir = `${outputDir}/win-unpacked.tmp`;
+const storeConfig = Object.fromEntries(
+  Object.entries(DEFAULT_STORE_CONFIG).map(([name, defaultValue]) => [
+    name,
+    process.env[name]?.trim() || defaultValue
+  ])
+);
 const env = {
-  ...DEFAULT_STORE_CONFIG,
   ...process.env,
+  ...storeConfig,
   CSC_IDENTITY_AUTO_DISCOVERY: process.env.CSC_IDENTITY_AUTO_DISCOVERY ?? 'false'
 };
 
