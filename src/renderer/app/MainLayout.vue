@@ -98,16 +98,6 @@ async function showSettings(tab: string = 'general'): Promise<void> {
   await setActiveMainView('settings');
 }
 
-async function showSoftwareUpdateAndCheck(): Promise<void> {
-  if (updaterStore.isStoreDistribution) {
-    await showSettings('general');
-    return;
-  }
-
-  await showSettings('software-update');
-  await updaterStore.checkForUpdates(false);
-}
-
 function handleBeforeUnload(): void {
   forceFlushAutoSave().catch((err) => {
     mainLayoutLogger.error(`Failed to save before unload: ${getErrorMessage(err)}`);
@@ -124,7 +114,7 @@ onMounted(async () => {
   });
   if (electronApi.menu.isAvailable()) {
     removeUpdateMenuListener = electronApi.menu.onCheckForUpdates(() => {
-      void showSoftwareUpdateAndCheck();
+      void updaterStore.checkForUpdatesWithDialog();
     });
   }
   await syncWindowState();

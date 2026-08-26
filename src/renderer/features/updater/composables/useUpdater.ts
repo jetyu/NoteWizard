@@ -8,6 +8,8 @@ export function useUpdater() {
   return {
     ...state,
     checkForUpdates: updaterStore.checkForUpdates,
+    checkForUpdatesWithDialog: updaterStore.checkForUpdatesWithDialog,
+    closeUpdateDialog: updaterStore.closeUpdateDialog,
     downloadUpdate: updaterStore.downloadUpdate,
     cancelDownload: updaterStore.cancelDownload,
     installUpdate: updaterStore.installUpdate,

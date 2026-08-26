@@ -167,8 +167,7 @@ function handleAction(action?: MenuAction) {
       break;
     case 'update':
       if (!updaterStore.isStoreDistribution) {
-        openSettings('software-update');
-        void updaterStore.checkForUpdates(false);
+        void updaterStore.checkForUpdatesWithDialog();
       }
       break;
     case 'feedback':

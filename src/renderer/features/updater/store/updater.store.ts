@@ -70,6 +70,7 @@ export const useUpdaterStore = defineStore('updater', () => {
   const isSilentChecking = ref(false);
   const visibleCheckRequested = ref(false);
   const isStoreDistribution = ref(false);
+  const isUpdateDialogOpen = ref(false);
 
   let cleanupListeners: (() => void) | null = null;
   let initialized = false;
@@ -304,6 +305,21 @@ export const useUpdaterStore = defineStore('updater', () => {
     }
   }
 
+  async function checkForUpdatesWithDialog(): Promise<void> {
+    if (isStoreDistribution.value) return;
+
+    isUpdateDialogOpen.value = true;
+    if (isDownloading.value || isDownloadRequestPending.value) {
+      return;
+    }
+
+    await checkForUpdates(false);
+  }
+
+  function closeUpdateDialog(): void {
+    isUpdateDialogOpen.value = false;
+  }
+
   async function downloadUpdate(): Promise<void> {
     if (isStoreDistribution.value) return;
     if (isDownloading.value || isDownloadRequestPending.value) return;
@@ -423,12 +439,15 @@ export const useUpdaterStore = defineStore('updater', () => {
     error,
     showNoUpdateResult,
     isStoreDistribution,
+    isUpdateDialogOpen,
     isManualInstallUpdate,
     updatePanelState,
     isDownloadRequestPending,
     showAvailableUpdateActions,
     showInstallActions,
     checkForUpdates,
+    checkForUpdatesWithDialog,
+    closeUpdateDialog,
     downloadUpdate,
     cancelDownload,
     installUpdate,

@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type Component, watch, watchEffect } from 'vue';
+import { computed, type Component, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconAdjustments,
@@ -58,7 +58,6 @@ import {
 } from '@tabler/icons-vue';
 import { useUpdaterStore } from '@renderer/features/updater';
 import { useSettingsPanel } from '../composables/useSettingsPanel';
-import { useSettingsStore } from '../store/settings.store';
 import GeneralSettings from './tabs/GeneralSettings.vue';
 import SoftwareUpdateSettings from './tabs/SoftwareUpdateSettings.vue';
 import PreviewSettings from './tabs/PreviewSettings.vue';
@@ -75,9 +74,7 @@ import AccessControlSettings from './tabs/AccessControlSettings.vue';
 
 const { t } = useI18n();
 const updaterStore = useUpdaterStore();
-const settingsStore = useSettingsStore();
 const { activeTab, setActiveTab } = useSettingsPanel();
-let hasAutoCheckedUpdates = false;
 
 type TabItem =
   | { id: string; type: 'group'; labelKey: string }
@@ -112,33 +109,6 @@ watchEffect(() => {
     setActiveTab('general');
   }
 });
-
-watch(
-  [activeTab, () => settingsStore.config.softwareUpdate.autoCheck],
-  ([tab, autoCheckUpdates]) => {
-    if (
-      tab !== 'software-update' ||
-      !autoCheckUpdates ||
-      updaterStore.isStoreDistribution ||
-      hasAutoCheckedUpdates
-    ) {
-      return;
-    }
-
-    hasAutoCheckedUpdates = true;
-    if (
-      updaterStore.updateAvailable ||
-      updaterStore.isDownloading ||
-      updaterStore.isDownloadRequestPending ||
-      updaterStore.isUpdateDownloaded
-    ) {
-      return;
-    }
-
-    void updaterStore.checkForUpdates(false);
-  },
-  { immediate: true },
-);
 
 const currentComponent = computed(() => {
   const tab = tabs.value.find((item) => item.id === activeTab.value);

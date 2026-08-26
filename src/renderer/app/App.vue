@@ -6,6 +6,7 @@
   <HistoryDialog />
   <NotePropertiesDialog />
   <AccessControlOverlay />
+  <UpdateDialog />
 </template>
 
 
@@ -26,7 +27,7 @@ import { useSyncLifecycle } from '@renderer/features/sync';
 import { AccessControlOverlay } from '@renderer/features/security';
 import { useFavoritesStore } from '@renderer/features/favorites/store/favorites.store';
 import { electronApi } from '@renderer/core/bridge/electronApi';
-import { useUpdaterStore } from '@renderer/features/updater';
+import { UpdateDialog, useUpdaterStore } from '@renderer/features/updater';
 import { useAppShellStore } from './store/appShell.store';
 import { useQuickCapture } from '@renderer/features/quick-capture';
 import { useAccessControlActivity } from '@renderer/features/security/composables/useAccessControlActivity';

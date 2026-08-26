@@ -1,4 +1,11 @@
-### v2.2.8 - 2026-08-28 
+### v2.2.9 - 2026-08-27
+This update optimizes details and user experience.
+#### Improvements
+* Improved the software update experience
+#### Fixes
+* Fixed known issues
+
+### v2.2.8 - 2026-08-26 
 This update optimizes details and user experience.
 #### Improvements
 * Improved the Knowledge Copilot user experience
