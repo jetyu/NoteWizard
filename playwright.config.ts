@@ -7,7 +7,7 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:5188',
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,7 +18,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev:renderer',
-    url: 'http://127.0.0.1:5173',
+    url: 'http://127.0.0.1:5188',
     reuseExistingServer: true,
     timeout: 120_000,
   },

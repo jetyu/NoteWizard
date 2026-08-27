@@ -35,7 +35,7 @@ export function secureWebContents(win: BrowserWindow, isDev: boolean): void {
 
   webContents.on('will-navigate', (event: Event, url: string) => {
     const allowedPrefixes = isDev
-      ? ['http://127.0.0.1:5173']
+      ? ['http://127.0.0.1:5188']
       : ['file://'];
 
     const isAllowed = allowedPrefixes.some((prefix) => url.startsWith(prefix));
@@ -79,7 +79,7 @@ export function createMainWindow({ isDev, appPath }: CreateMainWindowOptions): B
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
   if (isDev) {
-    mainWindow.loadURL('http://127.0.0.1:5173');
+    mainWindow.loadURL('http://127.0.0.1:5188');
   } else {
     mainWindow.loadFile(path.join(appPath, 'dist/renderer/index.html'));
   }
