@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import packageJson from './package.json' with { type: 'json' };
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -7,7 +8,7 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:5188',
+    baseURL: packageJson.devServer.url,
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,7 +19,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev:renderer',
-    url: 'http://127.0.0.1:5188',
+    url: packageJson.devServer.url,
     reuseExistingServer: true,
     timeout: 120_000,
   },

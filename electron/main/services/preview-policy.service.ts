@@ -3,8 +3,9 @@ import {
   isTrustedRemoteImageUrl,
   normalizeTrustedRemoteImageHosts,
 } from '../../shared/preview-security.constants.js';
+import packageJson from '../../../package.json' with { type: 'json' };
 
-const DEV_SERVER_IMAGE_ORIGIN = 'http://127.0.0.1:5173';
+const DEV_SERVER_IMAGE_ORIGIN = new URL(packageJson.devServer.url).origin;
 
 type RemoteImageMode = 'blocked' | 'trusted' | 'all';
 

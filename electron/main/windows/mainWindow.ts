@@ -1,6 +1,7 @@
 import { BrowserWindow, shell, type Event } from 'electron';
 import path from 'node:path';
 import { $t } from '../utils/i18n.js';
+import packageJson from '../../../package.json' with { type: 'json' };
 
 interface CreateMainWindowOptions {
   isDev: boolean;
@@ -35,7 +36,7 @@ export function secureWebContents(win: BrowserWindow, isDev: boolean): void {
 
   webContents.on('will-navigate', (event: Event, url: string) => {
     const allowedPrefixes = isDev
-      ? ['http://127.0.0.1:5188']
+      ? [packageJson.devServer.url]
       : ['file://'];
 
     const isAllowed = allowedPrefixes.some((prefix) => url.startsWith(prefix));
@@ -79,7 +80,7 @@ export function createMainWindow({ isDev, appPath }: CreateMainWindowOptions): B
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
   if (isDev) {
-    mainWindow.loadURL('http://127.0.0.1:5188');
+    mainWindow.loadURL(packageJson.devServer.url);
   } else {
     mainWindow.loadFile(path.join(appPath, 'dist/renderer/index.html'));
   }

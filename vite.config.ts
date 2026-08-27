@@ -2,9 +2,11 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import packageJson from './package.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const devServerUrl = new URL(packageJson.devServer.url);
 const rendererChunkTargetSize = 480 * 1024;
 const codeMirrorVendorSegments = [
   '/node_modules/@codemirror/',
@@ -128,8 +130,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '127.0.0.1',
-    port: 5188,
+    host: devServerUrl.hostname,
+    port: Number(devServerUrl.port),
     strictPort: true,
   },
 });
