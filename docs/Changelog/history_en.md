@@ -1,3 +1,8 @@
+### v2.2.10 - 2026-09-06
+This update optimizes details and user experience.
+#### Fixes
+* Fixed known issues
+
 ### v2.2.9 - 2026-08-27
 This update optimizes details and user experience.
 #### Improvements
