@@ -145,32 +145,52 @@ export function isS3ServiceProvider(value: string): value is S3ServiceProvider {
   return S3_SERVICE_PRESETS.some((preset) => preset.id === value);
 }
 
+function getUrlHostname(endpoint: string): string | null {
+  try {
+    return new URL(endpoint.trim()).hostname.toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+function matchesDomain(hostname: string, domain: string): boolean {
+  return hostname === domain || hostname.endsWith(`.${domain}`);
+}
+
 export function detectWebDavServiceProvider(endpoint: string): WebDavServiceProvider {
-  const normalized = endpoint.trim().toLowerCase();
-  if (normalized.includes('dav.jianguoyun.com')) {
+  const hostname = getUrlHostname(endpoint);
+  if (!hostname) {
+    return WEBDAV_SERVICE_PROVIDERS.CUSTOM;
+  }
+
+  if (hostname === 'dav.jianguoyun.com') {
     return WEBDAV_SERVICE_PROVIDERS.JIANGUOYUN;
   }
-  if (normalized.includes('nextcloud')) {
+  if (hostname.includes('nextcloud')) {
     return WEBDAV_SERVICE_PROVIDERS.NEXTCLOUD;
   }
-  if (normalized.includes('owncloud')) {
+  if (hostname.includes('owncloud')) {
     return WEBDAV_SERVICE_PROVIDERS.OWNCLOUD;
   }
   return WEBDAV_SERVICE_PROVIDERS.CUSTOM;
 }
 
 export function detectS3ServiceProvider(endpoint: string): S3ServiceProvider {
-  const normalized = endpoint.trim().toLowerCase();
-  if (normalized.includes('.aliyuncs.com')) {
+  const hostname = getUrlHostname(endpoint);
+  if (!hostname) {
+    return S3_SERVICE_PROVIDERS.CUSTOM;
+  }
+
+  if (matchesDomain(hostname, 'aliyuncs.com')) {
     return S3_SERVICE_PROVIDERS.ALIBABA_OSS;
   }
-  if (normalized.includes('.myqcloud.com')) {
+  if (matchesDomain(hostname, 'myqcloud.com')) {
     return S3_SERVICE_PROVIDERS.TENCENT_COS;
   }
-  if (normalized.includes('.amazonaws.com')) {
+  if (matchesDomain(hostname, 'amazonaws.com')) {
     return S3_SERVICE_PROVIDERS.AMAZON_S3;
   }
-  if (normalized.includes('.r2.cloudflarestorage.com')) {
+  if (matchesDomain(hostname, 'r2.cloudflarestorage.com')) {
     return S3_SERVICE_PROVIDERS.CLOUDFLARE_R2;
   }
   return S3_SERVICE_PROVIDERS.CUSTOM;

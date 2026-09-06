@@ -20,6 +20,10 @@ describe('cloud sync provider presets', () => {
   it('detects known WebDAV and S3 endpoints', () => {
     expect(detectWebDavServiceProvider('https://dav.jianguoyun.com/dav/'))
       .toBe(WEBDAV_SERVICE_PROVIDERS.JIANGUOYUN);
+    expect(detectWebDavServiceProvider('https://nextcloud.example.com/remote.php/dav'))
+      .toBe(WEBDAV_SERVICE_PROVIDERS.NEXTCLOUD);
+    expect(detectWebDavServiceProvider('https://owncloud.example.com/remote.php/dav'))
+      .toBe(WEBDAV_SERVICE_PROVIDERS.OWNCLOUD);
     expect(detectS3ServiceProvider('https://oss-cn-hangzhou.aliyuncs.com'))
       .toBe(S3_SERVICE_PROVIDERS.ALIBABA_OSS);
     expect(detectS3ServiceProvider('https://cos.ap-guangzhou.myqcloud.com'))
@@ -28,6 +32,11 @@ describe('cloud sync provider presets', () => {
       .toBe(S3_SERVICE_PROVIDERS.AMAZON_S3);
     expect(detectS3ServiceProvider('https://account.r2.cloudflarestorage.com'))
       .toBe(S3_SERVICE_PROVIDERS.CLOUDFLARE_R2);
+  });
+
+  it.each(['', 'not-a-url'])('treats an invalid endpoint as custom: %s', (endpoint) => {
+    expect(detectWebDavServiceProvider(endpoint)).toBe(WEBDAV_SERVICE_PROVIDERS.CUSTOM);
+    expect(detectS3ServiceProvider(endpoint)).toBe(S3_SERVICE_PROVIDERS.CUSTOM);
   });
 
   it('applies Jianguoyun without replacing credentials', () => {
